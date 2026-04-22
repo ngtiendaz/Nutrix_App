@@ -12,24 +12,25 @@ import Combine
 
 
 class AddFoodViewModel: ObservableObject {
-    @Published var selectedImage: UIImage?
-    @Published var isShowingPicker = false // Thống nhất dùng biến này
-    @Published var sourceType: UIImagePickerController.SourceType = .photoLibrary
     
-    func showCamera() {
-        #if targetEnvironment(simulator)
-        print("Camera không khả dụng trên Simulator")
-        self.showLibrary()
-        #else
-        if UIImagePickerController.isSourceTypeAvailable(.camera) {
-            self.sourceType = .camera
-            self.isShowingPicker = true // Sửa lỗi tên biến ở đây
+    @Published var isShowingCamera = false
+    @Published var isShowingLibrary = false
+    @Published var isShowingPermissionAlert = false
+    
+    func handleCameraSelection() {
+            PermissionManager.shared.checkCameraPermission(
+                authorized: {
+                    // Đã có quyền -> Mở view camera custom
+                    self.isShowingCamera = true
+                },
+                denied: {
+                    // Bị từ chối -> Hiện thông báo dẫn đi Cài đặt
+                    self.isShowingPermissionAlert = true
+                }
+            )
         }
-        #endif
-    }
-    
-    func showLibrary() {
-        self.sourceType = .photoLibrary
-        self.isShowingPicker = true
-    }
+        
+        func showLibrary() {
+            self.isShowingLibrary = true
+        }
 }

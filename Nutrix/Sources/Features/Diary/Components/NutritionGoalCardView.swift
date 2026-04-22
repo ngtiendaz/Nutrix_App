@@ -9,57 +9,79 @@ import SwiftUI
 struct NutritionGoalCardView: View {
     let data: DailyNutrition
     
-    // Giả sử mục tiêu (Goal) của người dùng (có thể lấy từ Profile)
     let goalCalories: Double = 2560
     let goalProtein: Double = 128
     let goalCarbs: Double = 224
     let goalFat: Double = 128
     
     var body: some View {
-        VStack(spacing: 25) {
-            // Phần Calo chính
-            HStack(spacing: 30) {
-                VStack(alignment: .leading) {
-                    Label("Đã ăn", systemImage: "leaf.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(.green)
-                    Text("\(Int(data.totalCalories))")
-                        .font(.system(size: 24, weight: .bold))
-                    Text("kcal")
-                        .font(.system(size: 12))
-                        .foregroundColor(.gray)
-                }
-                
+        VStack(spacing: 20) {
+      
+            HStack(alignment: .center) {
+              
                 CircularProgress(current: data.totalCalories, goal: goalCalories)
+                    .frame(width: 110, height: 110)
                 
-                VStack(alignment: .leading) {
-                    Label("Đốt cháy", systemImage: "flame.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(.orange)
-                    Text("0") // Bạn có thể thêm trường burnedCalories vào model sau
-                        .font(.system(size: 24, weight: .bold))
-                    Text("kcal")
-                        .font(.system(size: 12))
-                        .foregroundColor(.gray)
+                Spacer(minLength: 25)
+                
+                // Cụm thông số bên phải
+                VStack(alignment: .leading, spacing: 18) {
+                    nutritionRow(label: "Đã ăn",
+                                 value: Int(data.totalCalories),
+                                 unit: "kcal",
+                                 icon: "leaf.fill",
+                                 color: .green)
+                    
+                    nutritionRow(label: "Đốt cháy",
+                                 value: 0,
+                                 unit: "kcal",
+                                 icon: "flame.fill",
+                                 color: .orange)
                 }
+                Spacer()
             }
+            .padding(.horizontal, 5)
             
             Divider()
+                .padding(.vertical, 5)
             
-            // Phần 3 chỉ số chính
-            HStack {
+           
+            HStack(spacing: 0) {
+                macroGroup(label: "Carbs", current: data.totalCarbs, goal: goalCarbs, color: .blue)
                 Spacer()
-                MacroCircle(label: "Carbs", current: data.totalCarbs, goal: goalCarbs, color: .blue.opacity(0.7))
+                macroGroup(label: "Protein", current: data.totalProtein, goal: goalProtein, color: .red)
                 Spacer()
-                MacroCircle(label: "Protein", current: data.totalProtein, goal: goalProtein, color: .red.opacity(0.7))
-                Spacer()
-                MacroCircle(label: "Fat", current: data.totalFat, goal: goalFat, color: .orange.opacity(0.7))
-                Spacer()
+                macroGroup(label: "Fat", current: data.totalFat, goal: goalFat, color: .orange)
+            }
+            .padding(.horizontal, 10)
+        }
+        .padding(24)
+        .background(Color(.white))
+        .cornerRadius(30)
+        .shadow(color: Color.black.opacity(0.06), radius: 20, x: 0, y: 10)
+    }
+    
+    @ViewBuilder
+    private func nutritionRow(label: String, value: Int, unit: String, icon: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Label(label, systemImage: icon)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(color)
+            
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(value)")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.black)
+                Text(unit)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.gray)
             }
         }
-        .padding(20)
-        .background(Color.white)
-        .cornerRadius(25)
-        .shadow(color: Color.black.opacity(0.05), radius: 15, x: 0, y: 10)
+    }
+
+    @ViewBuilder
+    private func macroGroup(label: String, current: Double, goal: Double, color: Color) -> some View {
+        MacroCircle(label: label, current: current, goal: goal, color: color.opacity(0.8))
+            .frame(maxWidth: .infinity)
     }
 }

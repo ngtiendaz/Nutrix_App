@@ -11,6 +11,7 @@ struct MacroCircle: View {
     let current: Double
     let goal: Double
     let color: Color
+    @State private var animatedProgress: Double = 0
     
     var body: some View {
         VStack(spacing: 8) {
@@ -18,13 +19,13 @@ struct MacroCircle: View {
                 Circle()
                     .stroke(Color.gray.opacity(0.1), lineWidth: 6)
                 Circle()
-                    .trim(from: 0, to: CGFloat(min(current / goal, 1.0)))
+                    .trim(from: 0, to: CGFloat(min(animatedProgress / goal, 1.0)))
                     .stroke(color, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 
                 VStack(spacing: 0) {
                     Text("\(Int(current))")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 14, weight: .bold)).foregroundColor(.black)
                     Text("/ \(Int(goal))g")
                         .font(.system(size: 10))
                         .foregroundColor(.gray)
@@ -35,6 +36,10 @@ struct MacroCircle: View {
             Text(label)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.gray)
+        }.onAppear {
+            withAnimation(.easeInOut(duration: 0.8)) {
+                animatedProgress = current
+            }
         }
     }
 }

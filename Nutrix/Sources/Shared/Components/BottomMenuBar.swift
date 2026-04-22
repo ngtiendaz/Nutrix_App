@@ -41,7 +41,7 @@ struct BottomMenuBar: View {
                         selectedTab = tab
                     }
                 } label: {
-                    VStack(spacing: 8) {
+                    VStack(spacing: 6) {
                         ZStack {
                             if selectedTab == tab {
                                 RoundedRectangle(cornerRadius: 14)

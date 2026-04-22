@@ -8,6 +8,9 @@
 import SwiftUI
 struct ChartView: View {
     var body: some View {
-        Text("ChartView")
+        ZStack{
+            Color.App.background
+            Text("ChartView")
+        }
     }
 }

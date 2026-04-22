@@ -8,6 +8,9 @@
 import SwiftUI
 struct NutritionView: View {
     var body: some View {
-        Text("NutritionView")
+        ZStack{
+            Color.App.background
+            Text("NutritionView")
+        }
     }
 }

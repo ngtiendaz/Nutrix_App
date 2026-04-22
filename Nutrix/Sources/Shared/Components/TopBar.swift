@@ -11,7 +11,7 @@ struct TopBar: View {
     @State private var selectedDate = Date()
     var body: some View {
         HStack(alignment: .center, spacing: 10){
-            Text(selectedTab.title).font(.system(size: 36)).fontWeight(.bold)
+            Text(selectedTab.title).font(.system(size: 28)).fontWeight(.bold)
                 .foregroundColor(.black.opacity(0.8))
             Spacer()
             

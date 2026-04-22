@@ -8,6 +8,9 @@
 import SwiftUI
 struct ProfileView: View {
     var body: some View {
-        Text("Daz")
+        ZStack{
+            Color.App.background
+            Text("ProfileView")
+        }
     }
 }

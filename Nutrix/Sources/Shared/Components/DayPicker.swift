@@ -28,6 +28,7 @@ struct DayPicker: View { // Bạn có thể đổi tên thành DayPicker cho đ�
             // 2. Nhãn hiển thị Ngày (Hoặc "Hôm nay")
             Text(formatDate(selectedDate))
                 .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.black)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
                 .padding(.horizontal, 14)

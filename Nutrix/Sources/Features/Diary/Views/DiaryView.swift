@@ -24,7 +24,7 @@ struct DiaryView: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing){
             ScrollView{
-                VStack(spacing: 20){
+                VStack(spacing: 10){
                     NutritionGoalCardView(data: sampleData)
                     WaterGoalCardView(currentWater: sampleData.totalWater)
                     Spacer(minLength: 100)
@@ -57,12 +57,12 @@ struct DiaryView: View {
                 Image(systemName: "fork.knife")
                     .font(.system(size: 24, weight: .bold))
                     .foregroundColor(.white)
-                    .frame(width: 70, height: 70)
+                    .frame(width: 60, height: 60)
                     .background(Color.App.primary)
                     .clipShape(Circle())
                     .shadow(color: Color.App.primary.opacity(0.3), radius: 10, x: 0, y: 5)
             }
             .padding(.trailing, 20)
-            .padding(.bottom, 30)
+            .padding(.bottom, 10)
         }
 }

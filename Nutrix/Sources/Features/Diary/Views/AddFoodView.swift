@@ -11,6 +11,7 @@ struct AddFoodView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var addFoodViewModel = AddFoodViewModel()
     @EnvironmentObject var router: AppRouter
+
     
     var body: some View {
         VStack(spacing: 25) {
@@ -20,7 +21,7 @@ struct AddFoodView: View {
             // Cards chọn nguồn ảnh
             HStack(spacing: 20) {
                 Button {
-                    addFoodViewModel.showCamera()
+                    addFoodViewModel.handleCameraSelection()
                 } label: {
                     SelectionCard(title: "Chụp ảnh", icon: "camera.fill", color: Color.App.primary)
                 }
@@ -41,11 +42,20 @@ struct AddFoodView: View {
         .padding(.horizontal, 20)
         .background(Color.App.background.ignoresSafeArea())
         
-        // --- QUAN TRỌNG: Modifier này giúp hiển thị Camera/Thư viện ---
-        .sheet(isPresented: $addFoodViewModel.isShowingPicker) {
-            ImagePicker(image: $addFoodViewModel.selectedImage,
-                        sourceType: addFoodViewModel.sourceType)
+        .fullScreenCover(isPresented: $addFoodViewModel.isShowingCamera) {
+            ScanFoodView()
+        }
+        .sheet(isPresented: $addFoodViewModel.isShowingLibrary) {
+            ImagePicker(image: .constant(nil), sourceType: .photoLibrary)
                 .ignoresSafeArea()
+        }
+        .alert("Cấp quyền Camera", isPresented: $addFoodViewModel.isShowingPermissionAlert) {
+                    Button("Để sau", role: .cancel) { }
+                    Button("Đi tới Cài đặt") {
+                        PermissionManager.shared.openAppSettings()
+                    }
+        } message: {
+            Text("Nutrix cần truy cập Camera để nhận diện món ăn. Vui lòng bật quyền này trong Cài đặt.")
         }
     }
     
@@ -53,7 +63,7 @@ struct AddFoodView: View {
     private var headerView: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Thêm món").font(.system(size: 28, weight: .bold))
+                Text("Thêm món").font(.system(size: 28, weight: .bold)).foregroundColor(.black)
                 Text("Chụp ảnh món ăn của bạn").font(.system(size: 16)).foregroundColor(.gray)
             }
             Spacer()
@@ -66,7 +76,7 @@ struct AddFoodView: View {
     private var dividerView: some View {
         HStack {
             Rectangle().frame(height: 1).foregroundColor(.gray.opacity(0.2))
-            Text("hoặc chọn nhanh").font(.system(size: 14)).foregroundColor(.gray).padding(.horizontal, 8)
+            Text("hoặc chọn nhanh").font(.system(size: 14)).foregroundColor(.gray).padding(.horizontal, 8).layoutPriority(1)
             Rectangle().frame(height: 1).foregroundColor(.gray.opacity(0.2))
         }
     }
