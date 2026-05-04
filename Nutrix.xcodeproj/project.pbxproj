@@ -6,6 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		FABA0C642FA7B76600D3B9DC /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = FABA0C632FA7B76600D3B9DC /* FirebaseAnalytics */; };
+		FABA0C662FA7B76600D3B9DC /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = FABA0C652FA7B76600D3B9DC /* FirebaseAuth */; };
+		FABA0C682FA7B76600D3B9DC /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = FABA0C672FA7B76600D3B9DC /* FirebaseDatabase */; };
+		FABA0C6A2FA7B76600D3B9DC /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = FABA0C692FA7B76600D3B9DC /* FirebaseFirestore */; };
+		FABA0C6C2FA7B76600D3B9DC /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = FABA0C6B2FA7B76600D3B9DC /* FirebaseMessaging */; };
+		FABA0C6E2FA7B76600D3B9DC /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = FABA0C6D2FA7B76600D3B9DC /* FirebaseStorage */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		FAAB204E2F8F7FF9001D775E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -29,9 +38,22 @@
 		FAAB20572F8F7FF9001D775E /* NutrixUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NutrixUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		FAA95CAF2FA89742005B1F3A /* Exceptions for "Nutrix" folder in "Nutrix" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = FAAB203A2F8F7FF7001D775E /* Nutrix */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		FAAB203D2F8F7FF7001D775E /* Nutrix */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				FAA95CAF2FA89742005B1F3A /* Exceptions for "Nutrix" folder in "Nutrix" target */,
+			);
 			path = Nutrix;
 			sourceTree = "<group>";
 		};
@@ -52,6 +74,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FABA0C682FA7B76600D3B9DC /* FirebaseDatabase in Frameworks */,
+				FABA0C6A2FA7B76600D3B9DC /* FirebaseFirestore in Frameworks */,
+				FABA0C6C2FA7B76600D3B9DC /* FirebaseMessaging in Frameworks */,
+				FABA0C642FA7B76600D3B9DC /* FirebaseAnalytics in Frameworks */,
+				FABA0C662FA7B76600D3B9DC /* FirebaseAuth in Frameworks */,
+				FABA0C6E2FA7B76600D3B9DC /* FirebaseStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +140,12 @@
 			);
 			name = Nutrix;
 			packageProductDependencies = (
+				FABA0C632FA7B76600D3B9DC /* FirebaseAnalytics */,
+				FABA0C652FA7B76600D3B9DC /* FirebaseAuth */,
+				FABA0C672FA7B76600D3B9DC /* FirebaseDatabase */,
+				FABA0C692FA7B76600D3B9DC /* FirebaseFirestore */,
+				FABA0C6B2FA7B76600D3B9DC /* FirebaseMessaging */,
+				FABA0C6D2FA7B76600D3B9DC /* FirebaseStorage */,
 			);
 			productName = Nutrix;
 			productReference = FAAB203B2F8F7FF7001D775E /* Nutrix.app */;
@@ -195,6 +229,9 @@
 			);
 			mainGroup = FAAB20322F8F7FF7001D775E;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				FABA0C622FA7B76600D3B9DC /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FAAB203C2F8F7FF7001D775E /* Products */;
 			projectDirPath = "";
@@ -271,6 +308,8 @@
 /* Begin XCBuildConfiguration section */
 		FAAB205F2F8F7FF9001D775E /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = FAAB203D2F8F7FF7001D775E /* Nutrix */;
+			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -334,6 +373,8 @@
 		};
 		FAAB20602F8F7FF9001D775E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = FAAB203D2F8F7FF7001D775E /* Nutrix */;
+			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -390,6 +431,8 @@
 		};
 		FAAB20622F8F7FF9001D775E /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = FAAB203D2F8F7FF7001D775E /* Nutrix */;
+			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -397,7 +440,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RJW4DUF829;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "$(SRCROOT)/Nutrix/Info.plist";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Nutrix cần dùng camera để nhận diện món ăn";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -424,6 +468,8 @@
 		};
 		FAAB20632F8F7FF9001D775E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = FAAB203D2F8F7FF7001D775E /* Nutrix */;
+			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -431,7 +477,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RJW4DUF829;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "$(SRCROOT)/Nutrix/Info.plist";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Nutrix cần dùng camera để nhận diện món ăn";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -458,6 +505,8 @@
 		};
 		FAAB20652F8F7FF9001D775E /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = FAAB203D2F8F7FF7001D775E /* Nutrix */;
+			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -479,6 +528,8 @@
 		};
 		FAAB20662F8F7FF9001D775E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = FAAB203D2F8F7FF7001D775E /* Nutrix */;
+			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -500,6 +551,8 @@
 		};
 		FAAB20682F8F7FF9001D775E /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = FAAB203D2F8F7FF7001D775E /* Nutrix */;
+			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -519,6 +572,8 @@
 		};
 		FAAB20692F8F7FF9001D775E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = FAAB203D2F8F7FF7001D775E /* Nutrix */;
+			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -576,6 +631,50 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		FABA0C622FA7B76600D3B9DC /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.12.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		FABA0C632FA7B76600D3B9DC /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FABA0C622FA7B76600D3B9DC /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		FABA0C652FA7B76600D3B9DC /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FABA0C622FA7B76600D3B9DC /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		FABA0C672FA7B76600D3B9DC /* FirebaseDatabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FABA0C622FA7B76600D3B9DC /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseDatabase;
+		};
+		FABA0C692FA7B76600D3B9DC /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FABA0C622FA7B76600D3B9DC /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		FABA0C6B2FA7B76600D3B9DC /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FABA0C622FA7B76600D3B9DC /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+		FABA0C6D2FA7B76600D3B9DC /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FABA0C622FA7B76600D3B9DC /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = FAAB20332F8F7FF7001D775E /* Project object */;
 }

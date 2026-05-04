@@ -18,6 +18,9 @@ class AppRouter: ObservableObject {
     @Published var settingPath = NavigationPath()
     @Published var selectedTab: Tab = .diary
     
+    @Published var toast: ToastData? = nil
+    @Published var isLoading: Bool = false
+    
     func push(_ destination: AppDestination) {
         switch selectedTab {
         case .diary:
@@ -68,4 +71,25 @@ class AppRouter: ObservableObject {
             break
         }
     }
+    
+    
+    func showToast(message: String, type: ToastType) {
+        toast = ToastData(message: message, type: type)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            self.toast = nil
+        }
+    }
+    func showLoading() {
+        print("SHOW LOADING")
+          DispatchQueue.main.async {
+              self.isLoading = true
+          }
+      }
+
+      func hideLoading() {
+          DispatchQueue.main.async {
+              self.isLoading = false
+          }
+      }
 }

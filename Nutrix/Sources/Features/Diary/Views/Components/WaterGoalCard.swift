@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct WaterGoalCardView: View {
+struct WaterGoalCard: View {
     let currentWater: Double
     let goalWater: Double = 2.0
     

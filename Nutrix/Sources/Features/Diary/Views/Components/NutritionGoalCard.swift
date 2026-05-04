@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct NutritionGoalCardView: View {
+struct NutritionGoalCard: View {
     let data: DailyNutrition
     
     let goalCalories: Double = 2560

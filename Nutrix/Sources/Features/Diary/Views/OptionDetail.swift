@@ -7,9 +7,9 @@
 
 import SwiftUI
 
-struct AddFoodView: View {
+struct OptionDetail: View {
     @Environment(\.dismiss) var dismiss
-    @StateObject private var addFoodViewModel = AddFoodViewModel()
+    @StateObject private var diaryViewModel = DiaryViewModel()
     @EnvironmentObject var router: AppRouter
 
     
@@ -21,13 +21,13 @@ struct AddFoodView: View {
             // Cards chọn nguồn ảnh
             HStack(spacing: 20) {
                 Button {
-                    addFoodViewModel.handleCameraSelection()
+                    diaryViewModel.handleCameraSelection()
                 } label: {
                     SelectionCard(title: "Chụp ảnh", icon: "camera.fill", color: Color.App.primary)
                 }
                 
                 Button {
-                    addFoodViewModel.showLibrary()
+                    diaryViewModel.showLibrary()
                 } label: {
                     SelectionCard(title: "Thư viện", icon: "photo.on.rectangle.angled",
                                   color: Color.App.primary.opacity(0.1), iconColor: Color.App.primary)
@@ -42,14 +42,27 @@ struct AddFoodView: View {
         .padding(.horizontal, 20)
         .background(Color.App.background.ignoresSafeArea())
         
-        .fullScreenCover(isPresented: $addFoodViewModel.isShowingCamera) {
-            ScanFoodView()
-        }
-        .sheet(isPresented: $addFoodViewModel.isShowingLibrary) {
-            ImagePicker(image: .constant(nil), sourceType: .photoLibrary)
+        .sheet(isPresented: $diaryViewModel.isShowingLibrary) {
+            ImagePicker(image: $diaryViewModel.selectedImage, sourceType: .photoLibrary)
                 .ignoresSafeArea()
         }
-        .alert("Cấp quyền Camera", isPresented: $addFoodViewModel.isShowingPermissionAlert) {
+
+        // 2. Mở Camera hệ thống
+        .fullScreenCover(isPresented: $diaryViewModel.isShowingCamera) {
+            ImagePicker(image: $diaryViewModel.selectedImage, sourceType: .camera)
+                .ignoresSafeArea()
+        }
+
+        // 3. TỰ ĐỘNG NHẢY SANG VIEW PHÂN TÍCH KHI CÓ ẢNH
+        .fullScreenCover(item: $diaryViewModel.selectedImage) { uiImage in
+            FoodAnalysisView(
+                foodAnalysisViewModel: FoodAnalysisViewModel(image: uiImage),
+                onSaved: {
+                    dismiss() 
+                }
+            )
+        }
+        .alert("Cấp quyền Camera", isPresented: $diaryViewModel.isShowingPermissionAlert) {
                     Button("Để sau", role: .cancel) { }
                     Button("Đi tới Cài đặt") {
                         PermissionManager.shared.openAppSettings()
@@ -98,24 +111,3 @@ struct AddFoodView: View {
     }
 }
 
-struct SelectionCard: View {
-    let title: String
-    let icon: String
-    let color: Color
-    var iconColor: Color = .white
-    
-    var body: some View {
-        VStack(spacing: 15) {
-            Image(systemName: icon)
-                .font(.system(size: 40))
-                .foregroundColor(iconColor)
-            Text(title)
-                .font(.system(size: 18, weight: .bold))
-                .foregroundColor(iconColor)
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 160)
-        .background(color)
-        .cornerRadius(25)
-    }
-}

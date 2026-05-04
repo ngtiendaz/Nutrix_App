@@ -6,16 +6,27 @@
 //
 
 import SwiftUI
-import CoreData
+import FirebaseCore // Import thư viện lõi
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+  func application(_ application: UIApplication,
+                   didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+    FirebaseApp.configure() // Lệnh kích hoạt Firebase
+    return true
+  }
+}
 
 @main
 struct NutrixApp: App {
-    let persistenceController = PersistenceController.shared
-    @StateObject var router = AppRouter()
+    // Đăng ký AppDelegate để Firebase khởi tạo đúng cách
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    
+    @StateObject  var router = AppRouter()
 
     var body: some Scene {
         WindowGroup {
-          ContentView().environment(\.managedObjectContext, persistenceController.container.viewContext).environmentObject(router)
+            MainView()
+                .environmentObject(router)
         }
     }
 }

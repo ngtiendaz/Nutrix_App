@@ -11,6 +11,7 @@ struct DiaryView: View {
     @EnvironmentObject var router: AppRouter
     @State private var isShowingAddFood = false
     @State private var animateButton = false
+    
     let sampleData = DailyNutrition(
             userId: "123",
             date: "2026-04-16",
@@ -25,8 +26,8 @@ struct DiaryView: View {
         ZStack(alignment: .bottomTrailing){
             ScrollView{
                 VStack(spacing: 10){
-                    NutritionGoalCardView(data: sampleData)
-                    WaterGoalCardView(currentWater: sampleData.totalWater)
+                    NutritionGoalCard(data: sampleData)
+                    WaterGoalCard(currentWater: sampleData.totalWater)
                     Spacer(minLength: 100)
                 } .padding(.horizontal,12)
             }
@@ -44,7 +45,7 @@ struct DiaryView: View {
             animateButton = false
         }
         .sheet(isPresented: $isShowingAddFood) {
-            AddFoodView()
+            OptionDetail()
                 .environmentObject(router)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)

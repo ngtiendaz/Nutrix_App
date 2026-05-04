@@ -19,7 +19,33 @@ struct MainView: View {
                 
                 BottomMenuBar(selectedTab: $router.selectedTab).padding(.bottom, -20)
             }
+        }.onAppear {
+            print("===== ENV TEST =====")
+            print("EDAMAM ID:", AppConfig.edamamAppID)
+            print("EDAMAM KEY:", AppConfig.edamamAppKey)
+            print("VISION KEY:", AppConfig.visionAPIKey)
         }
+        .overlay(
+            ToastView(toast: router.toast)
+                .animation(.spring(response: 0.35, dampingFraction: 0.85),
+                           value: router.toast != nil)
+                .zIndex(999)
+            
+        ).overlay {
+            if router.isLoading {
+                ZStack {
+                    Color.black.opacity(0.35)
+                        .ignoresSafeArea()
+
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .tint(.white)
+                }
+                .transition(.opacity)
+                .zIndex(999)
+            }
+        }
+        .animation(.easeInOut, value: router.isLoading)
     }
 
     var contentView: some View {

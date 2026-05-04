@@ -10,12 +10,15 @@ import Foundation
 struct Meal: Codable {
     let id: String
     let userId: String
-    
-    let food: [Food]
-    
-    let quantity: Double
     let mealType: MealType
     
+    var food: [Food]
+    var totalCalories: Double
+    var totalProtein: Double
+    var totalCarbs: Double
+    var totalFats: Double
+    
+    let dateKey: String
     let imageUrl: String?
     let createdAt: Date
 }

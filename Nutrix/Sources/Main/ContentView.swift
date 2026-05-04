@@ -13,6 +13,7 @@ struct ContentView: View {
     var body: some View {
        MainView().environmentObject(router)
         // thêm logic login để vào main
+        
     }
 }
 

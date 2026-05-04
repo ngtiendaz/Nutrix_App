@@ -10,7 +10,13 @@ struct ChartView: View {
     var body: some View {
         ZStack{
             Color.App.background
-            Text("ChartView")
+            Button("Test gọi Edamam") {
+                Task {
+                    let service = EdamamService()
+                    // Giả sử đây là nhãn nhận được từ Google Vision
+                    await service.fetchNutrition(for: "Pizza")
+                }
+            }
         }
     }
 }
