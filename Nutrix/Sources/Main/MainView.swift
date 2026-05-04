@@ -19,11 +19,6 @@ struct MainView: View {
                 
                 BottomMenuBar(selectedTab: $router.selectedTab).padding(.bottom, -20)
             }
-        }.onAppear {
-            print("===== ENV TEST =====")
-            print("EDAMAM ID:", AppConfig.edamamAppID)
-            print("EDAMAM KEY:", AppConfig.edamamAppKey)
-            print("VISION KEY:", AppConfig.visionAPIKey)
         }
         .overlay(
             ToastView(toast: router.toast)

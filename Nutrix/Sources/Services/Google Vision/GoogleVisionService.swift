@@ -10,7 +10,7 @@ import UIKit
 
 class GoogleVisionService {
     // Thay chuỗi này bằng API Key ông lấy từ Google Cloud Console (image_65fec0.jpg)
-    private let apiKey = "AIzaSyBXvVNw-08lertZER37-09GTZ3wN6On3Ys"
+    private let apiKey = AppConfig.visionAPIKey
     private let baseURL = "https://vision.googleapis.com/v1/images:annotate"
 
     func analyzeImage(uiImage: UIImage, completion: @escaping (Result<VisionResponse, Error>) -> Void) {

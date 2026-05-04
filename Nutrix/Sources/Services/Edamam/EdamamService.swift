@@ -1,8 +1,8 @@
 import Foundation
 
 struct EdamamService {
-    let appID = "2ec2f1c4"
-    let appKey = "36168070056db62b07dbadda290fe2c0"
+    let appID = AppConfig.edamamAppID
+    let appKey = AppConfig.edamamAppKey
     
     // Sửa hàm để trả về EdamamResponse (Optional)
     func fetchNutrition(for foodName: String) async -> EdamamResponse? {
