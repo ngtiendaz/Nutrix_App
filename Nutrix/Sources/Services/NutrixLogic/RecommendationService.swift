@@ -39,7 +39,7 @@ class RecommendationService {
         }
         
         let mealType = getMealTypeByTime(hour: currentHour)
-        let isLoseWeightGoal = user.goal.lowercased().contains("lose")
+        let isLoseWeightGoal = (user.goal ?? "").lowercased().contains("lose")
         
         // 2. PHÂN TÍCH THEO MỤC TIÊU
         if isLoseWeightGoal {

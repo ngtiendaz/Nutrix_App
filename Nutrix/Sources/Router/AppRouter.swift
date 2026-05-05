@@ -9,8 +9,16 @@ import Foundation
 import Combine
 import SwiftUI
 
+enum AppRoot {
+    case splash
+    case login
+    case main
+}
 
 class AppRouter: ObservableObject {
+    
+    @Published var currentRoot: AppRoot = .splash
+    
     @Published var diaryPath = NavigationPath()
     @Published var chartPath = NavigationPath()
     @Published var nutritionPath = NavigationPath()
@@ -92,4 +100,23 @@ class AppRouter: ObservableObject {
               self.isLoading = false
           }
       }
+    func changeRoot(to newRoot: AppRoot) {
+            DispatchQueue.main.async {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    self.currentRoot = newRoot
+                }
+            }
+        }
+    
+    func resetAllPaths() {
+        DispatchQueue.main.async {
+           
+            self.diaryPath = NavigationPath()
+            self.chartPath = NavigationPath()
+            self.nutritionPath = NavigationPath()
+            self.profilePath = NavigationPath()
+            self.settingPath = NavigationPath()
+            self.selectedTab = .diary
+        }
+    }
 }

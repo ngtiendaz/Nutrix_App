@@ -40,21 +40,22 @@ class FoodAnalysisViewModel: ObservableObject {
     let selectedImage: UIImage
     private let visionService = GoogleVisionService()
     private let edamamService = EdamamService()
+    private let authService: FirebaseAuthService
     
-    // Dữ liệu giả lập cho đồ án (Trong thực tế, Daz sẽ lấy từ DiaryViewModel hoặc Database)
     private let dailyGoalMock = DailyGoal(userId: "daz123", date: Date(), targetCalories: 2000, targetProtein: 150, targetFat: 60, targetCarbs: 250, targetWater: 2.0)
     private let dailyNutritionMock = DailyNutrition(userId: "daz123", date: "2026-05-03", totalCalories: 1200, totalProtein: 80, totalCarbs: 150, totalFat: 40, totalWater: 1.0)
-    private let userMock = User(userId: "daz123", email: "daz@nutrix.com", name: "Daz", age: 24, gender: "Male", height: 175, weight: 70, activityLevel: "Active", goal: "Lose Weight", createdAt: Date())
-
-
     private let blacklist = ["food", "cuisine", "dish", "ingredient", "recipe", "tableware", "produce", "fast food"]
     
    
     
-    init(image: UIImage) {
-        self.selectedImage = image
-        updateMealType()
-    }
+    init(image: UIImage, authService: FirebaseAuthService) {
+            self.selectedImage = image
+            self.authService = authService
+            updateMealType()
+        }
+    private var currentUser: User? {
+            return authService.currentUser
+        }
     
     func updateMealType() {
         let hour = Calendar.current.component(.hour, from: mealDate)
@@ -68,9 +69,9 @@ class FoodAnalysisViewModel: ObservableObject {
         default: selectedMealType = .snack
         }
     }
-    // --- MỚI: Hàm để gọi Service tính toán lời khuyên ---
+  
     func updateAIAdvice() {
-        guard let food = analyzedFood else {
+        guard let food = analyzedFood, let user = currentUser else{
             self.advice = nil
             return
         }
@@ -87,14 +88,12 @@ class FoodAnalysisViewModel: ObservableObject {
             servingUnit: "grams",
             quantity: 1.0
         )
-        
-        // 👉 thêm mealType context
         self.advice = RecommendationService.shared.generateAdvice(
             currentFood: scaledFood,
             quantity: self.quantity,
             dailyNutrition: dailyNutritionMock,
             dailyGoal: dailyGoalMock,
-            user: userMock,
+            user: user,
             mealType: selectedMealType // 👈 thêm dòng này
         )
     }
@@ -103,7 +102,7 @@ class FoodAnalysisViewModel: ObservableObject {
         guard !isAnalyzing && analyzedFood == nil else { return }
         isAnalyzing = true
         errorMessage = nil
-        self.advice = nil // Reset advice cũ
+        self.advice = nil
         
         visionService.analyzeImage(uiImage: selectedImage) { result in
             DispatchQueue.main.async {
@@ -187,52 +186,53 @@ class FoodAnalysisViewModel: ObservableObject {
     }
     
     func saveFood(completion: @escaping () -> Void) {
-        
-        guard let food = analyzedFood else { return }
-        
-        guard !isSaving else { return }
-        
-        FirebaseService.shared.uploadFoodImage(image: selectedImage) { result in
+            guard let food = analyzedFood, let user = currentUser else {
+                self.errorMessage = "Không tìm thấy thông tin người dùng."
+                return
+            }
+            guard !isSaving else { return }
             
-            switch result {
-            case .success(let imageUrl):
-                
-                let finalFood = Food(
-                    id: food.id,
-                    name: food.name,
-                    image: imageUrl, // 🔥 ảnh user
-                    calories: self.valueFor(food.calories),
-                    protein: self.valueFor(food.protein),
-                    carbs: self.valueFor(food.carbs),
-                    fats: self.valueFor(food.fats),
-                    servingSize: self.weight,
-                    servingUnit: "Gram",
-                    quantity: self.quantity
-                )
-                
-                FirebaseService.shared.addFoodToMeal(
-                    userId: self.userMock.userId,
-                    mealType: self.selectedMealType,
-                    mealDate: self.mealDate,
-                    food: finalFood
-                ) { result in
-                    DispatchQueue.main.async {
-                        switch result {
-                        case .success:
-                            print("🔥 Saved with image:", imageUrl)
-                            completion()
-                        case .failure(let error):
-                            self.errorMessage = error.localizedDescription
+            isSaving = true
+            
+            FirebaseService.shared.uploadFoodImage(image: selectedImage) { result in
+                switch result {
+                case .success(let imageUrl):
+                    let finalFood = Food(
+                        id: food.id,
+                        name: food.name,
+                        image: imageUrl,
+                        calories: self.valueFor(food.calories),
+                        protein: self.valueFor(food.protein),
+                        carbs: self.valueFor(food.carbs),
+                        fats: self.valueFor(food.fats),
+                        servingSize: self.weight,
+                        servingUnit: "Gram",
+                        quantity: self.quantity
+                    )
+                    
+                    FirebaseService.shared.addFoodToMeal(
+                        userId: user.userId, 
+                        mealType: self.selectedMealType,
+                        mealDate: self.mealDate,
+                        food: finalFood
+                    ) { result in
+                        DispatchQueue.main.async {
+                            self.isSaving = false
+                            switch result {
+                            case .success:
+                                completion()
+                            case .failure(let error):
+                                self.errorMessage = error.localizedDescription
+                            }
                         }
                     }
-                }
-                
-            case .failure(let error):
-                DispatchQueue.main.async {
-                    self.errorMessage = error.localizedDescription
+                case .failure(let error):
+                    DispatchQueue.main.async {
+                        self.isSaving = false
+                        self.errorMessage = error.localizedDescription
+                    }
                 }
             }
         }
-    }
     
 }

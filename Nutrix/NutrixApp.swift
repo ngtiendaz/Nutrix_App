@@ -6,7 +6,8 @@
 //
 
 import SwiftUI
-import FirebaseCore // Import thư viện lõi
+import FirebaseCore
+import GoogleSignIn
 
 class AppDelegate: NSObject, UIApplicationDelegate {
   func application(_ application: UIApplication,
@@ -18,15 +19,17 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 
 @main
 struct NutrixApp: App {
-    // Đăng ký AppDelegate để Firebase khởi tạo đúng cách
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
     @StateObject  var router = AppRouter()
 
     var body: some Scene {
         WindowGroup {
-            MainView()
+            ContentView()
                 .environmentObject(router)
+                .onOpenURL { url in
+                    GIDSignIn.sharedInstance.handle(url)
+                }
         }
     }
 }

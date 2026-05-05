@@ -11,6 +11,7 @@ struct OptionDetail: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var diaryViewModel = DiaryViewModel()
     @EnvironmentObject var router: AppRouter
+    @EnvironmentObject var loginViewModel: LoginViewModel
 
     
     var body: some View {
@@ -52,16 +53,13 @@ struct OptionDetail: View {
             ImagePicker(image: $diaryViewModel.selectedImage, sourceType: .camera)
                 .ignoresSafeArea()
         }
-
-        // 3. TỰ ĐỘNG NHẢY SANG VIEW PHÂN TÍCH KHI CÓ ẢNH
         .fullScreenCover(item: $diaryViewModel.selectedImage) { uiImage in
-            FoodAnalysisView(
-                foodAnalysisViewModel: FoodAnalysisViewModel(image: uiImage),
-                onSaved: {
-                    dismiss() 
+                    // Gọi đúng init mới: nhận image và authService
+                    FoodAnalysisView(
+                        image: uiImage,
+                        authService: loginViewModel.authService
+                    )
                 }
-            )
-        }
         .alert("Cấp quyền Camera", isPresented: $diaryViewModel.isShowingPermissionAlert) {
                     Button("Để sau", role: .cancel) { }
                     Button("Đi tới Cài đặt") {

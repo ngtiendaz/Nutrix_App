@@ -25,9 +25,10 @@ struct DiaryView: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing){
             ScrollView{
-                VStack(spacing: 10){
+                VStack(alignment: .leading, spacing: 10){
                     NutritionGoalCard(data: sampleData)
                     WaterGoalCard(currentWater: sampleData.totalWater)
+                    Text("Hôm nay").font(Font.largeTitle.bold()).foregroundColor(.black)
                     Spacer(minLength: 100)
                 } .padding(.horizontal,12)
             }

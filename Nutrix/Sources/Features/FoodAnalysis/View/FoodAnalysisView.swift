@@ -9,11 +9,17 @@ import SwiftUI
 
 struct FoodAnalysisView: View {
     @StateObject var foodAnalysisViewModel: FoodAnalysisViewModel
+    
     @Environment(\.dismiss) var dismiss
     @State private var scanAnimation = false
     @FocusState private var focusedField: Field?
     
     @EnvironmentObject var router: AppRouter
+    @EnvironmentObject var loginViewModel: LoginViewModel
+    
+    init(image: UIImage, authService: FirebaseAuthService) {
+            _foodAnalysisViewModel = StateObject(wrappedValue: FoodAnalysisViewModel(image: image, authService: authService))
+        }
     
     var onSaved: (() -> Void)? = nil
     
@@ -28,25 +34,20 @@ struct FoodAnalysisView: View {
             Color.App.background.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // --- 2. HEADER CỐ ĐỊNH ---
                 headerView
-                    .ignoresSafeArea(.all, edges: .top) // Ghim sát tai thỏ
+                    .ignoresSafeArea(.all, edges: .top)
                 
-                // --- 3. NỘI DUNG CUỘN ---
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
                         
-                        // KHU VỰC ẢNH
                         imageSection
                         
                         if foodAnalysisViewModel.isAnalyzing {
                             loadingView
                         }
-                        // MỚI: HIỂN THỊ KHI CÓ LỖI (KHÔNG NHẬN DIỆN ĐƯỢC ĐỒ ĂN)
                         else if let error = foodAnalysisViewModel.errorMessage {
                             errorView(message: error)
                         }
-                        // HIỂN THỊ KHI CÓ DỮ LIỆU ĐỒ ĂN
                         else if let food = foodAnalysisViewModel.analyzedFood {
                             foodContent(food: food)
                         }
@@ -55,7 +56,6 @@ struct FoodAnalysisView: View {
                 }
             }
             
-            // --- 4. CỤM NÚT DƯỚI CÙNG (Cố định đáy) ---
             if !foodAnalysisViewModel.isAnalyzing && foodAnalysisViewModel.analyzedFood != nil {
                 actionButtons
             }
@@ -72,7 +72,6 @@ struct FoodAnalysisView: View {
                 foodAnalysisViewModel.updateAIAdvice()
             }
         }
-        // Theo dõi quantity thay đổi để cập nhật advice theo thời gian thực
         .onChange(of: foodAnalysisViewModel.quantity) { _ in
             foodAnalysisViewModel.updateAIAdvice()
             
@@ -87,8 +86,6 @@ struct FoodAnalysisView: View {
             }
         
     }
-    
-    // MARK: - Subviews để code sạch hơn (Sử dụng code cũ của ông và thêm cái mới)
     
     private var headerView: some View {
         ZStack {
@@ -117,7 +114,6 @@ struct FoodAnalysisView: View {
         let imageShape = RoundedRectangle(cornerRadius: 30)
 
         return ZStack {
-            // Ảnh + nền
             imageShape
                 .fill(Color.white)
                 .frame(width: UIScreen.main.bounds.width - 40, height: 280)
@@ -131,7 +127,7 @@ struct FoodAnalysisView: View {
                 .overlay {
                     if foodAnalysisViewModel.isAnalyzing {
                         scanEffect
-                            .clipShape(imageShape) // 🔥 QUAN TRỌNG
+                            .clipShape(imageShape)
                     }
                 }
         }
@@ -208,7 +204,6 @@ struct FoodAnalysisView: View {
         VStack(spacing: 20) {
             HStack {
                 VStack(alignment: .leading) {
-                    // SỬ DỤNG valueFor để tính Calo theo weight và quantity
                     Text("\(Int(foodAnalysisViewModel.valueFor(food.calories)))")
                         .font(.system(size: 40, weight: .bold))
                         .foregroundColor(Color.App.primary)
@@ -237,7 +232,6 @@ struct FoodAnalysisView: View {
     
     private var portionInputSection: some View {
         HStack(spacing: 15) {
-            // CỘT NHẬP CÂN NẶNG (GRAMS)
             VStack(alignment: .center, spacing: 8) {
                 HStack {
                     Image(systemName: "scalemass") // Biểu tượng quả cân
@@ -259,7 +253,6 @@ struct FoodAnalysisView: View {
                     .foregroundColor(.gray)
             }
             
-            // CỘT NHẬP SỐ LƯỢNG (SERVES)
             VStack(alignment: .center, spacing: 8) {
                 HStack {
                     Image(systemName: "number")
@@ -288,7 +281,6 @@ struct FoodAnalysisView: View {
         .onChange(of: foodAnalysisViewModel.weight) { _ in foodAnalysisViewModel.updateAIAdvice() }
     }
 
-    // --- MỚI: UI Component hiển thị Khuyến nghị từ NutriX ---
     @ViewBuilder
     private func smartRecommendation(food: Food) -> some View {
         if let advice = foodAnalysisViewModel.advice {
