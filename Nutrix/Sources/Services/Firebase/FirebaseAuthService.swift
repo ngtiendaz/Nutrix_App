@@ -185,24 +185,73 @@ class FirebaseAuthService: ObservableObject {
             }
         }
     }
-    func updateUserProfile(data: [String: Any], completion: @escaping (Error?) -> Void) {
-        // 1. Kiểm tra xem user có đang đăng nhập không
-        guard let userId = Auth.auth().currentUser?.uid else {
-            completion(NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "User chưa đăng nhập"]))
-            return
-        }
-
-        // 2. Cập nhật dữ liệu lên Firestore
+    // MARK: - Cập nhật thông tin cơ bản (Tên, Tuổi, Giới tính, Vận động)
+    func updateBasicProfile(data: [String: Any], completion: @escaping (Error?) -> Void) {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
         db.collection("users").document(userId).updateData(data) { [weak self] error in
-            if let error = error {
-                print("Lỗi cập nhật hồ sơ: \(error.localizedDescription)")
-                completion(error)
-            } else {
-                // 3. Sau khi cập nhật thành công trên server, tải lại dữ liệu cục bộ để UI đồng bộ
-                print("DEBUG: Cập nhật hồ sơ thành công!")
+            if error == nil {
                 self?.fetchUserData(userId: userId)
-                completion(nil)
+            }
+            completion(error)
+        }
+    }
+
+    // MARK: - Cập nhật Chiều cao & Cân nặng (Kèm lưu lịch sử)
+    func updateBodyMetrics(height: Double, weight: Double, completion: @escaping (Error?) -> Void) {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        let userRef = db.collection("users").document(userId)
+        
+        // 1. Lấy dữ liệu cũ để so sánh trạng thái tăng/giảm
+        userRef.getDocument { [weak self] snapshot, error in
+            let oldWeight = snapshot?.data()?["weight"] as? Double ?? weight
+            
+            // Xác định trạng thái
+            var status = "Giữ nguyên"
+            if weight > oldWeight { status = "Tăng" }
+            else if weight < oldWeight { status = "Giảm" }
+            
+            let batch = self?.db.batch()
+            
+            // 2. Update dữ liệu chính của User
+            batch?.updateData([
+                "height": height,
+                "weight": weight
+            ], forDocument: userRef)
+            
+            // 3. Thêm vào sub-collection "weight_history"
+            let historyRef = userRef.collection("body_metrics_history").document()
+            batch?.setData([
+                "height": height,
+                "weight": weight,
+                "status": status,
+                "timestamp": FieldValue.serverTimestamp()
+            ], forDocument: historyRef)
+            
+            // Thực thi Batch
+            batch?.commit { error in
+                if error == nil {
+                    self?.fetchUserData(userId: userId)
+                }
+                completion(error)
             }
         }
+    }
+    func fetchBodyMetricsHistory(completion: @escaping (Result<[BodyMetrics], Error>) -> Void) {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        db.collection("users").document(userId).collection("body_metrics_history")
+            .order(by: "timestamp", descending: true) // Sắp xếp mới nhất lên đầu
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                let metrics = snapshot?.documents.compactMap { doc in
+                    BodyMetrics(id: doc.documentID, dictionary: doc.data())
+                } ?? []
+                completion(.success(metrics))
+            }
     }
 }

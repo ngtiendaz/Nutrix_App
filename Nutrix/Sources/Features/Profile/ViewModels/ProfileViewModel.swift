@@ -16,10 +16,13 @@ class ProfileViewModel: ObservableObject {
     @Published var gender: String = "Nam"
     @Published var activityLevel: String = "Vừa phải"
     
-    @Published var isEditing: Bool = false
+    @Published var isEditingBasic: Bool = false   // Cho Tên, Tuổi, Giới tính...
+    @Published var isEditingMetrics: Bool = false // Cho Cao, Nặng
     @Published var isUpdating: Bool = false
     
     private var initialData: [String: String] = [:]
+    @Published var metricsHistory: [BodyMetrics] = []
+    @Published var showHistorySheet: Bool = false
     
     // Data cho Picker
     let genders = ["Nam", "Nữ"]
@@ -40,33 +43,55 @@ class ProfileViewModel: ObservableObject {
         ]
     }
     
-    func saveProfile(authService: FirebaseAuthService) {
-        let hasChanges = name != initialData["name"] || weight != initialData["weight"] ||
-                         height != initialData["height"] || age != initialData["age"] ||
-                         gender != initialData["gender"] || activityLevel != initialData["activityLevel"]
-        
-        if !hasChanges {
-            self.isEditing = false
-            return
+    func saveBasicInfo(authService: FirebaseAuthService, completion: @escaping (Bool) -> Void) {
+            let data: [String: Any] = [
+                "name": name,
+                "age": Int(age) ?? 0,
+                "gender": gender,
+                "activityLevel": activityLevel
+            ]
+            
+            authService.updateBasicProfile(data: data) { [weak self] error in
+                DispatchQueue.main.async {
+                    if error == nil {
+                        self?.isEditingBasic = false
+                        self?.setupFields(user: authService.currentUser)
+                        completion(true)
+                    } else { completion(false) }
+                }
+            }
         }
-        
-        isUpdating = true
-        let data: [String: Any] = [
-            "name": name,
-            "weight": Double(weight) ?? 0.0,
-            "height": Double(height) ?? 0.0,
-            "age": Int(age) ?? 0,
-            "gender": gender,
-            "activityLevel": activityLevel
-        ]
-        
-        authService.updateUserProfile(data: data) { [weak self] error in
+    func saveBodyMetrics(authService: FirebaseAuthService, completion: @escaping (Bool) -> Void) {
+            let h = Double(height) ?? 0.0
+            let w = Double(weight) ?? 0.0
+            
+            authService.updateBodyMetrics(height: h, weight: w) { [weak self] error in
+                DispatchQueue.main.async {
+                    if error == nil {
+                        self?.isEditingMetrics = false
+                        self?.setupFields(user: authService.currentUser)
+                        completion(true)
+                    } else { completion(false) }
+                }
+            }
+        }
+    func fetchHistory(authService: FirebaseAuthService) {
+        authService.fetchBodyMetricsHistory { [weak self] result in
             DispatchQueue.main.async {
-                self?.isUpdating = false
-                if error == nil {
-                    self?.isEditing = false
-                    // Cập nhật lại initialData sau khi lưu thành công
-                    self?.setupFields(user: authService.currentUser)
+                switch result {
+                case .success(let history):
+                    var processedHistory = history
+                    for i in 0..<processedHistory.count - 1 {
+                        let current = processedHistory[i].weight
+                        let previous = processedHistory[i+1].weight
+                        if previous > 0 {
+                            processedHistory[i].weightDiff = current - previous
+                            processedHistory[i].percentChange = ((current - previous) / previous) * 100
+                        }
+                    }
+                    self?.metricsHistory = processedHistory
+                case .failure(let error):
+                    print("Lỗi: \(error.localizedDescription)")
                 }
             }
         }

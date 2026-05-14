@@ -88,6 +88,9 @@ struct MainView: View {
         case .foodDetail(let food):
             FoodDetailView(food: food, mealDate: selectedDate)
                 .environmentObject(router)
+        case .nutritionPlan(let plan):
+                NutritionPlanView(plan: plan)
+                    .environmentObject(router)
         default:
             VStack {
                 Image(systemName: "hammer.fill")

@@ -15,8 +15,8 @@ struct TopBar: View {
                 .foregroundColor(.black.opacity(0.8))
             Spacer()
             
-            if selectedTab == .diary {
-                DayPicker(selectedDate: $selectedDate) 
+            if selectedTab == .diary || selectedTab == .chart  {
+                DayPicker(selectedDate: $selectedDate)
                     .transition(.opacity.combined(with: .move(edge: .trailing)))
             }
             

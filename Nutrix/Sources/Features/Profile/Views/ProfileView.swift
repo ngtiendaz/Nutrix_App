@@ -4,175 +4,192 @@
 //
 //  Created by Daz on 15/4/26.
 //
-
 import SwiftUI
 
 struct ProfileView: View {
     @EnvironmentObject var loginViewModel: LoginViewModel
-    @StateObject private var vm = ProfileViewModel()
+    @EnvironmentObject var router: AppRouter
+    @StateObject private var profileViewModel = ProfileViewModel()
     @Binding var selectedDate: Date
+    @State private var isShowingHistory = false
+    @State private var isShowingAISetup = false
+    
     
     var body: some View {
         ZStack {
-            Color.App.background
-                .ignoresSafeArea()
-                .onTapGesture { hideKeyboard() }
+            Color.App.background.ignoresSafeArea()
             
-            ScrollView {
-                VStack(alignment: .leading, spacing: 25) {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 24) {
                     TopBar(selectedTab: .constant(.profile), selectedDate: $selectedDate)
                     
-                    // MARK: - Main User Card
-                    VStack(spacing: 20) {
-                        HStack(alignment: .center, spacing: 15) {
-                            if let photoURL = loginViewModel.authService.userPhotoURL?.absoluteString {
-                                CachedImage(urlString: photoURL, width: 66, height: 66, cornerRadius: 33)
-                            } else {
-                                Image(systemName: "person.crop.circle.fill")
-                                    .resizable()
-                                    .frame(width: 60, height: 60)
-                                    .foregroundColor(.blue.opacity(0.8))
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(loginViewModel.authService.currentUser?.name ?? "Người dùng")
-                                    .font(.title3.bold())
-                                    .foregroundColor(.black)
-                                
-                                Text(loginViewModel.authService.currentUser?.email ?? "")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
-                            }
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                if vm.isEditing {
-                                    vm.saveProfile(authService: loginViewModel.authService)
-                                    hideKeyboard()
-                                } else {
-                                    vm.isEditing.toggle()
-                                }
-                            }) {
-                                Image(systemName: vm.isEditing ? "checkmark.circle.fill" : "pencil.circle.fill")
-                                    .font(.title2)
-                                    .foregroundColor(vm.isEditing ? .green : .blue)
+                    // 1. Profile Card (Tên, Tuổi, Giới tính, Vận động)
+                    mainUserCard
+                    
+                    BodyMetricsCard(
+                        vm: profileViewModel,
+                        onUpdate: { handleBodyMetricsUpdate() },
+                        onShowHistory: {
+                            profileViewModel.fetchHistory(authService: loginViewModel.authService)
+                            isShowingHistory = true
+                        }
+                    )
+                    
+                    // 3. AI Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Mục tiêu & lộ trình")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.black.opacity(0.7))
+                            .padding(.leading, 4)
+                        
+                        AIPlanCard(onStartPlan: {
+                            // ✅ 2. Kích hoạt hiển thị sheet
+                            isShowingAISetup = true
+                        })
+                        .fullScreenCover(isPresented: $isShowingAISetup) {
+                            if let user = loginViewModel.authService.currentUser {
+                                // ✅ 3. Sửa lỗi "Extra argument 'userId'" bằng cách chỉ truyền 'user'
+                                // (Giả sử AIPlanSetupView của bạn nhận init(user: User))
+                                AIPlanSetupView(user: user)
                             }
                         }
-                        
-                        Divider().background(Color.gray.opacity(0.2))
-                        
-                        // MARK: - Information Rows (Đã bổ sung các trường)
-                        VStack(alignment: .leading,spacing: 18) {
-                            InfoRow(label: "Họ và tên", value: $vm.name, isEditing: vm.isEditing, placeholder: "Nhập tên")
-                            
-                            InfoRow(label: "Tuổi", value: $vm.age, unit: "tuổi", isEditing: vm.isEditing, placeholder: "0")
-                            
-                            // Giới tính Row - Fix Nhảy Layout
-                            HStack(spacing: 0) {
-                                Text("Giới tính")
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundColor(.black)
-                                    .frame(width: 100, alignment: .leading)
-                                
-                                Text(":")
-                                    .foregroundColor(.black)
-                                    .padding(.trailing, 10)
-                                
-                                ZStack(alignment: .leading) {
-                                    if vm.isEditing {
-                                        Picker("", selection: $vm.gender) {
-                                            ForEach(vm.genders, id: \.self) { Text($0) }
-                                        }
-                                        .pickerStyle(.menu)
-                                        .labelsHidden()
-                                        .frame(height: 36)
-                                        .background(Color.gray.opacity(0.1))
-                                        .cornerRadius(8)
-                                    } else {
-                                        Text(vm.gender)
-                                            .font(.system(size: 16, weight: .semibold))
-                                            .foregroundColor(.black)
-                                            .frame(height: 36)
-                                        Spacer()
-                                    }
-                                }
-                            }
-                            
-                            InfoRow(label: "Chiều cao", value: $vm.height, unit: "cm", isEditing: vm.isEditing, placeholder: "0")
-                            
-                            InfoRow(label: "Cân nặng", value: $vm.weight, unit: "kg", isEditing: vm.isEditing, placeholder: "0")
-                            
-                            // Vận động Row - Fix Nhảy Layout
-                            HStack(spacing: 0) {
-                                Text("Vận động")
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundColor(.black)
-                                    .frame(width: 100, alignment: .leading)
-                                
-                                Text(":")
-                                    .foregroundColor(.black)
-                                    .padding(.trailing, 10)
-                                
-                                ZStack(alignment: .leading) {
-                                    if vm.isEditing {
-                                        Picker("", selection: $vm.activityLevel) {
-                                            ForEach(vm.activityLevels, id: \.self) { Text($0) }
-                                        }
-                                        .pickerStyle(.menu)
-                                        .labelsHidden()
-                                        .frame(height: 36)
-                                        .background(Color.gray.opacity(0.1))
-                                        .cornerRadius(8)
-                                    } else {
-                                        Text(vm.activityLevel)
-                                            .font(.system(size: 16, weight: .semibold))
-                                            .foregroundColor(.black)
-                                            .frame(height: 36)
-                                        Spacer()
-                                    }
-                                }
-                            }
-                        }.padding(.vertical, 5)
                     }
-                    .padding(20)
-                    .background(Color.white)
-                    .cornerRadius(24)
-                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
-                    .onAppear {
-                        vm.setupFields(user: loginViewModel.authService.currentUser)
-                    }
-
-                    // MARK: - Plan Section (Giữ nguyên)
-                    VStack(alignment: .leading, spacing: 15) {
-                        Text("Mục tiêu & Kế hoạch")
-                            .font(.headline)
-                            .foregroundColor(.black)
-                        
-                        Button(action: { print("Tạo plan mới") }) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Tạo kế hoạch dinh dưỡng")
-                                        .font(.system(size: 18, weight: .bold))
-                                    Text("AI sẽ giúp bạn tính toán lượng Calo dựa trên chỉ số cơ thể.")
-                                        .font(.caption)
-                                        .multilineTextAlignment(.leading)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right.circle.fill")
-                                    .font(.title2)
-                            }
-                            .padding(24)
-                            .background(LinearGradient(colors: [.orange, .red], startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .foregroundColor(.white)
-                            .cornerRadius(20)
-                            .shadow(color: Color.red.opacity(0.3), radius: 8, x: 0, y: 4)
+                    
+                    // 4. Settings List
+                    VStack(spacing: 12) {
+                        settingItem(icon: "bell.fill", title: "Thông báo", color: .orange)
+                        settingItem(icon: "lock.shield.fill", title: "Bảo mật", color: .blue)
+                        Button(action: { /* loginViewModel.signOut() */ }) {
+                            settingItem(icon: "door.right.hand.open", title: "Đăng xuất", color: .red, isLast: true)
                         }
                     }
+                    
+                    Spacer(minLength: 100)
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 16)
             }
         }
-        .ignoresSafeArea(.keyboard, edges: .bottom)
+        .sheet(isPresented: $isShowingHistory) {
+            BodyMetricsHistorySheet(history: profileViewModel.metricsHistory)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { hideKeyboard() }
+        .onAppear { profileViewModel.setupFields(user: loginViewModel.authService.currentUser) }
+    }
+    
+    private func handleBodyMetricsUpdate() {
+            if profileViewModel.isEditingMetrics {
+                router.showLoading()
+                profileViewModel.saveBodyMetrics(authService: loginViewModel.authService) { success in
+                    router.hideLoading()
+                    if success { router.showToast(message: "Đã cập nhật chỉ số cơ thể", type: .success) }
+                }
+                hideKeyboard()
+            } else {
+                withAnimation { profileViewModel.isEditingMetrics = true }
+            }
+        }
+
+    private var mainUserCard: some View {
+            VStack(spacing: 20) {
+                HStack(spacing: 16) {
+                    avatarSection
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(loginViewModel.authService.currentUser?.name ?? "Người dùng")
+                            .font(.system(size: 20, weight: .bold)).foregroundColor(.black)
+                        Text(loginViewModel.authService.currentUser?.email ?? "")
+                            .font(.system(size: 14)).foregroundColor(.gray)
+                    }
+                    Spacer()
+                    editBasicInfoButton // Nút này chỉ quản lý InfoRow bên dưới
+                }
+                
+                Divider().background(Color.black.opacity(0.05))
+                
+                VStack(alignment: .leading, spacing: 10) {
+                    InfoRow(label: "Họ và tên", value: $profileViewModel.name, isEditing: profileViewModel.isEditingBasic, placeholder: "Tên")
+                    InfoRow(label: "Tuổi", value: $profileViewModel.age, unit: "tuổi", isEditing: profileViewModel.isEditingBasic, placeholder: "0")
+                    genderPickerRow
+                    activityPickerRow
+                }
+            }
+            .padding(20).background(Color.white).cornerRadius(24).shadow(color: Color.black.opacity(0.03), radius: 12, x: 0, y: 8)
+        }
+
+    private var editBasicInfoButton: some View {
+            Button(action: {
+                if profileViewModel.isEditingBasic {
+                    router.showLoading()
+                    profileViewModel.saveBasicInfo(authService: loginViewModel.authService) { success in
+                        router.hideLoading()
+                        if success { router.showToast(message: "Đã cập nhật hồ sơ", type: .success) }
+                    }
+                    hideKeyboard()
+                } else {
+                    withAnimation { profileViewModel.isEditingBasic.toggle() }
+                }
+            }) {
+                Text(profileViewModel.isEditingBasic ? "Lưu" : "Sửa")
+                    .font(.system(size: 13, weight: .bold))
+                    .padding(.horizontal, 14).padding(.vertical, 7)
+                    .background(profileViewModel.isEditingBasic ? Color.green.opacity(0.1) : Color.App.primary.opacity(0.1))
+                    .foregroundColor(profileViewModel.isEditingBasic ? .green : Color.App.primary)
+                    .clipShape(Capsule())
+            }
+        }
+    
+    private var avatarSection: some View {
+            ZStack {
+                if let photoURL = loginViewModel.authService.userPhotoURL?.absoluteString {
+                    CachedImage(urlString: photoURL, width: 68, height: 68, cornerRadius: 34)
+                } else {
+                    Circle().fill(Color.App.primaryLight).frame(width: 68, height: 68)
+                    Image(systemName: "person.fill").font(.system(size: 28)).foregroundColor(Color.App.primary)
+                }
+            }
+            .overlay(Circle().stroke(Color.white, lineWidth: 2))
+            .shadow(color: .black.opacity(0.08), radius: 4)
+        }
+    
+    private var genderPickerRow: some View {
+            HStack(spacing: 0) {
+                Text("Giới tính").font(.system(size: 15, weight: .medium)).frame(width: 100, alignment: .leading).foregroundColor(.black)
+                Text(":").padding(.trailing, 10).foregroundColor(.black)
+                if profileViewModel.isEditingBasic {
+                    Picker("", selection: $profileViewModel.gender) { ForEach(profileViewModel.genders, id: \.self) { Text($0) } }
+                        .pickerStyle(.menu).labelsHidden().frame(height: 40).frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.black.opacity(0.04)).cornerRadius(10)
+                } else {
+                    Text(profileViewModel.gender).font(.system(size: 15, weight: .semibold)).foregroundColor(.black).padding(.horizontal, 12).frame(height: 40)
+                    Spacer()
+                }
+            }
+        }
+    
+    private var activityPickerRow: some View {
+            HStack(spacing: 0) {
+                Text("Vận động").font(.system(size: 15, weight: .medium)).frame(width: 100, alignment: .leading).foregroundColor(.black)
+                Text(":").padding(.trailing, 10).foregroundColor(.black)
+                if profileViewModel.isEditingBasic {
+                    Picker("", selection: $profileViewModel.activityLevel) { ForEach(profileViewModel.activityLevels, id: \.self) { Text($0) } }
+                        .pickerStyle(.menu).labelsHidden().frame(height: 40).frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.black.opacity(0.04)).cornerRadius(10)
+                } else {
+                    Text(profileViewModel.activityLevel).font(.system(size: 15, weight: .semibold)).foregroundColor(.black).padding(.horizontal, 12).frame(height: 40)
+                    Spacer()
+                }
+            }
+        }
+    
+    private func settingItem(icon: String, title: String, color: Color, isLast: Bool = false) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(.system(size: 14, weight: .bold)).foregroundColor(color).frame(width: 32, height: 32).background(color.opacity(0.1)).cornerRadius(10)
+            Text(title).font(.system(size: 15, weight: .medium)).foregroundColor(.black.opacity(0.8))
+            Spacer()
+            if !isLast { Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold)).foregroundColor(.gray.opacity(0.3)) }
+        }
+        .padding(12).background(Color.white).cornerRadius(16).shadow(color: Color.black.opacity(0.02), radius: 5, x: 0, y: 2)
     }
 }

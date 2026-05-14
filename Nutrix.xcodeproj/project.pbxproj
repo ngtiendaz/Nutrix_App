@@ -15,6 +15,7 @@
 		FABA0C6E2FA7B76600D3B9DC /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = FABA0C6D2FA7B76600D3B9DC /* FirebaseStorage */; };
 		FABE1D4D2FA9087100609087 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = FABE1D4C2FA9087100609087 /* GoogleSignIn */; };
 		FABE1D4F2FA9087100609087 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = FABE1D4E2FA9087100609087 /* GoogleSignInSwift */; };
+		FAE94B6E2FB63D5100A5045F /* GoogleGenerativeAI in Frameworks */ = {isa = PBXBuildFile; productRef = FAE94B6D2FB63D5100A5045F /* GoogleGenerativeAI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,6 +83,7 @@
 				FABE1D4F2FA9087100609087 /* GoogleSignInSwift in Frameworks */,
 				FABA0C642FA7B76600D3B9DC /* FirebaseAnalytics in Frameworks */,
 				FABA0C662FA7B76600D3B9DC /* FirebaseAuth in Frameworks */,
+				FAE94B6E2FB63D5100A5045F /* GoogleGenerativeAI in Frameworks */,
 				FABA0C6E2FA7B76600D3B9DC /* FirebaseStorage in Frameworks */,
 				FABE1D4D2FA9087100609087 /* GoogleSignIn in Frameworks */,
 			);
@@ -152,6 +154,7 @@
 				FABA0C6D2FA7B76600D3B9DC /* FirebaseStorage */,
 				FABE1D4C2FA9087100609087 /* GoogleSignIn */,
 				FABE1D4E2FA9087100609087 /* GoogleSignInSwift */,
+				FAE94B6D2FB63D5100A5045F /* GoogleGenerativeAI */,
 			);
 			productName = Nutrix;
 			productReference = FAAB203B2F8F7FF7001D775E /* Nutrix.app */;
@@ -238,6 +241,7 @@
 			packageReferences = (
 				FABA0C622FA7B76600D3B9DC /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				FABE1D4B2FA9087100609087 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				FAE94B6C2FB63D5100A5045F /* XCRemoteSwiftPackageReference "generative-ai-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FAAB203C2F8F7FF7001D775E /* Products */;
@@ -656,6 +660,14 @@
 				minimumVersion = 9.1.0;
 			};
 		};
+		FAE94B6C2FB63D5100A5045F /* XCRemoteSwiftPackageReference "generative-ai-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/generative-ai-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.5.6;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -698,6 +710,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FABE1D4B2FA9087100609087 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignInSwift;
+		};
+		FAE94B6D2FB63D5100A5045F /* GoogleGenerativeAI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FAE94B6C2FB63D5100A5045F /* XCRemoteSwiftPackageReference "generative-ai-swift" */;
+			productName = GoogleGenerativeAI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

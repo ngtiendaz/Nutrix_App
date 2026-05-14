@@ -15,7 +15,7 @@ struct InfoRow: View {
     
     var body: some View {
         HStack(spacing: 0) {
-            // Cố định độ rộng nhãn là 100
+            // Nhãn cố định 100pt
             Text(label)
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(.black)
@@ -25,7 +25,7 @@ struct InfoRow: View {
                 .foregroundColor(.black)
                 .padding(.trailing, 10)
             
-            ZStack(alignment: .leading) {
+            Group {
                 if isEditing {
                     HStack(spacing: 5) {
                         TextField(placeholder, text: $value)
@@ -39,14 +39,14 @@ struct InfoRow: View {
                                 .foregroundColor(.gray)
                         }
                     }
-                    .padding(.horizontal, 10)
-                    .frame(height: 36) // Cố định chiều cao vùng nhập
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
+                    .padding(.horizontal, 12)
+                    .frame(height: 40) // Chiều cao cố định
+                    .background(Color.black.opacity(0.04))
+                    .cornerRadius(10)
                 } else {
                     HStack(spacing: 4) {
                         Text(value.isEmpty ? "--" : value)
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.black)
                         
                         if let unit = unit, !value.isEmpty {
@@ -54,13 +54,13 @@ struct InfoRow: View {
                                 .font(.system(size: 14))
                                 .foregroundColor(.gray)
                         }
-                        
-                        Spacer() // Đẩy nội dung về bên trái
+                        Spacer()
                     }
-                    .frame(height: 36) // Giữ chiều cao bằng với khi Edit
+                    .padding(.horizontal, 12) // Padding bằng với lúc Edit
+                    .frame(height: 40) // Chiều cao bằng với lúc Edit
+                    .background(Color.clear) // Để giữ nguyên diện tích chiếm dụng
                 }
             }
         }
-        .frame(maxWidth: .infinity)
     }
 }

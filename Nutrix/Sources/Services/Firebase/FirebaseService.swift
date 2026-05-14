@@ -350,4 +350,44 @@ final class FirebaseService{
                 }
             }
         }
+    // MARK: - Nutrition Plan (AI)
+        
+        /// Lưu lộ trình dinh dưỡng AI vào sub-collection 'plans'
+        func saveNutritionPlan(
+            userId: String,
+            plan: NutritionPlan,
+            completion: @escaping (Result<Void, Error>) -> Void
+        ) {
+            // Xác định ngày kết thúc mặc định (thường là 30 ngày sau hoặc theo plan)
+            let endDate = Calendar.current.date(byAdding: .month, value: 1, to: Date()) ?? Date()
+            
+            let planData: [String: Any] = [
+                "dailyCalories": plan.dailyCalories,
+                "protein": plan.protein,
+                "carbs": plan.carbs,
+                "fat": plan.fat,
+                "advice": plan.advice,
+                "exercisePlan": plan.exercisePlan,
+                "startDate": Timestamp(date: Date()),
+                "endDate": Timestamp(date: endDate),
+                "isActive": true, // Đánh dấu là lộ trình hiện tại
+                "createdAt": FieldValue.serverTimestamp()
+            ]
+            
+            // Thực hiện lưu vào Firestore
+            // Dùng document("current") nếu bạn muốn mỗi user chỉ có 1 plan hoạt động duy nhất
+            // Hoặc addDocument nếu muốn lưu lịch sử các plan cũ.
+            db.collection("users")
+                .document(userId)
+                .collection("plans")
+                .document("current_plan") // Ghi đè lên plan hiện tại để dashboard dễ truy vấn
+                .setData(planData) { error in
+                    if let error = error {
+                        completion(.failure(error))
+                    } else {
+                        print("✅ AI PLAN SAVED for user: \(userId)")
+                        completion(.success(()))
+                    }
+                }
+        }
 }
