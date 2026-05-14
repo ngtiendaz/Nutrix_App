@@ -9,24 +9,31 @@ import SwiftUI
 enum Tab: String, CaseIterable {
     case diary = "list.bullet.rectangle"
     case chart = "chart.bar.xaxis"
-    case nutrition = "leaf"
+    case barcode = "barcode.viewfinder"
+    case activity = "figure.run"
     case profile = "person.crop.circle"
-    case setting = "gearshape"
+ 
   
     
     var title: String{
         switch self {
         case .diary: return "Nhật ký"
         case .chart: return "Thống kê"
-        case .nutrition: return "Dinh dưỡng"
+        case .barcode: return "Thực phẩm"
+        case .activity: return "Hoạt động"
         case .profile: return "Cá nhân"
-        case .setting: return "Cài đặt"
         }
     }
     var activeIcon: String {
             if self == .chart {
                 return self.rawValue
             }
+        if self == .activity {
+            return self.rawValue
+        }
+        if self == .barcode {
+            return self.rawValue
+        }
             return self.rawValue + ".fill"
         }
 }

@@ -34,13 +34,10 @@ struct DiaryView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         if let nutrition = diaryViewModel.dailyNutrition {
                             NutritionGoalCard(data: nutrition)
-//                                .id(nutrition.date) // Quan trọng: Ép render lại khi đổi ngày
                         } else {
-                                            // Hiển thị card trống hoặc loading card
-                                            ProgressView().frame(height: 150)
-                                        }
-                        WaterGoalCard(currentWater: sampleData.totalWater)
-                        
+                            ProgressView().frame(height: 150)
+                        }
+                    
                         foodList
                         
                         Spacer(minLength: 120)
@@ -69,7 +66,6 @@ struct DiaryView: View {
         }
         // Tự động load lại khi ngày thay đổi (nếu bạn có bộ chọn ngày)
         .onChange(of: selectedDate) { newDate in
-            print("📅 Fetching data for: \(newDate)")
             diaryViewModel.fetchDailyFoods(for: newDate)
         }
         .sheet(isPresented: $isShowingAddFood) {
@@ -128,9 +124,13 @@ struct DiaryView: View {
             } else {
                 // Hiển thị các món ăn lẻ
                 VStack(spacing: 12) {
-                    ForEach(diaryViewModel.allFoods) { food in
-                        FoodItem(food: food)
-                    }
+                        ForEach(diaryViewModel.allFoods) { food in
+                            FoodItem(food: food)
+                                .contentShape(Rectangle()) // Giúp vùng bấm nhạy hơn
+                                .onTapGesture {
+                                    router.push(.foodDetail(food))
+                                }
+                        }
                     if isPastDate {
                         addPastFoodButton
                             .padding(.top, 8)

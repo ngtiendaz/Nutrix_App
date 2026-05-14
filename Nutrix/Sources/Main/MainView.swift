@@ -56,14 +56,14 @@ struct MainView: View {
                 }
             case .chart:
                 NavigationStack(path: $router.chartPath) {
-                    ChartView()
+                    ChartView(selectedDate:  $selectedDate)
                         .navigationDestination(for: AppDestination.self) { destination in
                             buildDestinationView(destination)
                         }
                 }
-            case .nutrition:
-                NavigationStack(path: $router.nutritionPath) {
-                    NutritionView()
+            case .barcode:
+                NavigationStack(path: $router.barcodePath) {
+                    NutritionView(selectedDate: $selectedDate)
                         .navigationDestination(for: AppDestination.self) { destination in
                             buildDestinationView(destination)
                         }
@@ -73,9 +73,9 @@ struct MainView: View {
                     ProfileView(selectedDate: $selectedDate).navigationDestination(for: AppDestination.self) { destination in
                         buildDestinationView(destination) }
                 }
-            case .setting:
-                NavigationStack(path: $router.settingPath) {
-                    SettingView().navigationDestination(for: AppDestination.self) { destination in
+            case .activity:
+                NavigationStack(path: $router.activityPath) {
+                    ActivityView(selectedDate: $selectedDate).navigationDestination(for: AppDestination.self) { destination in
                         buildDestinationView(destination) }
                 }
             }
@@ -85,8 +85,9 @@ struct MainView: View {
     @ViewBuilder
         func buildDestinationView(_ destination: AppDestination) -> some View {
             switch destination {
-                case .foodDetail:
-                    Text("Chi tiết món ăn")
+            case .foodDetail(let food):
+                FoodDetailView(food: food, mealDate: selectedDate)
+                    .environmentObject(router)
                 default:
                     Text("Màn hình đang phát triển")
                 }

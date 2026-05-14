@@ -1,12 +1,12 @@
 //
-//  ChartView.swift
+//  NutritionView.swift
 //  Nutrix
 //
 //  Created by Daz on 15/4/26.
 //
 
 import SwiftUI
-struct ChartView: View {
+struct NutritionView: View {
     @Binding var selectedDate: Date
     
     var body: some View {
@@ -20,10 +20,10 @@ struct ChartView: View {
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 25) {
-                    TopBar(selectedTab: .constant(.chart), selectedDate: $selectedDate)
+                    TopBar(selectedTab: .constant(.barcode), selectedDate: $selectedDate)
                     
-                }.padding(.horizontal,12)
-            }
+                }
+            }.padding(.horizontal, 12)
             
             .ignoresSafeArea(.keyboard, edges: .bottom)
         }

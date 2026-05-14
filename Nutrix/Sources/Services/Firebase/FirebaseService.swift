@@ -9,10 +9,12 @@ import Foundation
 import FirebaseFirestore
 import FirebaseStorage
 
+
 final class FirebaseService{
     
     static let shared = FirebaseService()
-    private let db = Firestore.firestore()
+     let db = Firestore.firestore()
+    
     
     private init() {}
     
@@ -235,5 +237,117 @@ final class FirebaseService{
                 }
             }
         }
-    
+
+    func updateFoodInMeals(
+        userId: String,
+        mealDate: Date,
+        oldFood: Food,
+        newFood: Food,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        fetchMeals(userId: userId, date: mealDate) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .failure(let error):
+                completion(.failure(error))
+            case .success(let meals):
+                guard let found = self.findMealContainingFood(meals: meals, food: oldFood) else {
+                    completion(.failure(NSError(
+                        domain: "Nutrix",
+                        code: 404,
+                        userInfo: [NSLocalizedDescriptionKey: "Không tìm thấy món trong ngày đã chọn."]
+                    )))
+                    return
+                }
+
+                var meal = found.meal
+                let index = found.index
+                let previous = meal.food[index]
+
+                meal.totalCalories = meal.totalCalories - previous.calories + newFood.calories
+                meal.totalProtein = meal.totalProtein - previous.protein + newFood.protein
+                meal.totalCarbs = meal.totalCarbs - previous.carbs + newFood.carbs
+                meal.totalFats = meal.totalFats - previous.fats + newFood.fats
+                meal.food[index] = newFood
+
+                do {
+                    let data = try Firestore.Encoder().encode(meal)
+                    self.db.collection("users")
+                        .document(userId)
+                        .collection("meals")
+                        .document(meal.id)
+                        .setData(data, merge: true) { error in
+                            if let error {
+                                completion(.failure(error))
+                            } else {
+                                completion(.success(()))
+                            }
+                        }
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
+    private func findMealContainingFood(meals: [Meal], food: Food) -> (meal: Meal, index: Int)? {
+        for meal in meals {
+            if let index = meal.food.firstIndex(where: { $0.id == food.id && $0.createdAt == food.createdAt }) {
+                return (meal, index)
+            }
+        }
+        return nil
+    }
+    /// Xóa một món ăn khỏi Meal và cập nhật lại tổng dinh dưỡng
+        func deleteFoodFromMeal(
+            userId: String,
+            mealDate: Date,
+            foodToDelete: Food,
+            completion: @escaping (Result<Void, Error>) -> Void
+        ) {
+            fetchMeals(userId: userId, date: mealDate) { [weak self] result in
+                guard let self = self else { return }
+                switch result {
+                case .failure(let error):
+                    completion(.failure(error))
+                case .success(let meals):
+                    guard let found = self.findMealContainingFood(meals: meals, food: foodToDelete) else {
+                        completion(.failure(NSError(domain: "Nutrix", code: 404, userInfo: [NSLocalizedDescriptionKey: "Không tìm thấy món ăn để xóa."])))
+                        return
+                    }
+
+                    var meal = found.meal
+                    let index = found.index
+                    let food = meal.food[index]
+
+                    // Cập nhật lại chỉ số tổng của Meal
+                    meal.totalCalories -= food.calories
+                    meal.totalProtein -= food.protein
+                    meal.totalCarbs -= food.carbs
+                    meal.totalFats -= food.fats
+                    
+                    // Xóa khỏi mảng
+                    meal.food.remove(at: index)
+
+                    do {
+                        let data = try Firestore.Encoder().encode(meal)
+                        // Nếu sau khi xóa không còn món nào, bạn có thể chọn xóa luôn Document hoặc để mảng trống.
+                        // Ở đây ta update Document.
+                        self.db.collection("users")
+                            .document(userId)
+                            .collection("meals")
+                            .document(meal.id)
+                            .setData(data, merge: true) { error in
+                                if let error = error {
+                                    completion(.failure(error))
+                                } else {
+                                    completion(.success(()))
+                                }
+                            }
+                    } catch {
+                        completion(.failure(error))
+                    }
+                }
+            }
+        }
 }

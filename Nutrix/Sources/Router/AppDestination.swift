@@ -12,7 +12,7 @@ import UIKit
 
 enum AppDestination: Hashable {
     case cameraScan
-    case libraryPicker  
-    case foodDetail
-
+    case libraryPicker
+    /// `mealDate`: ngày nhật ký đang xem (để cập nhật đúng document meal trên Firestore).
+    case foodDetail(Food)
 }

@@ -21,9 +21,9 @@ class AppRouter: ObservableObject {
     
     @Published var diaryPath = NavigationPath()
     @Published var chartPath = NavigationPath()
-    @Published var nutritionPath = NavigationPath()
+    @Published var barcodePath = NavigationPath()
     @Published var profilePath = NavigationPath()
-    @Published var settingPath = NavigationPath()
+    @Published var activityPath = NavigationPath()
     @Published var selectedTab: Tab = .diary
     
     @Published var toast: ToastData? = nil
@@ -35,12 +35,12 @@ class AppRouter: ObservableObject {
             diaryPath.append(destination)
         case .chart:
             chartPath.append(destination)
-        case .nutrition:
-            nutritionPath.append(destination)
+        case .barcode:
+            barcodePath.append(destination)
         case .profile:
             profilePath.append(destination)
-        case .setting:
-            settingPath.append(destination)
+        case .activity:
+            activityPath.append(destination)
         default:
             break
         }
@@ -52,12 +52,12 @@ class AppRouter: ObservableObject {
             if !diaryPath.isEmpty { diaryPath.removeLast() }
         case .chart:
             if !chartPath.isEmpty { chartPath.removeLast() }
-        case .nutrition:
-            if !nutritionPath.isEmpty { nutritionPath.removeLast() }
+        case .barcode:
+            if !barcodePath.isEmpty { barcodePath.removeLast() }
         case .profile:
             if !profilePath.isEmpty { profilePath.removeLast() }
-        case .setting:
-            if !settingPath.isEmpty { settingPath.removeLast() }
+        case .activity:
+            if !activityPath.isEmpty { activityPath.removeLast() }
         default:
             break
         }
@@ -69,12 +69,12 @@ class AppRouter: ObservableObject {
             diaryPath.removeLast(diaryPath.count)
         case .chart:
             chartPath.removeLast(chartPath.count)
-        case .nutrition:
-            nutritionPath.removeLast(nutritionPath.count)
+        case .barcode:
+            barcodePath.removeLast(barcodePath.count)
         case .profile:
             profilePath.removeLast(profilePath.count)
-        case .setting:
-            settingPath.removeLast(settingPath.count)
+        case .activity:
+            activityPath.removeLast(activityPath.count)
         default:
             break
         }
@@ -113,9 +113,9 @@ class AppRouter: ObservableObject {
            
             self.diaryPath = NavigationPath()
             self.chartPath = NavigationPath()
-            self.nutritionPath = NavigationPath()
+            self.barcodePath = NavigationPath()
             self.profilePath = NavigationPath()
-            self.settingPath = NavigationPath()
+            self.activityPath = NavigationPath()
             self.selectedTab = .diary
         }
     }

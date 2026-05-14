@@ -36,7 +36,8 @@ struct OptionDetail: View {
             }
             
             dividerView
-            quickSelectButton
+            quickSelectBarcodeButton
+//            quickSelectButton
             
             Spacer()
         }
@@ -99,6 +100,20 @@ struct OptionDetail: View {
                 VStack(alignment: .leading) {
                     Text("Món ăn có sẵn").font(.system(size: 18, weight: .bold)).foregroundColor(.black)
                     Text("24 món phổ biến").font(.system(size: 14)).foregroundColor(.gray)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").foregroundColor(.gray)
+            }
+            .padding().background(Color.white).cornerRadius(20)
+            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        }
+    }
+    private var quickSelectBarcodeButton: some View {
+        Button { } label: {
+            HStack(spacing: 15) {
+                Text("🥫").font(.system(size: 30))
+                VStack(alignment: .leading) {
+                    Text("Danh sách đồ hộp").font(.system(size: 18, weight: .bold)).foregroundColor(.black)
                 }
                 Spacer()
                 Image(systemName: "chevron.right").foregroundColor(.gray)

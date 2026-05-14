@@ -9,7 +9,7 @@ import Foundation
 
 import Foundation
 
-struct Food: Codable, Identifiable {
+struct Food: Codable, Identifiable , Hashable{
     let id: String
     let name: String
     let imageUrl: String?

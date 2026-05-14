@@ -15,6 +15,7 @@ import FirebaseFirestore
 class FirebaseAuthService: ObservableObject {
     @Published var isLoggedIn = false
     @Published var currentUser: User?
+    @Published var userPhotoURL: URL?
     
     private let tokenService = "com.daz.nutrix.token"
     private let account = "user-session"
@@ -169,13 +170,39 @@ class FirebaseAuthService: ObservableObject {
             }
         }
     func fetchUserData(userId: String) {
-            db.collection("users").document(userId).getDocument { snapshot, error in
-                if let data = snapshot?.data(), error == nil {
-                    DispatchQueue.main.async {
-                        self.currentUser = User(dictionary: data)
-                        print("DEBUG: Đã tải thông tin user: \(self.currentUser?.name ?? "")")
+        db.collection("users").document(userId).getDocument { snapshot, error in
+            if let data = snapshot?.data(), error == nil {
+                DispatchQueue.main.async {
+                    self.currentUser = User(dictionary: data)
+                    
+                    // Lấy ảnh từ Firebase Auth (thường có sẵn nếu login Google)
+                    if let firebaseUser = Auth.auth().currentUser {
+                        self.userPhotoURL = firebaseUser.photoURL
                     }
+                    
+                    print("DEBUG: Đã tải thông tin user: \(self.currentUser?.name ?? "")")
                 }
             }
         }
+    }
+    func updateUserProfile(data: [String: Any], completion: @escaping (Error?) -> Void) {
+        // 1. Kiểm tra xem user có đang đăng nhập không
+        guard let userId = Auth.auth().currentUser?.uid else {
+            completion(NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "User chưa đăng nhập"]))
+            return
+        }
+
+        // 2. Cập nhật dữ liệu lên Firestore
+        db.collection("users").document(userId).updateData(data) { [weak self] error in
+            if let error = error {
+                print("Lỗi cập nhật hồ sơ: \(error.localizedDescription)")
+                completion(error)
+            } else {
+                // 3. Sau khi cập nhật thành công trên server, tải lại dữ liệu cục bộ để UI đồng bộ
+                print("DEBUG: Cập nhật hồ sơ thành công!")
+                self?.fetchUserData(userId: userId)
+                completion(nil)
+            }
+        }
+    }
 }
