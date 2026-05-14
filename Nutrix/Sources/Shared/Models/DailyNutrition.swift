@@ -15,5 +15,7 @@ struct DailyNutrition: Codable {
     let totalCarbs: Double
     let totalFat: Double
     
-    let totalWater: Double 
+    let totalWater: Double
+    
+    let totalBurned: Double?
 }

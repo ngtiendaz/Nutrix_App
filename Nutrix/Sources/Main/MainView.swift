@@ -9,17 +9,18 @@ import SwiftUI
 
 struct MainView: View {
     @EnvironmentObject var router: AppRouter
+    @State private var selectedDate = Date()
     var body: some View {
-        ZStack(alignment: .bottom){
-            Color.App.background.ignoresSafeArea()
-            VStack(alignment: .leading){
-                TopBar(selectedTab: $router.selectedTab)
-                
+        ZStack(alignment: .bottom) {
+                // Lớp 1: Content hiển thị tràn toàn màn hình
                 contentView
-                
-                BottomMenuBar(selectedTab: $router.selectedTab).padding(.bottom, -20)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .ignoresSafeArea(.all, edges: .bottom) // Để nội dung có thể cuộn xuống dưới thanh menu
+
+                // Lớp 2: BottomMenuBar nằm đè lên trên
+                BottomMenuBar(selectedTab: $router.selectedTab)
+                .offset(y: 26)
             }
-        }
         .overlay(
             ToastView(toast: router.toast)
                 .animation(.spring(response: 0.35, dampingFraction: 0.85),
@@ -48,7 +49,7 @@ struct MainView: View {
             switch router.selectedTab {
             case .diary:
                 NavigationStack(path: $router.diaryPath) {
-                    DiaryView()
+                    DiaryView(selectedDate: $selectedDate)
                         .navigationDestination(for: AppDestination.self) { destination in
                             buildDestinationView(destination)
                         }
@@ -69,7 +70,7 @@ struct MainView: View {
                 }
             case .profile:
                 NavigationStack(path: $router.profilePath) {
-                    ProfileView().navigationDestination(for: AppDestination.self) { destination in
+                    ProfileView(selectedDate: $selectedDate).navigationDestination(for: AppDestination.self) { destination in
                         buildDestinationView(destination) }
                 }
             case .setting:

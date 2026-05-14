@@ -20,11 +20,14 @@ struct CircularProgress: View {
                 .trim(from: 0, to: CGFloat(min(animatedProgress / goal, 1.0))) // Dùng biến animated
                 .stroke(color, style: StrokeStyle(lineWidth: 12, lineCap: .round))
                 .rotationEffect(.degrees(-90))
+                .animation(.easeOut(duration: 0.8), value: animatedProgress)
             
             VStack {
-                Text("\(Int(goal - current))")
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.black)
+                Color.clear
+                        .frame(width: 0, height: 0)
+                        .rollingNumber(value: max(goal - animatedProgress, 0)) // Chạy theo biến animated
+                        .font(.system(size: 32, weight: .bold))
+                        .foregroundColor(.black)
                 Text("kcal còn lại")
                     .font(.system(size: 14))
                     .foregroundColor(.gray)
@@ -32,9 +35,25 @@ struct CircularProgress: View {
         }
         .frame(width: 140, height: 140)
         .onAppear {
-            withAnimation(.easeOut(duration: 0.8)) { // Chạy trong 1.2 giây
+                    // Khi hiện ra lần đầu, chạy từ 0 đến current
+                    withAnimation(.spring(response: 0.8, dampingFraction: 0.7)) {
                         animatedProgress = current
                     }
                 }
+        .onChange(of: current) { newValue in
+                    // Khi current thay đổi (kể cả về 0), thanh bar sẽ chạy lùi/tiến đến đó
+                    withAnimation(.spring(response: 0.8, dampingFraction: 0.7)) {
+                        animatedProgress = newValue
+                    }
+                }
     }
+    private func updateProgress() {
+            withAnimation(.easeOut(duration: 0.8)) {
+                animatedProgress = current
+            }
+        }
+    private var progressRatio: CGFloat {
+            guard goal > 0 else { return 0 }
+            return CGFloat(min(animatedProgress / goal, 1.0))
+        }
 }

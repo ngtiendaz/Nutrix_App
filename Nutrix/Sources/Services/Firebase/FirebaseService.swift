@@ -165,4 +165,75 @@ final class FirebaseService{
             }
         }
     }
+        func fetchMeals(
+            userId: String,
+            date: Date,
+            completion: @escaping (Result<[Meal], Error>) -> Void
+        ) {
+            let dateKey = getDateKey(from: date)
+            
+            db.collection("users")
+                .document(userId)
+                .collection("meals")
+                .whereField("dateKey", isEqualTo: dateKey) // Lọc theo ngày
+                .order(by: "createdAt", descending: true) // Món mới thêm hiện lên đầu
+                .getDocuments { snapshot, error in
+                    
+                    if let error = error {
+                        completion(.failure(error))
+                        return
+                    }
+                    
+                    guard let documents = snapshot?.documents else {
+                        completion(.success([]))
+                        return
+                    }
+                    
+                    // Giải mã dữ liệu từ Firestore snapshot sang Model Meal
+                    let meals = documents.compactMap { doc -> Meal? in
+                        try? doc.data(as: Meal.self)
+                    }
+                    
+                    completion(.success(meals))
+                }
+        }
+    func fetchDailyNutrition(
+            userId: String,
+            date: Date,
+            completion: @escaping (Result<DailyNutrition, Error>) -> Void
+        ) {
+            // Tận dụng lại hàm fetchMeals để lấy danh sách các bữa ăn trong ngày
+            self.fetchMeals(userId: userId, date: date) { result in
+                switch result {
+                case .success(let meals):
+                    // Tính toán tổng các chỉ số
+                    let calories = meals.reduce(0) { $0 + $1.totalCalories }
+                    let protein = meals.reduce(0) { $0 + $1.totalProtein }
+                    let carbs = meals.reduce(0) { $0 + $1.totalCarbs }
+                    let fats = meals.reduce(0) { $0 + $1.totalFats }
+                    
+                    // Giả sử bạn sẽ lấy thêm lượng nước từ một collection khác hoặc
+                    // tính từ một logic riêng. Ở đây tạm thời để 0.0 hoặc lấy từ Meal nếu có.
+                    let water = 0.0
+                    let burned = 0.0
+                    
+                    let dailyData = DailyNutrition(
+                        userId: userId,
+                        date: self.getDateKey(from: date),
+                        totalCalories: calories,
+                        totalProtein: protein,
+                        totalCarbs: carbs,
+                        totalFat: fats,
+                        totalWater: water,
+                        totalBurned: burned
+                    )
+                    
+                    completion(.success(dailyData))
+                    
+                case .failure(let error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    
 }

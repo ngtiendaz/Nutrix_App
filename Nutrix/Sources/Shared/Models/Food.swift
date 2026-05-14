@@ -25,6 +25,7 @@ struct Food: Codable, Identifiable {
     let quantity: Double
     let servingUnit: String // Gram
     
+    let createdAt: Date
     
     // Hàm khởi tạo tiện ích để chuyển đổi từ Edamam sang Food của NutriX
     init(from edamamFood: EdamamFood, measure: FoodMeasure?) {
@@ -41,10 +42,11 @@ struct Food: Codable, Identifiable {
         self.servingSize = measure?.weight ?? 100.0
         self.servingUnit = measure?.label ?? "Gram"
         self.quantity = 1.0
+        self.createdAt = Date()
     }
     
     // Giữ lại init mặc định nếu ông cần tạo thủ công
-    init(id: String, name: String, image: String? = nil, calories: Double, protein: Double, carbs: Double, fats: Double, servingSize: Double, servingUnit: String, quantity: Double) {
+    init(id: String, name: String, image: String? = nil, calories: Double, protein: Double, carbs: Double, fats: Double, servingSize: Double, servingUnit: String, quantity: Double, createdAt: Date = Date()) {
         self.id = id
         self.name = name
         self.imageUrl = image
@@ -55,5 +57,6 @@ struct Food: Codable, Identifiable {
         self.servingSize = servingSize
         self.servingUnit = servingUnit
         self.quantity = quantity
+        self.createdAt = createdAt
     }
 }

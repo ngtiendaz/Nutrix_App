@@ -8,8 +8,10 @@ import SwiftUI
 
 struct NutritionGoalCard: View {
     let data: DailyNutrition
+    @State private var animatedCalories: Double = 0
+    @State private var animatedBurned: Double = 0
     
-    let goalCalories: Double = 2560
+    let goalCalories: Double = 22560
     let goalProtein: Double = 128
     let goalCarbs: Double = 224
     let goalFat: Double = 128
@@ -33,11 +35,11 @@ struct NutritionGoalCard: View {
                                  color: .green)
                     
                     nutritionRow(label: "Đốt cháy",
-                                 value: 0,
+                                 value: Int(data.totalBurned ?? 0),
                                  unit: "kcal",
                                  icon: "flame.fill",
                                  color: .orange)
-                }
+                }.frame(minWidth: 120, alignment: .leading)
                 Spacer()
             }
             .padding(.horizontal, 5)
@@ -54,6 +56,15 @@ struct NutritionGoalCard: View {
                 macroGroup(label: "Fat", current: data.totalFat, goal: goalFat, color: .orange)
             }
             .padding(.horizontal, 10)
+        }.onAppear {
+            withAnimation(.easeOut(duration: 0.8)) {
+                animatedCalories = data.totalCalories
+            }
+        }
+        .onChange(of: data.totalCalories) { newValue in
+            withAnimation(.easeOut(duration: 0.8)) {
+                animatedCalories = newValue
+            }
         }
         .padding(24)
         .background(Color(.white))
@@ -69,7 +80,9 @@ struct NutritionGoalCard: View {
                 .foregroundColor(color)
             
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("\(value)")
+                Color.clear
+                    .frame(width: 0, height: 0)
+                    .rollingNumber(value: animatedCalories)
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.black)
                 Text(unit)

@@ -1,0 +1,25 @@
+
+Dự án sử dụng SwiftUI, kiến trúc MVVM, ưu tiên sử dụng Swift Concurrency (async/await)
+
+App User
+1. Quản lý bữa ăn
+2. Thống kê dinh dưỡng
+3. Hoạt động thể chất
+4. Lộ trình cá nhân
+5. Scanner Barcode
+
+Web Admin
+1. Quản lý người dùng
+2. Quản lý đồ ăn
+3. Quản lý hoạt động thể chất
+4. Thống kê từ User
+
+
+AI
+
+Google Vision
+Edamam
+Gemini 
+
+
+

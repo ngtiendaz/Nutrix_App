@@ -43,7 +43,7 @@ class FoodAnalysisViewModel: ObservableObject {
     private let authService: FirebaseAuthService
     
     private let dailyGoalMock = DailyGoal(userId: "daz123", date: Date(), targetCalories: 2000, targetProtein: 150, targetFat: 60, targetCarbs: 250, targetWater: 2.0)
-    private let dailyNutritionMock = DailyNutrition(userId: "daz123", date: "2026-05-03", totalCalories: 1200, totalProtein: 80, totalCarbs: 150, totalFat: 40, totalWater: 1.0)
+    private let dailyNutritionMock = DailyNutrition(userId: "daz123", date: "2026-05-03", totalCalories: 1200, totalProtein: 80, totalCarbs: 150, totalFat: 40, totalWater: 1.0, totalBurned: 100.0)
     private let blacklist = ["food", "cuisine", "dish", "ingredient", "recipe", "tableware", "produce", "fast food"]
     
    

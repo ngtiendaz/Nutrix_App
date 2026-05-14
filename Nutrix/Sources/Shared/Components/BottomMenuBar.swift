@@ -69,8 +69,8 @@ struct BottomMenuBar: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
         .background(Color.App.menuBackground)
-        .clipShape(Capsule())
+        .clipShape(RoundedRectangle(cornerRadius: 28))
         .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 8)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 12)
     }
 }
