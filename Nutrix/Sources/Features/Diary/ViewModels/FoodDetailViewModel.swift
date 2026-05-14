@@ -16,7 +16,9 @@ final class FoodDetailViewModel: ObservableObject {
     // State chỉnh sửa
     @Published var currentWeight: Double = 0
     @Published var currentQuantity: Double = 0
+    @Published var lastAction: ActionType = .none
     enum Field { case weight, quantity }
+    enum ActionType { case none, update, delete }
     
     private let firebaseService = FirebaseService.shared
     let originalFood: Food
@@ -28,6 +30,7 @@ final class FoodDetailViewModel: ObservableObject {
         self.currentWeight = food.servingSize
         self.currentQuantity = food.quantity
     }
+    
 
     // MARK: - Logic Tính Toán
     var hasChanges: Bool {
@@ -68,7 +71,10 @@ final class FoodDetailViewModel: ObservableObject {
         firebaseService.updateFoodInMeals(userId: userId, mealDate: mealDate, oldFood: originalFood, newFood: updatedFood) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isLoading = false
-                if case .success = result { self?.shouldDismiss = true }
+                if case .success = result {
+                    self?.shouldDismiss = true
+                    self?.lastAction = .update
+                }
             }
         }
     }
@@ -79,7 +85,10 @@ final class FoodDetailViewModel: ObservableObject {
         firebaseService.deleteFoodFromMeal(userId: userId, mealDate: mealDate, foodToDelete: originalFood) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isLoading = false
-                if case .success = result { self?.shouldDismiss = true }
+                if case .success = result {
+                    self?.shouldDismiss = true
+                    self?.lastAction = .delete
+                }
             }
         }
     }

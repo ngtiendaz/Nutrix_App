@@ -17,11 +17,12 @@ struct FoodAnalysisView: View {
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject var loginViewModel: LoginViewModel
     
-    init(image: UIImage, authService: FirebaseAuthService) {
+    init(image: UIImage, authService: FirebaseAuthService, onSaveSuccess: (() -> Void)? = nil) {
             _foodAnalysisViewModel = StateObject(wrappedValue: FoodAnalysisViewModel(image: image, authService: authService))
+            self.onSaveSuccess = onSaveSuccess // Gán giá trị vào đây
         }
     
-    var onSaved: (() -> Void)? = nil
+    var onSaveSuccess: (() -> Void)? = nil
     
     enum Field {
         case weight
@@ -29,37 +30,64 @@ struct FoodAnalysisView: View {
     }
     
     var body: some View {
-        ZStack(alignment: .top) {
-            // 1. NỀN TRÀN TOÀN BỘ
-            Color.App.background.ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                headerView
-                    .ignoresSafeArea(.all, edges: .top)
+        ZStack { // Đổi alignment thành mặc định để Loading nằm chính giữa
+                // 1. NỀN TRÀN TOÀN BỘ
+                Color.App.background.ignoresSafeArea()
                 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
-                        
-                        imageSection
-                        
-                        if foodAnalysisViewModel.isAnalyzing {
-                            loadingView
+                VStack(spacing: 0) {
+                    headerView
+                        .ignoresSafeArea(.all, edges: .top)
+                    
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 20) {
+                            imageSection
+                            
+                            if foodAnalysisViewModel.isAnalyzing {
+                                loadingView
+                            }
+                            else if let error = foodAnalysisViewModel.errorMessage {
+                                errorView(message: error)
+                            }
+                            else if let food = foodAnalysisViewModel.analyzedFood {
+                                foodContent(food: food)
+                            }
                         }
-                        else if let error = foodAnalysisViewModel.errorMessage {
-                            errorView(message: error)
-                        }
-                        else if let food = foodAnalysisViewModel.analyzedFood {
-                            foodContent(food: food)
-                        }
+                        .padding(.bottom, 160)
                     }
-                    .padding(.bottom, 160)
+                }
+                
+                // Action Buttons nằm ở dưới cùng
+                if !foodAnalysisViewModel.isAnalyzing && foodAnalysisViewModel.analyzedFood != nil {
+                    actionButtons
+                }
+
+                // --- PHẦN THÊM VÀO: LOADING OVERLAY KHI LƯU ---
+                if foodAnalysisViewModel.isSaving {
+                    LoadingOverlay()
+                        .transition(.opacity)
+                        .zIndex(2)
                 }
             }
-            
-            if !foodAnalysisViewModel.isAnalyzing && foodAnalysisViewModel.analyzedFood != nil {
-                actionButtons
+            .onTapGesture { focusedField = nil }
+            .navigationBarHidden(true)
+            .task {
+                if foodAnalysisViewModel.analyzedFood == nil {
+                    await foodAnalysisViewModel.startAnalysis()
+                }
+                if foodAnalysisViewModel.analyzedFood != nil {
+                    foodAnalysisViewModel.updateAIAdvice()
+                }
             }
-        }
+            .onChange(of: foodAnalysisViewModel.quantity) { _ in
+                foodAnalysisViewModel.updateAIAdvice()
+            }
+            .ignoresSafeArea(.keyboard, edges: .bottom)
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Xong") { focusedField = nil }
+                }
+            }
         .onTapGesture {
             focusedField = nil
         }
@@ -338,43 +366,37 @@ struct FoodAnalysisView: View {
                 }
                 
                 Button {
+                  
+                    focusedField = nil
                     router.showLoading()
-
+                    
                     foodAnalysisViewModel.saveFood {
+                        // Logic sau khi lưu thành công
                         DispatchQueue.main.async {
-
                             router.hideLoading()
-
-
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            onSaveSuccess?()
+                            router.showToast(message: "Đã lưu vào nhật ký!", type: .success)
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                                 dismiss()
-                                onSaved?()
                             }
-                            router.showToast(message: "Lưu thành công", type: .success)
                         }
                     }
-                } label: { 
-                    if foodAnalysisViewModel.isSaving {
-                        ProgressView()
-                            .tint(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                    } else {
-                        Text("Lưu nhật ký")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                    }
+                } label: {
+                    Text("Lưu nhật ký")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
                 }
                 .background(Color.App.primary)
                 .cornerRadius(15)
                 .disabled(foodAnalysisViewModel.isSaving)
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 20) // Tránh Home Indicator
+            .padding(.bottom, 20)
             .background(
-                LinearGradient(colors: [Color.App.background.opacity(0), Color.App.background], startPoint: .top, endPoint: .bottom)
+                LinearGradient(colors: [Color.App.background.opacity(0), Color.App.background],
+                               startPoint: .top, endPoint: .bottom)
                     .padding(.top, -20)
             )
         }

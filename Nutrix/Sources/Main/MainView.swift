@@ -10,38 +10,33 @@ import SwiftUI
 struct MainView: View {
     @EnvironmentObject var router: AppRouter
     @State private var selectedDate = Date()
+    
     var body: some View {
         ZStack(alignment: .bottom) {
-                // Lớp 1: Content hiển thị tràn toàn màn hình
-                contentView
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .ignoresSafeArea(.all, edges: .bottom) // Để nội dung có thể cuộn xuống dưới thanh menu
+            // Lớp 1: Nội dung chính hiển thị toàn màn hình
+            contentView
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                // Lớp 2: BottomMenuBar nằm đè lên trên
-                BottomMenuBar(selectedTab: $router.selectedTab)
+            // Lớp 2: Thanh Menu dưới đáy
+            BottomMenuBar(selectedTab: $router.selectedTab)
                 .offset(y: 26)
-            }
-        .overlay(
-            ToastView(toast: router.toast)
-                .animation(.spring(response: 0.35, dampingFraction: 0.85),
-                           value: router.toast != nil)
-                .zIndex(999)
             
-        ).overlay {
+            // Lớp 3: Loading Overlay dùng chung (hiển thị đè lên tất cả khi router.isLoading = true)
             if router.isLoading {
-                ZStack {
-                    Color.black.opacity(0.35)
-                        .ignoresSafeArea()
-
-                    ProgressView()
-                        .scaleEffect(1.5)
-                        .tint(.white)
-                }
-                .transition(.opacity)
-                .zIndex(999)
+                LoadingOverlay() // Sử dụng file LoadingOverlay.swift đã tạo
+                    .transition(.opacity)
+                    .zIndex(998) // Nằm dưới Notification một chút
             }
         }
-        .animation(.easeInOut, value: router.isLoading)
+        .ignoresSafeArea(.keyboard, edges: .bottom)
+        .overlay(
+            // Lớp 4: Thông báo Notification kiểu mới (Banner Apple Style)
+            AppNotificationView(data: router.toast)
+                .animation(.spring(response: 0.35, dampingFraction: 0.8), value: router.toast != nil)
+                .zIndex(999) // Luôn nằm trên cùng
+        )
+        // Animation mượt mà cho toàn bộ MainView khi các trạng thái thay đổi
+        .animation(.easeInOut(duration: 0.25), value: router.isLoading)
     }
 
     var contentView: some View {
@@ -56,7 +51,7 @@ struct MainView: View {
                 }
             case .chart:
                 NavigationStack(path: $router.chartPath) {
-                    ChartView(selectedDate:  $selectedDate)
+                    ChartView(selectedDate: $selectedDate)
                         .navigationDestination(for: AppDestination.self) { destination in
                             buildDestinationView(destination)
                         }
@@ -70,26 +65,38 @@ struct MainView: View {
                 }
             case .profile:
                 NavigationStack(path: $router.profilePath) {
-                    ProfileView(selectedDate: $selectedDate).navigationDestination(for: AppDestination.self) { destination in
-                        buildDestinationView(destination) }
+                    ProfileView(selectedDate: $selectedDate)
+                        .navigationDestination(for: AppDestination.self) { destination in
+                            buildDestinationView(destination)
+                        }
                 }
             case .activity:
                 NavigationStack(path: $router.activityPath) {
-                    ActivityView(selectedDate: $selectedDate).navigationDestination(for: AppDestination.self) { destination in
-                        buildDestinationView(destination) }
+                    ActivityView(selectedDate: $selectedDate)
+                        .navigationDestination(for: AppDestination.self) { destination in
+                            buildDestinationView(destination)
+                        }
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+
     @ViewBuilder
-        func buildDestinationView(_ destination: AppDestination) -> some View {
-            switch destination {
-            case .foodDetail(let food):
-                FoodDetailView(food: food, mealDate: selectedDate)
-                    .environmentObject(router)
-                default:
-                    Text("Màn hình đang phát triển")
-                }
+    func buildDestinationView(_ destination: AppDestination) -> some View {
+        switch destination {
+        case .foodDetail(let food):
+            FoodDetailView(food: food, mealDate: selectedDate)
+                .environmentObject(router)
+        default:
+            VStack {
+                Image(systemName: "hammer.fill")
+                    .font(.system(size: 50))
+                    .foregroundColor(.gray.opacity(0.5))
+                Text("Màn hình đang phát triển")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.gray)
+            }
         }
     }
+}

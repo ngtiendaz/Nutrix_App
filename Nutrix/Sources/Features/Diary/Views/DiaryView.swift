@@ -69,7 +69,7 @@ struct DiaryView: View {
             diaryViewModel.fetchDailyFoods(for: newDate)
         }
         .sheet(isPresented: $isShowingAddFood) {
-            OptionDetail()
+            OptionDetail(isPresented: $isShowingAddFood)
                 .environmentObject(router)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)

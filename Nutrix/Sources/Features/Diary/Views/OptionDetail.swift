@@ -12,7 +12,8 @@ struct OptionDetail: View {
     @StateObject private var diaryViewModel = DiaryViewModel()
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject var loginViewModel: LoginViewModel
-
+    
+    @Binding var isPresented: Bool
     
     var body: some View {
         VStack(spacing: 25) {
@@ -55,12 +56,15 @@ struct OptionDetail: View {
                 .ignoresSafeArea()
         }
         .fullScreenCover(item: $diaryViewModel.selectedImage) { uiImage in
-                    // Gọi đúng init mới: nhận image và authService
-                    FoodAnalysisView(
-                        image: uiImage,
-                        authService: loginViewModel.authService
-                    )
+            FoodAnalysisView(
+                image: uiImage,
+                authService: loginViewModel.authService,
+                onSaveSuccess: {
+                    // Khi nhận được tín hiệu lưu thành công từ Analysis
+                    isPresented = false // Đóng luôn cái OptionDetail sheet
                 }
+            )
+        }
         .alert("Cấp quyền Camera", isPresented: $diaryViewModel.isShowingPermissionAlert) {
                     Button("Để sau", role: .cancel) { }
                     Button("Đi tới Cài đặt") {
