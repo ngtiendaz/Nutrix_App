@@ -89,69 +89,91 @@ extension FirebaseService {
                     .collection("userActivities")
                     .document(logId)
                     .setData(from: log) { error in
-                        if let error = error { completion(.failure(error)) }
-                        else { completion(.success(())) }
+                        if let error = error {
+                            completion(.failure(error))
+                        } else {
+                            // ✅ CẬP NHẬT SUMMARY: Cộng thêm lượng calo vừa đốt
+                            self.updateDailySummary(userId: userId, date: date, burnedChange: burned)
+                            completion(.success(()))
+                        }
                     }
             } catch { completion(.failure(error)) }
         }
     }
     
-    // MARK: - 4. Update UserActivity (Sửa thời gian tập)
-    /// Cập nhật thời gian và tính toán lại lượng calo tương ứng
+
     func updateUserActivity(
-        userId: String,
-        logId: String,
-        newDuration: Double,
-        activity: Activity,
-        completion: @escaping (Result<Void, Error>) -> Void
-    ) {
-        db.collection("users").document(userId).getDocument { [weak self] snapshot, error in
-            guard let self = self, let data = snapshot?.data(), error == nil else {
-                completion(.failure(error ?? NSError(domain: "UserData", code: 404)))
-                return
-            }
-            
-            let weight = data["weight"] as? Double ?? 0.0
-            let height = data["height"] as? Double ?? 0.0
-            let age = data["age"] as? Int ?? 0
-            let gender = data["gender"] as? String ?? "Nam"
-            
-            let newBurned = self.calculateAccurateCalories(
-                met: activity.metValue,
-                duration: newDuration,
-                weight: weight,
-                height: height,
-                age: age,
-                gender: gender
-            )
-            
-            let updateData: [String: Any] = [
-                "durationMinutes": newDuration,
-                "caloriesBurned": newBurned
-            ]
-            
-            self.db.collection("users")
-                .document(userId)
-                .collection("userActivities")
-                .document(logId)
-                .updateData(updateData) { error in
-                    if let error = error { completion(.failure(error)) }
-                    else { completion(.success(())) }
+            userId: String,
+            logId: String,
+            newDuration: Double,
+            activity: Activity,
+            completion: @escaping (Result<Void, Error>) -> Void
+        ) {
+            // Lấy dữ liệu cũ để tính toán sự chênh lệch (Diff)
+            db.collection("users").document(userId).collection("userActivities").document(logId).getDocument { [weak self] logSnapshot, _ in
+                guard let self = self, let logData = logSnapshot?.data() else { return }
+                let oldBurned = logData["caloriesBurned"] as? Double ?? 0.0
+                let dateTimestamp = logData["createdAt"] as? Timestamp
+                let activityDate = dateTimestamp?.dateValue() ?? Date()
+
+                // Lấy thông tin user để tính calo mới
+                self.db.collection("users").document(userId).getDocument { snapshot, error in
+                    guard let data = snapshot?.data(), error == nil else { return }
+                    
+                    let weight = data["weight"] as? Double ?? 0.0
+                    let height = data["height"] as? Double ?? 0.0
+                    let age = data["age"] as? Int ?? 0
+                    let gender = data["gender"] as? String ?? "Nam"
+                    
+                    let newBurned = self.calculateAccurateCalories(
+                        met: activity.metValue, duration: newDuration,
+                        weight: weight, height: height, age: age, gender: gender
+                    )
+                    
+                    // Tính độ chênh lệch (Có thể âm hoặc dương)
+                    let burnedDifference = newBurned - oldBurned
+                    
+                    let updateData: [String: Any] = [
+                        "durationMinutes": newDuration,
+                        "caloriesBurned": newBurned
+                    ]
+                    
+                    self.db.collection("users").document(userId).collection("userActivities").document(logId)
+                        .updateData(updateData) { error in
+                            if let error = error {
+                                completion(.failure(error))
+                            } else {
+                                self.updateDailySummary(userId: userId, date: activityDate, burnedChange: burnedDifference)
+                                completion(.success(()))
+                            }
+                        }
                 }
-        }
-    }
-    
-    // MARK: - 5. Delete UserActivity (Xóa nhật ký)
-    func deleteUserActivity(userId: String, logId: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        db.collection("users")
-            .document(userId)
-            .collection("userActivities")
-            .document(logId)
-            .delete { error in
-                if let error = error { completion(.failure(error)) }
-                else { completion(.success(())) }
             }
-    }
+        }
+    
+    func deleteUserActivity(userId: String, logId: String, completion: @escaping (Result<Void, Error>) -> Void) {
+            // Phải lấy lượng calo của log này trước khi xóa để trừ đi trong summary
+            db.collection("users").document(userId).collection("userActivities").document(logId).getDocument { [weak self] snapshot, _ in
+                guard let self = self, let data = snapshot?.data() else { return }
+                
+                let burnedToSubtract = data["caloriesBurned"] as? Double ?? 0.0
+                let dateTimestamp = data["createdAt"] as? Timestamp
+                let activityDate = dateTimestamp?.dateValue() ?? Date()
+                
+                self.db.collection("users")
+                    .document(userId)
+                    .collection("userActivities")
+                    .document(logId)
+                    .delete { error in
+                        if let error = error {
+                            completion(.failure(error))
+                        } else {
+                            self.updateDailySummary(userId: userId, date: activityDate, burnedChange: -burnedToSubtract)
+                            completion(.success(()))
+                        }
+                    }
+            }
+        }
     
     // MARK: - Private Logic
     private func calculateAccurateCalories(met: Double, duration: Double, weight: Double, height: Double, age: Int, gender: String) -> Double {

@@ -10,12 +10,12 @@ struct TopBar: View {
     @Binding var selectedTab: Tab
     @Binding var selectedDate: Date
     var body: some View {
-        HStack(alignment: .center, spacing: 10){
+        HStack(alignment: .center, spacing: 5){
             Text(selectedTab.title).font(.system(size: 32)).fontWeight(.bold)
                 .foregroundColor(.black.opacity(0.8))
             Spacer()
             
-            if selectedTab == .diary || selectedTab == .chart  {
+            if selectedTab == .diary || selectedTab == .chart || selectedTab == .activity {
                 DayPicker(selectedDate: $selectedDate)
                     .transition(.opacity.combined(with: .move(edge: .trailing)))
             }

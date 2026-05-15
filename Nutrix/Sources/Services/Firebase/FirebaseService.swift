@@ -78,13 +78,12 @@ final class FirebaseService{
                 if let error = error {
                     completion(.failure(error))
                 } else {
+                    let changes = ["cal": newFood.calories, "pro": newFood.protein, "carb": newFood.carbs, "fat": newFood.fats]
+                    self.updateDailySummary(userId: meal.userId, date: meal.createdAt, intakeChange: changes)
+                    
                     completion(.success(()))
                 }
             }
-            print("♻️ UPDATE MEAL")
-            print("Add food:", newFood.name)
-            print("New total calories:", meal.totalCalories)
-            print("Food count:", meal.food.count)
             
         } catch {
             completion(.failure(error))
@@ -119,17 +118,17 @@ final class FirebaseService{
         do {
             let data = try Firestore.Encoder().encode(meal)
             
-            db.collection("users")
-                .document(userId)
-                .collection("meals")
-                .document(meal.id)
-                .setData(data) { error in
-                    if let error = error {
-                        completion(.failure(error))
-                    } else {
-                        completion(.success(()))
-                    }
+            self.db.collection("users").document(userId).collection("meals").document(meal.id).setData(data) { error in
+                if let error = error {
+                    completion(.failure(error))
+                } else {
+                    // ✅ CẬP NHẬT SUMMARY
+                    let changes = ["cal": food.calories, "pro": food.protein, "carb": food.carbs, "fat": food.fats]
+                    self.updateDailySummary(userId: userId, date: mealDate, intakeChange: changes)
+                    
+                    completion(.success(()))
                 }
+            }
             
             
         } catch {
@@ -272,17 +271,21 @@ final class FirebaseService{
 
                 do {
                     let data = try Firestore.Encoder().encode(meal)
-                    self.db.collection("users")
-                        .document(userId)
-                        .collection("meals")
-                        .document(meal.id)
-                        .setData(data, merge: true) { error in
-                            if let error {
-                                completion(.failure(error))
-                            } else {
-                                completion(.success(()))
-                            }
+                    self.db.collection("users").document(userId).collection("meals").document(meal.id).setData(data, merge: true) { error in
+                        if let error {
+                            completion(.failure(error))
+                        } else {
+                            let diffCal = newFood.calories - oldFood.calories
+                            let diffPro = newFood.protein - oldFood.protein
+                            let diffCarb = newFood.carbs - oldFood.carbs
+                            let diffFat = newFood.fats - oldFood.fats
+                            
+                            let changes = ["cal": diffCal, "pro": diffPro, "carb": diffCarb, "fat": diffFat]
+                            self.updateDailySummary(userId: userId, date: mealDate, intakeChange: changes)
+                            
+                            completion(.success(()))
                         }
+                    }
                 } catch {
                     completion(.failure(error))
                 }
@@ -333,90 +336,26 @@ final class FirebaseService{
                         let data = try Firestore.Encoder().encode(meal)
                         // Nếu sau khi xóa không còn món nào, bạn có thể chọn xóa luôn Document hoặc để mảng trống.
                         // Ở đây ta update Document.
-                        self.db.collection("users")
-                            .document(userId)
-                            .collection("meals")
-                            .document(meal.id)
-                            .setData(data, merge: true) { error in
-                                if let error = error {
-                                    completion(.failure(error))
-                                } else {
-                                    completion(.success(()))
-                                }
+                        self.db.collection("users").document(userId).collection("meals").document(meal.id).setData(data, merge: true) { error in
+                            if let error = error {
+                                completion(.failure(error))
+                            } else {
+                                // ✅ CẬP NHẬT SUMMARY (TRỪ ĐI)
+                                let changes = [
+                                    "cal": -food.calories,
+                                    "pro": -food.protein,
+                                    "carb": -food.carbs,
+                                    "fat": -food.fats
+                                ]
+                                self.updateDailySummary(userId: userId, date: mealDate, intakeChange: changes)
+                                
+                                completion(.success(()))
                             }
+                        }
                     } catch {
                         completion(.failure(error))
                     }
                 }
             }
         }
-    // MARK: - Nutrition Plan (AI)
-        
-        /// Lưu lộ trình dinh dưỡng AI vào sub-collection 'plans'
-        func saveNutritionPlan(
-            userId: String,
-            plan: NutritionPlan,
-            completion: @escaping (Result<Void, Error>) -> Void
-        ) {
-            // Xác định ngày kết thúc mặc định (thường là 30 ngày sau hoặc theo plan)
-            let endDate = Calendar.current.date(byAdding: .month, value: 1, to: Date()) ?? Date()
-            
-            let planData: [String: Any] = [
-                "dailyCalories": plan.dailyCalories,
-                "protein": plan.protein,
-                "carbs": plan.carbs,
-                "fat": plan.fat,
-                "advice": plan.advice,
-                "exercisePlan": plan.exercisePlan,
-                "startDate": Timestamp(date: Date()),
-                "endDate": Timestamp(date: endDate),
-                "isActive": true, // Đánh dấu là lộ trình hiện tại
-                "createdAt": FieldValue.serverTimestamp()
-            ]
-            
-            // Thực hiện lưu vào Firestore
-            // Dùng document("current") nếu bạn muốn mỗi user chỉ có 1 plan hoạt động duy nhất
-            // Hoặc addDocument nếu muốn lưu lịch sử các plan cũ.
-            db.collection("users")
-                .document(userId)
-                .collection("plans")
-                .document("current_plan") // Ghi đè lên plan hiện tại để dashboard dễ truy vấn
-                .setData(planData) { error in
-                    if let error = error {
-                        completion(.failure(error))
-                    } else {
-                        print("✅ AI PLAN SAVED for user: \(userId)")
-                        completion(.success(()))
-                    }
-                }
-        }
-    func uploadActivities() {
-
-        guard let url = Bundle.main.url(forResource: "activities", withExtension: "json") else {
-            print("Không tìm thấy file JSON")
-            return
-        }
-
-        do {
-
-            let data = try Data(contentsOf: url)
-
-            let activities = try JSONDecoder().decode([Activity].self, from: data)
-
-            let db = Firestore.firestore()
-
-            for activity in activities {
-
-                try db.collection("activities").addDocument(from: activity)
-
-            }
-
-            print("Upload thành công")
-
-        } catch {
-
-            print(error)
-
-        }
-    }
 }

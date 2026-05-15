@@ -3,7 +3,7 @@ import FirebaseAuth
 
 struct ActivityView: View {
     @Binding var selectedDate: Date
-    @StateObject private var viewModel = ActivityViewModel()
+    @StateObject private var activityViewModel = ActivityViewModel()
     @State private var showAddSheet = false
     @State private var selectedLog: UserActivityLog?
 
@@ -13,24 +13,24 @@ struct ActivityView: View {
     
     // Tổng calo thực tế đã đốt từ danh sách tập luyện
     var totalCalories: Int {
-        viewModel.userLogs.reduce(0) { $0 + Int($1.caloriesBurned) }
+        activityViewModel.userLogs.reduce(0) { $0 + Int($1.caloriesBurned) }
     }
     
     // Tổng thời gian tập luyện thực tế
     var totalDuration: Int {
-        viewModel.userLogs.reduce(0) { $0 + Int($1.durationMinutes) }
+        activityViewModel.userLogs.reduce(0) { $0 + Int($1.durationMinutes) }
     }
     
     // Tính toán tiến độ vòng tròn (Tối đa 1.0 để không bị vẽ đè)
     private var progress: CGFloat {
-        let goal = Double(viewModel.goalCalories)
+        let goal = Double(activityViewModel.goalCalories)
         guard goal > 0 else { return 0 }
         return CGFloat(min(Double(totalCalories) / goal, 1.0))
     }
     
     // Kiểm tra trạng thái hoàn thành mục tiêu
     private var isGoalAchieved: Bool {
-        viewModel.goalCalories > 0 && totalCalories >= viewModel.goalCalories
+        activityViewModel.goalCalories > 0 && totalCalories >= activityViewModel.goalCalories
     }
 
     var body: some View {
@@ -43,12 +43,9 @@ struct ActivityView: View {
                         
                         // Header chọn ngày
                         TopBar(selectedTab: .constant(.activity), selectedDate: $selectedDate)
-                            .padding(.horizontal)
-                            .padding(.bottom, 10)
                         
                         // Card chỉ số chính
                         mainStatsCard
-                            .padding(.horizontal)
 
                         // --- SECTION: LỊCH SỬ HOẠT ĐỘNG ---
                         VStack(alignment: .leading, spacing: 18) {
@@ -69,35 +66,34 @@ struct ActivityView: View {
                                 }
                             }
                             
-                            if viewModel.userLogs.isEmpty {
+                            if activityViewModel.userLogs.isEmpty {
                                 emptyStateView
                             } else {
-                                ForEach(viewModel.userLogs) { log in
+                                ForEach(activityViewModel.userLogs) { log in
                                     ActivityCard(log: log)
                                         .contentShape(Rectangle())
                                         .onTapGesture { selectedLog = log }
                                 }
                             }
                         }
-                        .padding(.horizontal)
-                        .padding(.bottom, 30)
+                        .padding(.bottom, 70)
                     }
                 }
-            }
+            }  .padding(.horizontal,12)
         }
         .onAppear {
             // Load dữ liệu lần đầu
-            viewModel.getUserLogs(userId: userId, date: selectedDate)
+            activityViewModel.getUserLogs(userId: userId, date: selectedDate)
         }
         .onChange(of: selectedDate) { newDate in
             // Reload khi người dùng đổi ngày trên TopBar
-            viewModel.getUserLogs(userId: userId, date: newDate)
+            activityViewModel.getUserLogs(userId: userId, date: newDate)
         }
         .sheet(isPresented: $showAddSheet) {
-            AddActivitySheet(viewModel: viewModel, userId: userId, date: selectedDate)
+            AddActivitySheet(viewModel: activityViewModel, userId: userId, date: selectedDate)
         }
         .sheet(item: $selectedLog) { log in
-            ActivityDetailView(viewModel: viewModel, userId: userId, log: log, date: selectedDate)
+            ActivityDetailView(viewModel: activityViewModel, userId: userId, log: log, date: selectedDate)
         }
     }
 
@@ -153,7 +149,7 @@ struct ActivityView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "target")
                             .font(.system(size: 14))
-                        Text("\(viewModel.goalCalories) kcal")
+                        Text("\(activityViewModel.goalCalories) kcal")
                     }
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.orange)

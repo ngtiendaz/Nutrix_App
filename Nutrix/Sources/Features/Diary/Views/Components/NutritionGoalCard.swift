@@ -10,6 +10,7 @@ struct NutritionGoalCard: View {
     let data: DailyNutrition
     let goal: NutritionPlan
     
+    
     @State private var animatedCalories: Double = 0
     
     // Logic xác định trạng thái vượt ngưỡng
@@ -28,13 +29,13 @@ struct NutritionGoalCard: View {
                 
                 // Các chỉ số calo bên phải
                 VStack(alignment: .leading, spacing: 18) {
-                    nutritionRow(label: "Đã ăn",
+                    nutritionRow(label: "Hấp thụ",
                                  value: data.totalCalories,
                                  unit: "kcal",
                                  icon: "leaf.fill",
                                  color: isOverGoal ? .red : .green)
                     
-                    nutritionRow(label: "Đốt cháy",
+                    nutritionRow(label: "Tiêu thụ",
                                  value: data.totalBurned ?? 0,
                                  unit: "kcal",
                                  icon: "flame.fill",

@@ -10,12 +10,12 @@ import FirebaseFirestore
 
 extension FirebaseService {
     
-        func saveNutritionPlan(
+    func saveNutritionPlan(
             userId: String,
             plan: NutritionPlan,
             durationMonths: Int,
-            currentWeight: Double,  // Thêm tham số này
-            targetWeight: Double,   // Thêm tham số này
+            currentWeight: Double,
+            targetWeight: Double,
             completion: @escaping (Result<Void, Error>) -> Void
         ) {
             // 1. Kiểm tra xem có plan hiện tại không để lưu vào lịch sử trước
@@ -30,7 +30,7 @@ extension FirebaseService {
                 let startDate = Date()
                 let endDate = Calendar.current.date(byAdding: .month, value: durationMonths, to: startDate) ?? startDate
                 
-                // 3. Tạo dữ liệu plan mới (Đã thêm weight)
+                // 3. Tạo dữ liệu plan mới
                 let planData: [String: Any] = [
                     "dailyCalories": plan.dailyCalories,
                     "activityCalories": plan.activityCalories,
@@ -41,8 +41,8 @@ extension FirebaseService {
                     "exercisePlan": plan.exercisePlan,
                     "startDate": Timestamp(date: startDate),
                     "endDate": Timestamp(date: endDate),
-                    "currentWeight": currentWeight, // Lưu cân nặng hiện tại
-                    "targetWeight": targetWeight,   // Lưu cân nặng mục tiêu
+                    "currentWeight": currentWeight,
+                    "targetWeight": targetWeight,
                     "isActive": true,
                     "createdAt": FieldValue.serverTimestamp()
                 ]
@@ -56,9 +56,37 @@ extension FirebaseService {
                         if let error = error {
                             completion(.failure(error))
                         } else {
+                            // ✅ BƯỚC QUAN TRỌNG: Sau khi save Plan thành công, cập nhật ngay vào DailySummary của ngày hôm nay
+                            self.syncPlanToDailySummary(userId: userId, plan: plan)
+                            
                             completion(.success(()))
                         }
                     }
+            }
+        }
+        
+        // MARK: - Hàm hỗ trợ đồng bộ Plan sang DailySummary
+        private func syncPlanToDailySummary(userId: String, plan: NutritionPlan) {
+            let dateKey = self.getDateKey(from: Date()) // Lấy ngày hôm nay
+            let summaryRef = db.collection("users").document(userId).collection("daily_summaries").document(dateKey)
+            
+            let targetData: [String: Any] = [
+                "targetCalories": plan.dailyCalories,
+                "targetProtein": plan.protein,
+                "targetCarbs": plan.carbs,
+                "targetFats": plan.fat,
+                "updatedAt": FieldValue.serverTimestamp() // Để biết summary này vừa được cập nhật target
+            ]
+            
+            // Sử dụng setData với merge: true
+            // Nếu đã có record (đã ăn/tập rồi): Nó chỉ ghi đè 4 trường target.
+            // Nếu chưa có record: Nó tạo mới document với các trường intake mặc định là 0.
+            summaryRef.setData(targetData, merge: true) { error in
+                if let error = error {
+                    print("⚠️ Lỗi đồng bộ Plan sang Summary: \(error.localizedDescription)")
+                } else {
+                    print("✅ Đã cập nhật mục tiêu mới vào DailySummary ngày \(dateKey)")
+                }
             }
         }
     

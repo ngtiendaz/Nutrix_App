@@ -32,6 +32,7 @@ class DiaryViewModel: ObservableObject, Hashable {
         fetchDailyData(for: lastSelectedDate)
     }
     
+    
     // MARK: - Actions
     func handleCameraSelection() {
         PermissionManager.shared.checkCameraPermission(

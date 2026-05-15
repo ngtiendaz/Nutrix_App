@@ -147,19 +147,19 @@ struct AIPlanSetupView: View {
                 }
             }
             .fullScreenCover(isPresented: $showResultView) {
-                if let plan = vm.generatedPlan {
-                    NutritionPlanView(plan: plan) {
-                        // ✅ Logic xử lý khi nhấn "Áp dụng ngay" từ màn hình kết quả:
-                        showResultView = false // 1. Đóng màn hình NutritionPlanView
-                        
-                        // 2. Đợi một nhịp cực ngắn rồi đóng luôn màn hình Setup hiện tại
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            dismiss() // Quay về DiaryView
+                    if let plan = vm.generatedPlan {
+                        // Bao bọc toàn bộ nội dung trong NavigationView nếu cần
+                        // và đảm bảo environmentObject nằm ở ngoài cùng của Cover
+                        NutritionPlanView(plan: plan) {
+                            showResultView = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                dismiss()
+                            }
                         }
+                        .environmentObject(diaryViewModel)
+                        .environmentObject(router)
                     }
-                    .environmentObject(diaryViewModel)
                 }
-            }
         }
     }
     

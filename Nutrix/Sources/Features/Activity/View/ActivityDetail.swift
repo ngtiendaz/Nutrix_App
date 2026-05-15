@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ActivityDetailView: View {
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var router: AppRouter
     @ObservedObject var viewModel: ActivityViewModel
     var userId: String
     let log: UserActivityLog
@@ -94,12 +95,7 @@ struct ActivityDetailView: View {
                     // 3. Action Buttons
                     VStack(spacing: 15) {
                         // Nút Lưu
-                        Button(action: {
-                            if let min = Double(duration) {
-                                viewModel.updateLog(userId: userId, logId: log.id, duration: min, activity: log.activityType, date: date)
-                                dismiss()
-                            }
-                        }) {
+                        Button(action: handleUpdate) {
                             Text("Lưu thay đổi")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
@@ -109,12 +105,7 @@ struct ActivityDetailView: View {
                                 .cornerRadius(18)
                                 .shadow(color: Color.App.primary.opacity(0.3), radius: 10, x: 0, y: 5)
                         }
-                        
-                        // Nút Xóa
-                        Button(action: {
-                            viewModel.deleteLog(userId: userId, logId: log.id, date: date)
-                            dismiss()
-                        }) {
+                        Button(action: handleDelete ) {
                             HStack {
                                 Image(systemName: "trash")
                                 Text("Xóa hoạt động")
@@ -141,4 +132,32 @@ struct ActivityDetailView: View {
             }
         }
     }
+    private func handleUpdate() {
+            guard let min = Double(duration) else { return }
+            
+            hideKeyboard()
+            router.showLoading()
+            
+            // Giả lập delay một chút để loading trông mượt mà hơn trước khi đóng
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                viewModel.updateLog(userId: userId, logId: log.id, duration: min, activity: log.activityType, date: date)
+                
+                router.hideLoading()
+                router.showToast(message: "Đã cập nhật thời gian tập luyện", type: .success)
+                dismiss()
+            }
+        }
+        
+        private func handleDelete() {
+            hideKeyboard()
+            router.showLoading()
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                viewModel.deleteLog(userId: userId, logId: log.id, date: date)
+                
+                router.hideLoading()
+                router.showToast(message: "Đã xóa hoạt động khỏi nhật ký", type: .success)
+                dismiss()
+            }
+        }
 }
