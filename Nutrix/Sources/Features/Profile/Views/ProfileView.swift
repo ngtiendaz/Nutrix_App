@@ -48,8 +48,6 @@ struct ProfileView: View {
                         })
                         .fullScreenCover(isPresented: $isShowingAISetup) {
                             if let user = loginViewModel.authService.currentUser {
-                                // ✅ 3. Sửa lỗi "Extra argument 'userId'" bằng cách chỉ truyền 'user'
-                                // (Giả sử AIPlanSetupView của bạn nhận init(user: User))
                                 AIPlanSetupView(user: user)
                             }
                         }
@@ -66,7 +64,7 @@ struct ProfileView: View {
                     
                     Spacer(minLength: 100)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 12)
             }
         }
         .sheet(isPresented: $isShowingHistory) {

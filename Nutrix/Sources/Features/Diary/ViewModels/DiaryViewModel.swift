@@ -43,12 +43,18 @@ class DiaryViewModel: ObservableObject, Hashable {
     func showLibrary() {
         self.isShowingLibrary = true
     }
+    // Trong DiaryViewModel.swift
+
+    @MainActor // Thêm cái này để đảm bảo mọi thay đổi UI đều an toàn
     func fetchDailyData(for date: Date) {
-        guard !isLoading else { return }
+        if isLoading { return }
+        
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
         self.lastSelectedDate = date
         self.isLoading = true
+        
+        // Reset data cũ để tránh hiển thị sai lệch
         self.planSummary = nil
         self.currentPlan = nil
         
@@ -57,47 +63,46 @@ class DiaryViewModel: ObservableObject, Hashable {
         // --- TASK 1: PLAN ---
         group.enter()
         FirebaseService.shared.fetchPlanForDate(userId: userId, date: date) { [weak self] result in
-            // Thay vì gọi DispatchQueue trực tiếp ở đây, ta gọi một hàm xử lý
-            self?.handlePlanResult(result, group: group)
+            // Firebase trả về ở Background Thread -> Phải đẩy về Main
+            DispatchQueue.main.async {
+                self?.handlePlanResult(result, group: group)
+            }
         }
         
         // --- TASK 2: FOODS ---
         group.enter()
         FirebaseService.shared.fetchMeals(userId: userId, date: date) { [weak self] result in
-            self?.handleMealsResult(result, date: date, userId: userId, group: group)
+            DispatchQueue.main.async {
+                self?.handleMealsResult(result, date: date, userId: userId, group: group)
+            }
         }
         
+        // --- KẾT THÚC ---
         group.notify(queue: .main) { [weak self] in
             self?.isLoading = false
+            print("--- 🏁 RELOAD THÀNH CÔNG ---")
         }
     }
 
+    // Đảm bảo các hàm Helper cũng chạy trên Main Thread
     private func handlePlanResult(_ result: Result<PlanSummary?, Error>, group: DispatchGroup) {
-        DispatchQueue.main.async { [weak self] in
-            defer { group.leave() }
-            guard let self = self else { return }
-            
-            switch result {
-            case .success(let summary):
-                if let summary = summary {
-                    self.planSummary = summary
-                    self.currentPlan = NutritionPlan(
-                        dailyCalories: summary.dailyCalories,
-                        activityCalories: summary.activityCalories,
-                        protein: summary.protein,
-                        carbs: summary.carbs,
-                        fat: summary.fat,
-                        advice: "",
-                        exercisePlan: ""
-                    )
-                    self.hasPlan = true
-                } else {
-                    self.hasPlan = false
-                }
-            case .failure(let error):
-                print("❌ Error fetching plan: \(error.localizedDescription)")
-                self.hasPlan = false
-            }
+        // Luôn sử dụng defer để đảm bảo leave() luôn được gọi đúng 1 lần
+        defer { group.leave() }
+        
+        if case .success(let summary) = result, let summary = summary {
+            self.planSummary = summary
+            self.currentPlan = NutritionPlan(
+                dailyCalories: summary.dailyCalories,
+                activityCalories: summary.activityCalories,
+                protein: summary.protein,
+                carbs: summary.carbs,
+                fat: summary.fat,
+                advice: "",
+                exercisePlan: ""
+            )
+            self.hasPlan = true
+        } else {
+            self.hasPlan = false
         }
     }
 

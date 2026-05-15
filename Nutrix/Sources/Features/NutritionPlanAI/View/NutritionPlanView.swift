@@ -12,11 +12,15 @@ struct NutritionPlanView: View {
     @EnvironmentObject var router: AppRouter
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var loginViewModel: LoginViewModel
+    @EnvironmentObject var diaryViewModel: DiaryViewModel
+    
     @StateObject private var viewModel = NutritionPlanViewModel()
     
     @State private var displayedAdvice: String = ""
     @State private var selectedDuration: Int = 1
     @State private var showButtons = false
+    
+    var onApplied: () -> Void
     
     var body: some View {
         ZStack {
@@ -222,9 +226,15 @@ struct NutritionPlanView: View {
                 router.hideLoading()
                 
                 if success {
+                    onApplied()
                     router.showToast(message: "Đã cập nhật lộ trình mới!", type: .success)
                     
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    // 1. Reload data trước
+                    diaryViewModel.refreshData()
+                    
+                    // 2. Delay một nhịp cực ngắn để đảm bảo ViewModel đã nhận lệnh rồi mới đóng View
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        router.hideLoading()
                         dismiss()
                     }
                 }

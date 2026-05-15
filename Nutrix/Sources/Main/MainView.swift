@@ -9,6 +9,7 @@ import SwiftUI
 
 struct MainView: View {
     @EnvironmentObject var router: AppRouter
+    @EnvironmentObject var diaryViewModel: DiaryViewModel
     @State private var selectedDate = Date()
     
     var body: some View {
@@ -90,8 +91,11 @@ struct MainView: View {
                     .environmentObject(router)
                     .environmentObject(diaryVM)
         case .nutritionPlan(let plan):
-                NutritionPlanView(plan: plan)
-                    .environmentObject(router)
+            NutritionPlanView(plan: plan, onApplied: {
+
+            })
+            .environmentObject(router)
+            .environmentObject(diaryViewModel)
         default:
             VStack {
                 Image(systemName: "hammer.fill")

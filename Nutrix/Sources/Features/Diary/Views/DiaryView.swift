@@ -7,6 +7,9 @@ struct DiaryView: View {
     @StateObject var diaryViewModel = DiaryViewModel()
     @Binding var selectedDate: Date
     
+    @State private var isShowingAISetup = false
+    @EnvironmentObject var loginViewModel: LoginViewModel
+    
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             ScrollView(showsIndicators: false) {
@@ -64,6 +67,13 @@ struct DiaryView: View {
             }
             .background(Color.App.background)
             .navigationBarHidden(true)
+            
+            .fullScreenCover(isPresented: $isShowingAISetup) {
+                            if let user = loginViewModel.authService.currentUser {
+                                AIPlanSetupView(user: user)
+                                    .environmentObject(diaryViewModel)
+                            }
+                        }
             
             // Nút Floating Action Button
             if !isPastDate {
@@ -189,7 +199,7 @@ struct DiaryView: View {
             }
             
             Button(action: {
-                // Điều hướng tới màn hình tạo lộ trình AI (Cần kiểm tra loginViewModel)
+                isShowingAISetup = true
             }) {
                 Text("Tạo lộ trình ngay")
                     .font(.system(size: 16, weight: .bold))

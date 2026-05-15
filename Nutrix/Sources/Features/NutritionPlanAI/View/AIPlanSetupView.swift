@@ -4,7 +4,9 @@ struct AIPlanSetupView: View {
     @StateObject var vm = AIPlanViewModel()
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var router: AppRouter
+    @EnvironmentObject var diaryViewModel: DiaryViewModel
     var user: User
+    
     
     // Trạng thái điều khiển việc hiển thị kết quả lộ trình
     @State private var showResultView = false
@@ -144,10 +146,18 @@ struct AIPlanSetupView: View {
                         .font(.system(size: 16, weight: .semibold))
                 }
             }
-            // HIỂN THỊ KẾT QUẢ DƯỚI DẠNG FULL SCREEN COVER
             .fullScreenCover(isPresented: $showResultView) {
                 if let plan = vm.generatedPlan {
-                    NutritionPlanView(plan: plan)
+                    NutritionPlanView(plan: plan) {
+                        // ✅ Logic xử lý khi nhấn "Áp dụng ngay" từ màn hình kết quả:
+                        showResultView = false // 1. Đóng màn hình NutritionPlanView
+                        
+                        // 2. Đợi một nhịp cực ngắn rồi đóng luôn màn hình Setup hiện tại
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            dismiss() // Quay về DiaryView
+                        }
+                    }
+                    .environmentObject(diaryViewModel)
                 }
             }
         }
