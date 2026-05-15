@@ -165,4 +165,26 @@ extension FirebaseService {
         // Công thức: (BMR/24h/60p) * MET * Số phút tập
         return (bmr / 1440) * met * duration
     }
+    // MARK: - Lấy mục tiêu Calo từ lộ trình hiện tại
+    func fetchActivityGoal(userId: String, completion: @escaping (Result<Int, Error>) -> Void) {
+        db.collection("users")
+            .document(userId)
+            .collection("plans")
+            .document("current_plan") // Document ID cố định mà AI đã lưu
+            .getDocument { snapshot, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                guard let data = snapshot?.data() else {
+                    completion(.success(0)) // Nếu chưa có plan, trả về 0
+                    return
+                }
+                
+                // Lấy activityCalories (AI tính toán calo cần đốt từ tập luyện)
+                let goal = data["activityCalories"] as? Double ?? 0.0
+                completion(.success(Int(goal)))
+            }
+    }
 }

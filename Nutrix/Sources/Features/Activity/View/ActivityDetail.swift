@@ -18,49 +18,127 @@ struct ActivityDetailView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 30) {
-                // Hiển thị icon & tên
-                VStack {
-                    Image(systemName: log.activityType.icon)
-                        .font(.system(size: 60))
-                        .foregroundColor(.blue)
-                    Text(log.activityType.name).font(.largeTitle).bold()
-                }.padding(.top)
+            ZStack {
+                // Background đồng bộ
+                Color.App.background.ignoresSafeArea()
                 
-                // Nhập liệu sửa
-                VStack(alignment: .leading) {
-                    Text("Thời gian tập luyện (phút)").font(.caption).foregroundColor(.gray)
-                    TextField("Phút", text: $duration)
-                        .font(.title).bold()
-                        .padding()
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(10)
-                        .keyboardType(.numberPad)
-                }.padding(.horizontal)
-                
-                Spacer()
-                
-                // Nút Lưu
-                Button(action: {
-                    if let min = Double(duration) {
-                        viewModel.updateLog(userId: userId, logId: log.id, duration: min, activity: log.activityType, date: date)
-                        dismiss()
+                VStack(spacing: 25) {
+                    // 1. Header Section
+                    VStack(spacing: 16) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.App.primaryLight)
+                                .frame(width: 100, height: 100)
+                            
+                            Image(systemName: log.activityType.icon)
+                                .font(.system(size: 45))
+                                .foregroundColor(Color.App.primary)
+                        }
+                        .padding(.top, 20)
+                        
+                        VStack(spacing: 4) {
+                            Text(log.activityType.name)
+                                .font(.system(size: 28, weight: .black))
+                                .foregroundColor(.black)
+                            
+                            Text("Chỉnh sửa nhật ký tập luyện")
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray)
+                        }
                     }
-                }) {
-                    Text("Lưu thay đổi").frame(maxWidth: .infinity).padding().background(Color.blue).foregroundColor(.white).cornerRadius(10)
-                }.padding(.horizontal)
-                
-                // Nút Xóa
-                Button(action: {
-                    viewModel.deleteLog(userId: userId, logId: log.id, date: date)
-                    dismiss()
-                }) {
-                    Text("Xóa hoạt động này").foregroundColor(.red)
+                    
+                    // 2. Input Card
+                    VStack(alignment: .leading, spacing: 15) {
+                        Text("THỜI GIAN TẬP LUYỆN")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(Color.App.primary)
+                            .tracking(1)
+                        
+                        HStack {
+                            Image(systemName: "clock.fill")
+                                .foregroundColor(Color.App.primary)
+                            
+                            TextField("0", text: $duration)
+                                .font(.system(size: 24, weight: .bold, design: .rounded))
+                                .foregroundColor(.black)
+                                .keyboardType(.numberPad)
+                            
+                            Text("phút")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.gray)
+                        }
+                        .padding()
+                        .background(Color.App.secondaryBackground.opacity(0.5))
+                        .cornerRadius(15)
+                        
+                        // Hiển thị calo tính toán nhanh
+                        if let min = Double(duration) {
+                            let burned = (log.activityType.metValue * (60.0 / 1440.0) * 1500.0 / 60.0) * min // Ước tính nhanh
+                            HStack {
+                                Image(systemName: "flame.fill")
+                                Text("Ước tính đốt cháy: ~\(Int(log.caloriesBurned * (min / log.durationMinutes))) kcal")
+                            }
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.orange)
+                            .padding(.leading, 4)
+                        }
+                    }
+                    .padding(20)
+                    .background(Color.white)
+                    .cornerRadius(24)
+                    .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 5)
+                    .padding(.horizontal)
+                    
+                    Spacer()
+                    
+                    // 3. Action Buttons
+                    VStack(spacing: 15) {
+                        // Nút Lưu
+                        Button(action: {
+                            if let min = Double(duration) {
+                                viewModel.updateLog(userId: userId, logId: log.id, duration: min, activity: log.activityType, date: date)
+                                dismiss()
+                            }
+                        }) {
+                            Text("Lưu thay đổi")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                                .background(Color.App.primary)
+                                .cornerRadius(18)
+                                .shadow(color: Color.App.primary.opacity(0.3), radius: 10, x: 0, y: 5)
+                        }
+                        
+                        // Nút Xóa
+                        Button(action: {
+                            viewModel.deleteLog(userId: userId, logId: log.id, date: date)
+                            dismiss()
+                        }) {
+                            HStack {
+                                Image(systemName: "trash")
+                                Text("Xóa hoạt động")
+                            }
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.red)
+                            .padding(.vertical, 8)
+                        }
+                    }
+                    .padding(.horizontal, 25)
+                    .padding(.bottom, 20)
                 }
             }
-            .onAppear { duration = "\(Int(log.durationMinutes))" }
-            .navigationTitle("Chi tiết")
-            .navigationBarItems(trailing: Button("Đóng") { dismiss() })
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Đóng") { dismiss() }
+                        .foregroundColor(.black)
+                        .font(.system(size: 16, weight: .medium))
+                }
+            }
+            .onAppear {
+                duration = "\(Int(log.durationMinutes))"
+            }
         }
     }
 }

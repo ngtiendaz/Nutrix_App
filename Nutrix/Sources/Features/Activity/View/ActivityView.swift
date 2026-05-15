@@ -1,7 +1,6 @@
 import SwiftUI
 import FirebaseAuth
 
-
 struct ActivityView: View {
     @Binding var selectedDate: Date
     @StateObject private var viewModel = ActivityViewModel()
@@ -10,10 +9,29 @@ struct ActivityView: View {
 
     let userId = Auth.auth().currentUser?.uid ?? ""
     
-    // Thông số tổng hợp
-    var totalCalories: Int { viewModel.userLogs.reduce(0) { $0 + Int($1.caloriesBurned) } }
-    var totalDuration: Int { viewModel.userLogs.reduce(0) { $0 + Int($1.durationMinutes) } }
-    let goalCalories: Int = 800
+    // --- COMPUTED PROPERTIES ---
+    
+    // Tổng calo thực tế đã đốt từ danh sách tập luyện
+    var totalCalories: Int {
+        viewModel.userLogs.reduce(0) { $0 + Int($1.caloriesBurned) }
+    }
+    
+    // Tổng thời gian tập luyện thực tế
+    var totalDuration: Int {
+        viewModel.userLogs.reduce(0) { $0 + Int($1.durationMinutes) }
+    }
+    
+    // Tính toán tiến độ vòng tròn (Tối đa 1.0 để không bị vẽ đè)
+    private var progress: CGFloat {
+        let goal = Double(viewModel.goalCalories)
+        guard goal > 0 else { return 0 }
+        return CGFloat(min(Double(totalCalories) / goal, 1.0))
+    }
+    
+    // Kiểm tra trạng thái hoàn thành mục tiêu
+    private var isGoalAchieved: Bool {
+        viewModel.goalCalories > 0 && totalCalories >= viewModel.goalCalories
+    }
 
     var body: some View {
         ZStack {
@@ -23,14 +41,17 @@ struct ActivityView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 25) {
                         
+                        // Header chọn ngày
                         TopBar(selectedTab: .constant(.activity), selectedDate: $selectedDate)
                             .padding(.horizontal)
                             .padding(.bottom, 10)
+                        
+                        // Card chỉ số chính
                         mainStatsCard
                             .padding(.horizontal)
 
-                        // --- SECTION 2: LỊCH SỬ HOẠT ĐỘNG ---
-                        VStack(alignment: .leading, spacing: 15) {
+                        // --- SECTION: LỊCH SỬ HOẠT ĐỘNG ---
+                        VStack(alignment: .leading, spacing: 18) {
                             HStack {
                                 Text("Lịch sử hoạt động")
                                     .font(.system(size: 18, weight: .bold))
@@ -53,6 +74,7 @@ struct ActivityView: View {
                             } else {
                                 ForEach(viewModel.userLogs) { log in
                                     ActivityCard(log: log)
+                                        .contentShape(Rectangle())
                                         .onTapGesture { selectedLog = log }
                                 }
                             }
@@ -64,8 +86,12 @@ struct ActivityView: View {
             }
         }
         .onAppear {
-            viewModel.getDataset()
+            // Load dữ liệu lần đầu
             viewModel.getUserLogs(userId: userId, date: selectedDate)
+        }
+        .onChange(of: selectedDate) { newDate in
+            // Reload khi người dùng đổi ngày trên TopBar
+            viewModel.getUserLogs(userId: userId, date: newDate)
         }
         .sheet(isPresented: $showAddSheet) {
             AddActivitySheet(viewModel: viewModel, userId: userId, date: selectedDate)
@@ -75,72 +101,91 @@ struct ActivityView: View {
         }
     }
 
-    // MARK: - Main Stats Card Component
+    // MARK: - Components
+
     private var mainStatsCard: some View {
-        VStack(spacing: 25) {
-            // Vòng tròn Calo lớn
+        VStack(spacing: 30) {
+            // Vòng tròn Calo trung tâm
             ZStack {
+                // Vòng tròn nền xám
                 Circle()
-                    .stroke(Color.App.secondaryBackground, lineWidth: 15)
-                Circle()
-                    .trim(from: 0, to: CGFloat(min(Double(totalCalories) / Double(goalCalories), 1.0)))
-                    .stroke(Color.App.primary, style: StrokeStyle(lineWidth: 15, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
+                    .stroke(Color.App.secondaryBackground, lineWidth: 16)
                 
-                VStack(spacing: 2) {
+                // Vòng tròn tiến độ (Cam hoặc Xanh lá nếu đạt mục tiêu)
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(
+                        isGoalAchieved ? Color.App.primary : Color.App.primary,
+                        style: StrokeStyle(lineWidth: 16, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .animation(.spring(response: 0.6, dampingFraction: 0.8), value: progress)
+                
+                VStack(spacing: 4) {
                     Text("\(totalCalories)")
-                        .font(.system(size: 45, weight: .bold))
-                        .foregroundColor(.black)
+                        .font(.system(size: 48, weight: .black, design: .rounded))
+                        .foregroundColor(isGoalAchieved ? .App.primary : .black)
+                    
                     Text("kcal đã đốt")
-                        .font(.system(size: 16))
-                        .foregroundColor(Color.App.lightGray)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(Color.App.primary)
+                    
+                    if isGoalAchieved {
+                        Image(systemName: "checkmark.seal.fill")
+                            .foregroundColor(.App.lightGray)
+                            .font(.system(size: 22))
+                            .padding(.top, 4)
+                            .transition(.scale.combined(with: .opacity))
+                    }
                 }
             }
-            .frame(width: 180, height: 180)
+            .frame(width: 200, height: 200)
             .padding(.top, 10)
             
-            // Dòng thông tin mục tiêu và thời gian
+            // Dòng thông tin Mục tiêu & Thời gian tập
             HStack {
-                // Mục tiêu Calo
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("MỤC TIÊU")
-                        .font(.system(size: 12, weight: .bold))
+                // Widget Mục tiêu
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("MỤC TIÊU ĐỐT")
+                        .font(.system(size: 11, weight: .black))
                         .foregroundColor(Color.App.lightGray)
-                    Text("\(goalCalories) kcal")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.orange)
+                    
+                    HStack(spacing: 4) {
+                        Image(systemName: "target")
+                            .font(.system(size: 14))
+                        Text("\(viewModel.goalCalories) kcal")
+                    }
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.orange)
                 }
                 
                 Spacer()
                 
-                // Đường kẻ phân cách dọc
-                Rectangle()
-                    .fill(Color.App.secondaryBackground)
-                    .frame(width: 1, height: 35)
-                
-                Spacer()
-                
-                // Thời gian tập luyện
-                VStack(alignment: .trailing, spacing: 5) {
-                    Text("THỜI GIAN")
-                        .font(.system(size: 12, weight: .bold))
+                // Widget Thời gian
+                VStack(alignment: .trailing, spacing: 6) {
+                    Text("TỔNG THỜI GIAN")
+                        .font(.system(size: 11, weight: .black))
                         .foregroundColor(Color.App.lightGray)
+                    
                     HStack(alignment: .bottom, spacing: 2) {
+                        Image(systemName: "stopwatch")
+                            .font(.system(size: 14))
+                            .padding(.bottom, 3)
                         Text("\(totalDuration)")
-                            .font(.system(size: 18, weight: .bold))
+                            .font(.system(size: 20, weight: .bold))
                             .foregroundColor(.black)
                         Text("phút")
-                            .font(.system(size: 12))
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundColor(Color.App.lightGray)
                             .padding(.bottom, 2)
                     }
                 }
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 5)
         }
         .padding(25)
         .background(Color.white)
-        .cornerRadius(30)
+        .cornerRadius(32)
         .shadow(color: Color.black.opacity(0.04), radius: 15, x: 0, y: 10)
     }
     
@@ -155,47 +200,5 @@ struct ActivityView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 60)
-    }
-}
-
-// MARK: - Activity Card
-struct ActivityCard: View {
-    let log: UserActivityLog
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Color.App.primaryLight)
-                    .frame(width: 52, height: 52)
-                
-                Image(systemName: log.activityType.icon)
-                    .font(.system(size: 22))
-                    .foregroundColor(Color.App.primary)
-            }
-            
-            VStack(alignment: .leading, spacing: 6) {
-                Text(log.activityType.name)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.black)
-                
-                HStack(spacing: 12) {
-                    Label("\(Int(log.durationMinutes)) phút", systemImage: "clock")
-                    Label("\(Int(log.caloriesBurned)) kcal", systemImage: "flame")
-                }
-                .font(.system(size: 13))
-                .foregroundColor(Color.App.lightGray)
-            }
-            
-            Spacer()
-            
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(Color.App.secondaryBackground)
-        }
-        .padding(14)
-        .background(Color.white)
-        .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.02), radius: 10, x: 0, y: 5)
     }
 }

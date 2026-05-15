@@ -28,6 +28,8 @@ class ProfileViewModel: ObservableObject {
     let genders = ["Nam", "Nữ"]
     let activityLevels = ["Ít vận động", "Vừa phải", "Năng động", "Rất năng động"]
     
+    
+    
     func setupFields(user: User?) {
         guard let user = user else { return }
         name = user.name

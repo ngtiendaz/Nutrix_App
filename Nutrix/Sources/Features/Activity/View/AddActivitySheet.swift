@@ -96,7 +96,7 @@ struct AddActivitySheet: View {
                                     .transition(.move(edge: .bottom).combined(with: .opacity))
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 12)
                         .padding(.bottom, 100) // Tránh đè lên nút Save
                     }
                 }

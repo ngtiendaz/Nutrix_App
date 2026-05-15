@@ -390,4 +390,33 @@ final class FirebaseService{
                     }
                 }
         }
+    func uploadActivities() {
+
+        guard let url = Bundle.main.url(forResource: "activities", withExtension: "json") else {
+            print("Không tìm thấy file JSON")
+            return
+        }
+
+        do {
+
+            let data = try Data(contentsOf: url)
+
+            let activities = try JSONDecoder().decode([Activity].self, from: data)
+
+            let db = Firestore.firestore()
+
+            for activity in activities {
+
+                try db.collection("activities").addDocument(from: activity)
+
+            }
+
+            print("Upload thành công")
+
+        } catch {
+
+            print(error)
+
+        }
+    }
 }
