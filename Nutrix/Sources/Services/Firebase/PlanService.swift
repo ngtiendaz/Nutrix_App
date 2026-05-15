@@ -10,55 +10,57 @@ import FirebaseFirestore
 
 extension FirebaseService {
     
-    // MARK: - Save & Update Plan
-    /// Lưu plan mới. Nếu đã có plan cũ, nó sẽ tự động được lưu vào lịch sử trước khi ghi đè.
-    func saveNutritionPlan(
-        userId: String,
-        plan: NutritionPlan,
-        durationMonths: Int,
-        completion: @escaping (Result<Void, Error>) -> Void
-    ) {
-        // 1. Kiểm tra xem có plan hiện tại không để lưu vào lịch sử trước
-        fetchCurrentPlan(userId: userId) { [weak self] result in
-            guard let self = self else { return }
-            
-            if case .success(let oldPlan) = result, let oldPlan = oldPlan {
-                // Lưu plan cũ vào sub-collection 'history_plans' trước khi ghi đè
-                self.archivePlanToHistory(userId: userId, plan: oldPlan)
-            }
-            
-            // 2. Tạo dữ liệu plan mới
-            let startDate = Date()
-            let endDate = Calendar.current.date(byAdding: .month, value: durationMonths, to: startDate) ?? startDate
-            
-            let planData: [String: Any] = [
-                "dailyCalories": plan.dailyCalories,
-                "activityCalories": plan.activityCalories,
-                "protein": plan.protein,
-                "carbs": plan.carbs,
-                "fat": plan.fat,
-                "advice": plan.advice,
-                "exercisePlan": plan.exercisePlan,
-                "startDate": Timestamp(date: startDate),
-                "endDate": Timestamp(date: endDate),
-                "isActive": true,
-                "createdAt": FieldValue.serverTimestamp()
-            ]
-            
-            // 3. Ghi đè vào document 'current_plan'
-            self.db.collection("users")
-                .document(userId)
-                .collection("plans")
-                .document("current_plan")
-                .setData(planData) { error in
-                    if let error = error {
-                        completion(.failure(error))
-                    } else {
-                        completion(.success(()))
-                    }
+        func saveNutritionPlan(
+            userId: String,
+            plan: NutritionPlan,
+            durationMonths: Int,
+            currentWeight: Double,  // Thêm tham số này
+            targetWeight: Double,   // Thêm tham số này
+            completion: @escaping (Result<Void, Error>) -> Void
+        ) {
+            // 1. Kiểm tra xem có plan hiện tại không để lưu vào lịch sử trước
+            fetchCurrentPlan(userId: userId) { [weak self] result in
+                guard let self = self else { return }
+                
+                if case .success(let oldPlan) = result, let oldPlan = oldPlan {
+                    self.archivePlanToHistory(userId: userId, plan: oldPlan)
                 }
+                
+                // 2. Tính toán ngày
+                let startDate = Date()
+                let endDate = Calendar.current.date(byAdding: .month, value: durationMonths, to: startDate) ?? startDate
+                
+                // 3. Tạo dữ liệu plan mới (Đã thêm weight)
+                let planData: [String: Any] = [
+                    "dailyCalories": plan.dailyCalories,
+                    "activityCalories": plan.activityCalories,
+                    "protein": plan.protein,
+                    "carbs": plan.carbs,
+                    "fat": plan.fat,
+                    "advice": plan.advice,
+                    "exercisePlan": plan.exercisePlan,
+                    "startDate": Timestamp(date: startDate),
+                    "endDate": Timestamp(date: endDate),
+                    "currentWeight": currentWeight, // Lưu cân nặng hiện tại
+                    "targetWeight": targetWeight,   // Lưu cân nặng mục tiêu
+                    "isActive": true,
+                    "createdAt": FieldValue.serverTimestamp()
+                ]
+                
+                // 4. Ghi đè vào document 'current_plan'
+                self.db.collection("users")
+                    .document(userId)
+                    .collection("plans")
+                    .document("current_plan")
+                    .setData(planData) { error in
+                        if let error = error {
+                            completion(.failure(error))
+                        } else {
+                            completion(.success(()))
+                        }
+                    }
+            }
         }
-    }
     
     // MARK: - Fetch Plan
     /// Lấy plan hiện tại và kiểm tra tính hiệu lực (còn trong thời hạn hay không)
@@ -92,7 +94,6 @@ extension FirebaseService {
                     }
                 }
                 
-                // Parse dữ liệu sang Model NutritionPlan
                 let plan = NutritionPlan(
                     dailyCalories: data["dailyCalories"] as? Double ?? 0,
                     activityCalories: data["activityCalories"] as? Double ?? 0,
@@ -101,7 +102,9 @@ extension FirebaseService {
                     fat: data["fat"] as? Double ?? 0,
                     advice: data["advice"] as? String ?? "",
                     exercisePlan: data["exercisePlan"] as? String ?? "",
-                    startDate: (data["startDate"] as? Timestamp)?.dateValue()
+                    startDate: (data["startDate"] as? Timestamp)?.dateValue(),
+                    currentWeight: data["currentWeight"] as? Double ?? 0,
+                    targetWeight: data["targetWeight"] as? Double ?? 0
                 )
                 completion(.success(plan))
             }
@@ -132,7 +135,6 @@ extension FirebaseService {
     
     // MARK: - Private Helpers
     
-    /// Lưu plan vào bộ sưu tập lịch sử
     private func archivePlanToHistory(userId: String, plan: NutritionPlan, status: String = "completed") {
         var historyData: [String: Any] = [
             "dailyCalories": plan.dailyCalories,
@@ -144,7 +146,10 @@ extension FirebaseService {
             "exercisePlan": plan.exercisePlan,
             "startDate": plan.startDate ?? Date(),
             "archivedAt": FieldValue.serverTimestamp(),
-            "status": status // completed, cancelled, or expired
+            "status": status,
+            // Lưu thêm cân nặng vào lịch sử ở đây
+            "currentWeight": plan.currentWeight ?? 0,
+            "targetWeight": plan.targetWeight ?? 0
         ]
         
         db.collection("users")
@@ -167,5 +172,96 @@ extension FirebaseService {
             .document(userId)
             .collection("history_plans")
             .addDocument(data: data)
+    }
+    // MARK: - Fetch Plan Summary
+    func fetchPlanSummary(userId: String, completion: @escaping (Result<PlanSummary?, Error>) -> Void) {
+        db.collection("users")
+            .document(userId)
+            .collection("plans")
+            .document("current_plan")
+            .getDocument { snapshot, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                guard let data = snapshot?.data() else {
+                    completion(.success(nil))
+                    return
+                }
+                
+                let startDate = (data["startDate"] as? Timestamp)?.dateValue() ?? Date()
+                let endDate = (data["endDate"] as? Timestamp)?.dateValue() ?? Date()
+                let isActive = data["isActive"] as? Bool ?? false
+                
+                // Giả định bạn có lưu weight trong profile hoặc plan
+                // Nếu chưa có trong plan, bạn có thể lấy từ Profile document
+                let summary = PlanSummary(
+                    startDate: startDate,
+                    endDate: endDate,
+                    currentWeight: data["currentWeight"] as? Double ?? 0.0,
+                    targetWeight: data["targetWeight"] as? Double ?? 0.0,
+                    isActive: isActive && Date() <= endDate
+                )
+                
+                completion(.success(summary))
+            }
+    }
+    func fetchPlanForDate(userId: String, date: Date, completion: @escaping (Result<PlanSummary?, Error>) -> Void) {
+        let targetDate = Calendar.current.startOfDay(for: date)
+        
+        // 1. Kiểm tra Current Plan trước
+        db.collection("users").document(userId).collection("plans").document("current_plan")
+            .getDocument { snapshot, error in
+                if let data = snapshot?.data(), let start = (data["startDate"] as? Timestamp)?.dateValue(), let end = (data["endDate"] as? Timestamp)?.dateValue() {
+                    
+                    if targetDate >= Calendar.current.startOfDay(for: start) && targetDate <= Calendar.current.startOfDay(for: end) {
+                        let summary = PlanSummary(
+                            startDate: start,
+                            endDate: end,
+                            currentWeight: data["currentWeight"] as? Double ?? 0,
+                            targetWeight: data["targetWeight"] as? Double ?? 0,
+                            isActive: data["isActive"] as? Bool ?? false,
+                            dailyCalories: data["dailyCalories"] as? Double ?? 0, // Thêm dòng này
+                            activityCalories: data["activityCalories"] as? Double ?? 0, // Thêm dòng này
+                            protein: data["protein"] as? Double ?? 0,
+                            carbs: data["carbs"] as? Double ?? 0,
+                            fat: data["fat"] as? Double ?? 0
+                        )
+                        completion(.success(summary))
+                        return
+                    }
+                }
+                
+                // 2. Nếu không nằm trong Current Plan, tìm trong History
+                self.db.collection("users").document(userId).collection("history_plans")
+                    .whereField("startDate", isLessThanOrEqualTo: Timestamp(date: date))
+                    .getDocuments { querySnapshot, error in
+                        if let error = error {
+                            completion(.failure(error))
+                            return
+                        }
+                        
+                        // Lọc thủ công vì Firestore không hỗ trợ query range trên 2 field khác nhau hiệu quả
+                        let match = querySnapshot?.documents.compactMap { doc -> PlanSummary? in
+                            let d = doc.data()
+                            guard let start = (d["startDate"] as? Timestamp)?.dateValue(),
+                                  let end = (d["endDate"] as? Timestamp)?.dateValue() else { return nil }
+                            
+                            if targetDate >= Calendar.current.startOfDay(for: start) && targetDate <= Calendar.current.startOfDay(for: end) {
+                                return PlanSummary(
+                                    startDate: start,
+                                    endDate: end,
+                                    currentWeight: d["currentWeight"] as? Double ?? 0,
+                                    targetWeight: d["targetWeight"] as? Double ?? 0,
+                                    isActive: false // Lịch sử thì luôn là false
+                                )
+                            }
+                            return nil
+                        }.first
+                        
+                        completion(.success(match))
+                    }
+            }
     }
 }

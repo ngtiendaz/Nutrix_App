@@ -72,25 +72,4 @@ struct FoodItem: View {
     }
 }
 
-struct FoodItem_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack {
-            FoodItem(food: Food(
-                id: "1",
-                name: "Sushi Set",
-                image: "https://via.placeholder.com/150",
-                calories: 163.0,
-                protein: 13,
-                carbs: 27,
-                fats: 2,
-                servingSize: 100,
-                servingUnit: "Gram",
-                quantity: 1,
-                createdAt: Date.now,
-            ))
-            Spacer()
-        }
-        .padding(.top)
-        .background(Color.App.background)
-    }
-}
+

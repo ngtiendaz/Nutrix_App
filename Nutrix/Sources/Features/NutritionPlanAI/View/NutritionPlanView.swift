@@ -15,6 +15,7 @@ struct NutritionPlanView: View {
     @StateObject private var viewModel = NutritionPlanViewModel()
     
     @State private var displayedAdvice: String = ""
+    @State private var selectedDuration: Int = 1
     @State private var showButtons = false
     
     var body: some View {
@@ -106,6 +107,9 @@ struct NutritionPlanView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
+            if let planDuration = plan.duration {
+                self.selectedDuration = planDuration
+            }
             startTypingEffect()
         }
         .alert("Thông báo", isPresented: .init(get: { viewModel.saveError != nil }, set: { _ in viewModel.saveError = nil })) {
@@ -201,26 +205,31 @@ struct NutritionPlanView: View {
     }
 
     // MARK: - Logic cập nhật
-    private func savePlanWithViewModel() {
-        guard let userId = loginViewModel.authService.currentUser?.userId else { return }
-        
-        // 1. Hiển thị loading của Router (Lớp phủ giữa màn hình)
-        router.showLoading()
-        
-        viewModel.handleSavePlan(userId: userId, plan: plan) { success in
-            // 2. Ẩn loading sau khi xử lý xong
-            router.hideLoading()
+    // MARK: - Logic cập nhật
+        private func savePlanWithViewModel() {
+            guard let userId = loginViewModel.authService.currentUser?.userId else { return }
             
-            if success {
-                router.showToast(message: "Đã cập nhật lộ trình mới!", type: .success)
+            router.showLoading()
+            
+            // Truyền thêm các tham số còn thiếu
+            viewModel.handleSavePlan(
+                userId: userId,
+                plan: plan,
+                durationMonths: selectedDuration, // Sử dụng biến state
+                currentWeight: plan.currentWeight ?? 0.0,
+                targetWeight: plan.targetWeight ?? 0.0
+            ) { success in
+                router.hideLoading()
                 
-                // 3. Đóng màn hình fullScreen kết quả
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    dismiss()
+                if success {
+                    router.showToast(message: "Đã cập nhật lộ trình mới!", type: .success)
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        dismiss()
+                    }
                 }
             }
         }
-    }
     
     private func startTypingEffect() {
         let chars = plan.advice.map { String($0) }

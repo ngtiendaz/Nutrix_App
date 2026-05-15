@@ -81,9 +81,15 @@ class AIPlanViewModel: ObservableObject {
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                     
                 if let data = cleanText.data(using: .utf8) {
-                    let decodedPlan = try JSONDecoder().decode(NutritionPlan.self, from: data)
+                    var decodedPlan = try JSONDecoder().decode(NutritionPlan.self, from: data)
+                    
+                    // GÁN DỮ LIỆU THỦ CÔNG TẠI ĐÂY
+                    decodedPlan.currentWeight = user.weight
+                    decodedPlan.targetWeight = Double(self.targetWeight)
+                    decodedPlan.duration = Int(self.duration)
+                    
                     self.generatedPlan = decodedPlan
-                    print("✅ LOG: Decode thành công với Activity Calories: \(decodedPlan.activityCalories)")
+                    print("✅ LOG: Decode thành công. Target: \(decodedPlan.targetWeight ?? 0)")
                 }
                 
             } catch {

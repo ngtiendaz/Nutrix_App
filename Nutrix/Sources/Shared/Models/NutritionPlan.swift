@@ -21,5 +21,22 @@ struct NutritionPlan: Codable, Hashable {
     var fat: Double
     var advice: String
     var exercisePlan: String
-    var startDate: Date? = Date() // Thêm giá trị mặc định để tránh lỗi keyNotFound
+    var startDate: Date? = Date()
+    var endDate: Date? = Date()
+    var currentWeight: Double?
+    var targetWeight: Double?
+    var duration: Int?
+}
+struct PlanSummary {
+    let startDate: Date
+    let endDate: Date
+    let currentWeight: Double
+    let targetWeight: Double
+    let isActive: Bool
+    
+    var dailyCalories: Double = 0
+    var activityCalories: Double = 0
+    var protein: Double = 0
+    var carbs: Double = 0
+    var fat: Double = 0
 }

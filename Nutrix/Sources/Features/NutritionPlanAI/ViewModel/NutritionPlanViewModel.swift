@@ -12,11 +12,25 @@ class NutritionPlanViewModel: ObservableObject {
     @Published var isSaving: Bool = false
     @Published var saveError: String? = nil
     
-    func handleSavePlan(userId: String, plan: NutritionPlan, completion: @escaping (Bool) -> Void) {
+    func handleSavePlan(
+            userId: String,
+            plan: NutritionPlan,
+            durationMonths: Int,    // Thêm thời hạn
+            currentWeight: Double,  // Thêm cân nặng hiện tại
+            targetWeight: Double,   // Thêm cân nặng mục tiêu
+            completion: @escaping (Bool) -> Void
+    ) {
         self.isSaving = true
         self.saveError = nil
         
-        FirebaseService.shared.saveNutritionPlan(userId: userId, plan: plan) { [weak self] result in
+        // Gọi FirebaseService với đầy đủ các tham số mới
+        FirebaseService.shared.saveNutritionPlan(
+            userId: userId,
+            plan: plan,
+            durationMonths: durationMonths,
+            currentWeight: currentWeight,
+            targetWeight: targetWeight
+        ) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isSaving = false
                 switch result {
