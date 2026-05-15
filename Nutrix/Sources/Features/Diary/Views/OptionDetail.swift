@@ -9,7 +9,7 @@ import SwiftUI
 
 struct OptionDetail: View {
     @Environment(\.dismiss) var dismiss
-    @StateObject private var diaryViewModel = DiaryViewModel()
+    @EnvironmentObject  var diaryViewModel: DiaryViewModel
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject var loginViewModel: LoginViewModel
     
@@ -55,15 +55,23 @@ struct OptionDetail: View {
             ImagePicker(image: $diaryViewModel.selectedImage, sourceType: .camera)
                 .ignoresSafeArea()
         }
-        .fullScreenCover(item: $diaryViewModel.selectedImage) { uiImage in
-            FoodAnalysisView(
-                image: uiImage,
-                authService: loginViewModel.authService,
-                onSaveSuccess: {
-                    // Khi nhận được tín hiệu lưu thành công từ Analysis
-                    isPresented = false // Đóng luôn cái OptionDetail sheet
-                }
-            )
+        // Sửa lại đoạn FullScreenCover
+        .fullScreenCover(isPresented: Binding(
+            get: { diaryViewModel.selectedImage != nil },
+            set: { if !$0 { diaryViewModel.selectedImage = nil } }
+        )) {
+            if let uiImage = diaryViewModel.selectedImage {
+                FoodAnalysisView(
+                    image: uiImage,
+                    authService: loginViewModel.authService,
+                    onSaveSuccess: {
+                        isPresented = false
+                        diaryViewModel.refreshData()
+                    }
+                )
+                .environmentObject(router)         // Tiêm router vào đây
+                .environmentObject(diaryViewModel) // Tiêm VM vào đây
+            }
         }
         .alert("Cấp quyền Camera", isPresented: $diaryViewModel.isShowingPermissionAlert) {
                     Button("Để sau", role: .cancel) { }

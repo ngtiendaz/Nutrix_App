@@ -30,4 +30,8 @@ enum AppConfig {
     static let visionAPIKey: String = {
         return infoDict["API_KEY_VISION"] as? String ?? ""
     }()
+    
+    static let geminiAPIKey: String = {
+        return infoDict["API_KEY_GEMINI"] as? String ?? ""
+    }()
 }

@@ -9,9 +9,15 @@ import GoogleGenerativeAI
 import FirebaseFirestore
 
 class GeminiService {
-    private let model = GenerativeModel(name: "gemini-1.5-flash", apiKey: "AIzaSyAVtJ7FFrbhM8hziTLHylTf4yMnZlDz8Tg")
+    private let apiKey: String
+    private let model: GenerativeModel
     private let db = Firestore.firestore()
-
+    init() {
+            // Lấy key từ AppConfig
+            self.apiKey = AppConfig.visionAPIKey
+            // Khởi tạo model bên trong init để tránh lỗi "instance member"
+            self.model = GenerativeModel(name: "gemini-1.5-flash", apiKey: self.apiKey)
+        }
     func generatePlan(user: User, input: AIPlanInput) async throws -> NutritionPlan? {
         let prompt = """
         Dựa trên thông tin người dùng:

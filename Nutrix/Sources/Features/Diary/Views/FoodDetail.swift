@@ -4,6 +4,7 @@ struct FoodDetailView: View {
     @StateObject var foodDetailViewModel: FoodDetailViewModel
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var router: AppRouter
+    @EnvironmentObject var diaryViewModel: DiaryViewModel
     @FocusState private var focusedField: FoodDetailViewModel.Field?
     @State private var showDeleteConfirmation = false
     
@@ -66,13 +67,12 @@ struct FoodDetailView: View {
         .ignoresSafeArea(.all, edges: .top)
         .onChange(of: foodDetailViewModel.shouldDismiss) { newValue in
                     if newValue {
-                        // Kiểm tra hành động cuối cùng để hiển thị thông báo phù hợp
                         if foodDetailViewModel.lastAction == .delete {
                             router.showToast(message: "Đã xóa món ăn khỏi nhật ký", type: .success)
                         } else {
                             router.showToast(message: "Cập nhật thành công", type: .success)
                         }
-                        
+                        diaryViewModel.refreshData()
                         dismiss() // Đóng màn hình chi tiết
                     }
                 }

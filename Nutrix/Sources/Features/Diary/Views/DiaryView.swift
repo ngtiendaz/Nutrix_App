@@ -1,10 +1,3 @@
-//
-//  DiaryView.swift
-//  Nutrix
-//
-//  Created by Daz on 15/4/26.
-//
-
 import SwiftUI
 
 struct DiaryView: View {
@@ -14,30 +7,44 @@ struct DiaryView: View {
     @StateObject var diaryViewModel = DiaryViewModel()
     @Binding var selectedDate: Date
     
-    let sampleData = DailyNutrition(
-        userId: "123",
-        date: "2026-04-16",
-        totalCalories: 1200,
-        totalProtein: 45,
-        totalCarbs: 150,
-        totalFat: 30,
-        totalWater: 1.5,
-        totalBurned: 100
-    )
-    
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            ScrollView {
+            ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading) {
+                    // Thanh chọn ngày và Header
                     TopBar(selectedTab: .constant(.diary), selectedDate: $selectedDate)
-//                        .padding(.top, 10)
-                    VStack(alignment: .leading, spacing: 16) {
-                        if let nutrition = diaryViewModel.dailyNutrition {
-                            NutritionGoalCard(data: nutrition)
-                        } else {
-                            ProgressView().frame(height: 150)
-                        }
                     
+                    VStack(alignment: .leading, spacing: 16) {
+                        
+                        // --- PHẦN DASHBOARD / GOAL CARD ---
+                        // Logic: Nếu đang tải thì hiện Loading, tải xong mới check Plan
+                        if diaryViewModel.isLoading {
+                            VStack {
+                                ProgressView("Đang cập nhật dữ liệu...")
+                                    .scaleEffect(1.1)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 180)
+                            .background(Color.white)
+                            .cornerRadius(24)
+                            .shadow(color: .black.opacity(0.03), radius: 10)
+                        } else {
+                            if diaryViewModel.hasPlan {
+                                if let nutrition = diaryViewModel.dailyNutrition,
+                                   let plan = diaryViewModel.currentPlan {
+                                    // Hiển thị Card khi đã có đủ dữ liệu thực tế và mục tiêu
+                                    NutritionGoalCard(data: nutrition, goal: plan)
+                                        .transition(.opacity.combined(with: .move(edge: .top)))
+                                }
+                            } else {
+                                // Hiển thị nút mời tạo lộ trình nếu Firebase trả về rỗng
+                                emptyPlanView
+                                    .transition(.opacity)
+                            }
+                        }
+                        // ----------------------------------
+                        
+                        // Danh sách món ăn trong ngày
                         foodList
                         
                         Spacer(minLength: 120)
@@ -47,6 +54,8 @@ struct DiaryView: View {
             }
             .background(Color.App.background)
             .navigationBarHidden(true)
+            
+            // Nút Thêm món ăn nhanh (Floating Action Button)
             if !isPastDate {
                 plusButtonView
                     .scaleEffect(animateButton ? 1.0 : 0.5)
@@ -54,27 +63,31 @@ struct DiaryView: View {
             }
         }
         .onAppear {
-            // 1. Animation cho nút Plus
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
-                animateButton = true
-            }
-            // 2. Fetch dữ liệu từ ViewModel
-            diaryViewModel.fetchDailyFoods(for: selectedDate)
+            setupView()
         }
-        .onDisappear {
-            animateButton = false
-        }
-        // Tự động load lại khi ngày thay đổi (nếu bạn có bộ chọn ngày)
         .onChange(of: selectedDate) { newDate in
-            diaryViewModel.fetchDailyFoods(for: newDate)
+            // Khi người dùng đổi ngày, fetch lại toàn bộ
+            diaryViewModel.fetchDailyData(for: newDate)
         }
         .sheet(isPresented: $isShowingAddFood) {
             OptionDetail(isPresented: $isShowingAddFood)
                 .environmentObject(router)
+                .environmentObject(diaryViewModel)
                 .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
         }
     }
+    
+    // MARK: - Helper Methods
+    private func setupView() {
+        // Animation cho nút FAB
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
+            animateButton = true
+        }
+        // Gọi hàm fetch tổng hợp (Foods + Plan)
+        diaryViewModel.fetchDailyData(for: selectedDate)
+    }
+    
+    // MARK: - Components
     
     var plusButtonView: some View {
         Button {
@@ -92,85 +105,111 @@ struct DiaryView: View {
         .padding(.bottom, 70)
     }
     
-    
     private var foodList: some View {
-        VStack(alignment: .leading){
+        VStack(alignment: .leading) {
             Text(dateTitle)
                 .font(Font.headline.bold())
                 .foregroundColor(.black.opacity(0.8))
                 .padding(.top, 8)
+            
             if diaryViewModel.isLoading {
-                HStack {
-                    Spacer()
-                    ProgressView("Đang tải món ăn...")
-                    Spacer()
-                }
-                .padding()
+                EmptyView() // Đã có loading ở trên Dashboard
             } else if diaryViewModel.allFoods.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "takeoutbag.and.cup.and.straw")
                         .font(.system(size: 40))
                         .foregroundColor(Color.App.lightGray)
-                    Text("Chưa có món ăn nào được ghi lại")
+                    Text("Chưa có món ăn nào")
                         .font(.subheadline)
                         .foregroundColor(Color.App.lightGray)
+                    
                     if isPastDate {
-                        addPastFoodButton
-                            .padding(.top, 8)
+                        addPastFoodButton.padding(.top, 8)
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 40)
             } else {
-                // Hiển thị các món ăn lẻ
                 VStack(spacing: 12) {
-                        ForEach(diaryViewModel.allFoods) { food in
-                            FoodItem(food: food)
-                                .contentShape(Rectangle()) // Giúp vùng bấm nhạy hơn
-                                .onTapGesture {
-                                    router.push(.foodDetail(food))
-                                }
-                        }
+                    ForEach(diaryViewModel.allFoods) { food in
+                        FoodItem(food: food)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                router.push(.foodDetail(food, diaryViewModel))
+                            }
+                    }
                     if isPastDate {
-                        addPastFoodButton
-                            .padding(.top, 8)
+                        addPastFoodButton.padding(.top, 8)
                     }
                 }
             }
-            
         }
     }
-    private var isPastDate: Bool {
-            let calendar = Calendar.current
-            return calendar.startOfDay(for: selectedDate) < calendar.startOfDay(for: Date())
-        }
-    private func handleAddPastFood() {
-            isShowingAddFood = true
-        }
+    
     private var addPastFoodButton: some View {
-            Button(action: handleAddPastFood) {
-                HStack {
-                    Image(systemName: "plus.circle.fill")
-                    Text("Bổ sung món ăn cho ngày này")
-                }
-                .font(.subheadline.bold())
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.App.primary)
-                .cornerRadius(12)
-                .shadow(color: Color.App.primary.opacity(0.2), radius: 5, x: 0, y: 3)
+        Button(action: { isShowingAddFood = true }) {
+            HStack {
+                Image(systemName: "plus.circle.fill")
+                Text("Bổ sung món ăn cho ngày này")
+            }
+            .font(.subheadline.bold())
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color.App.primary)
+            .cornerRadius(12)
+        }
+    }
+    
+    private var emptyPlanView: some View {
+        VStack(spacing: 15) {
+            VStack(spacing: 8) {
+                Image(systemName: "sparkles.rectangle.stack.fill")
+                    .font(.system(size: 40))
+                    .foregroundColor(.orange)
+                
+                Text("Chưa có lộ trình dinh dưỡng")
+                    .font(.headline)
+                
+                Text("Hãy để AI thiết kế lộ trình cá nhân hóa dựa trên mục tiêu cân nặng của bạn.")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+            }
+            
+            Button(action: {
+//                router.push(.createAIPlan)
+            }) {
+                Text("Tạo lộ trình ngay")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.black)
+                    .cornerRadius(15)
             }
         }
+        .padding(25)
+        .background(Color.white)
+        .cornerRadius(24)
+        .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 5)
+    }
+    
+    private var isPastDate: Bool {
+        let calendar = Calendar.current
+        return calendar.startOfDay(for: selectedDate) < calendar.startOfDay(for: Date())
+    }
+    
     private var dateTitle: String {
-            let calendar = Calendar.current
-            if calendar.isDateInToday(selectedDate) {
-                return "Hôm nay"
-            } else {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "EEEE, dd MMMM, yyyy"
-                formatter.locale = Locale(identifier: "vi_VN")
-                return formatter.string(from: selectedDate)
-            }
+        let calendar = Calendar.current
+        if calendar.isDateInToday(selectedDate) {
+            return "Hôm nay"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "EEEE, dd MMMM, yyyy"
+            formatter.locale = Locale(identifier: "vi_VN")
+            return formatter.string(from: selectedDate)
         }
+    }
 }

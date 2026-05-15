@@ -8,6 +8,8 @@
 	<string>$(APP_ID_EDAMAM)</string>
 	<key>APP_KEY_EDAMAM</key>
 	<string>$(APP_KEY_EDAMAM)</string>
+	<key>API_KEY_GEMINI</key>
+	<string>$(API_KEY_GEMINI)</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

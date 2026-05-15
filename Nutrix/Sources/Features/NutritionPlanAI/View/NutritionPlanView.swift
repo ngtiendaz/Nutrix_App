@@ -50,6 +50,13 @@ struct NutritionPlanView: View {
                                 nutritionCard(title: "Chất đạm", value: "\(Int(plan.protein))", unit: "g", icon: "leaf.fill", color: Color.App.primary)
                                 nutritionCard(title: "Tinh bột", value: "\(Int(plan.carbs))", unit: "g", icon: "cup.and.saucer.fill", color: .blue)
                                 nutritionCard(title: "Chất béo", value: "\(Int(plan.fat))", unit: "g", icon: "drop.fill", color: .yellow)
+                                nutritionCard(
+                                    title: "Calo cần tiêu thụ",
+                                    value: "\(Int(plan.activityCalories))",
+                                    unit: "kcal",
+                                    icon: "flame.fill",
+                                    color: .red
+                                )
                             }
                         }
                         

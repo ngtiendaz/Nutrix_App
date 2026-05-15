@@ -85,9 +85,10 @@ struct MainView: View {
     @ViewBuilder
     func buildDestinationView(_ destination: AppDestination) -> some View {
         switch destination {
-        case .foodDetail(let food):
-            FoodDetailView(food: food, mealDate: selectedDate)
-                .environmentObject(router)
+        case .foodDetail(let food, let diaryVM): // Nhận diaryVM từ destination
+                FoodDetailView(food: food, mealDate: selectedDate)
+                    .environmentObject(router)
+                    .environmentObject(diaryVM)
         case .nutritionPlan(let plan):
                 NutritionPlanView(plan: plan)
                     .environmentObject(router)

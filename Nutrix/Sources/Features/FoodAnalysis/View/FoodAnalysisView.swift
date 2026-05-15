@@ -16,6 +16,7 @@ struct FoodAnalysisView: View {
     
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject var loginViewModel: LoginViewModel
+    @EnvironmentObject var diaryViewModel: DiaryViewModel
     
     init(image: UIImage, authService: FirebaseAuthService, onSaveSuccess: (() -> Void)? = nil) {
             _foodAnalysisViewModel = StateObject(wrappedValue: FoodAnalysisViewModel(image: image, authService: authService))

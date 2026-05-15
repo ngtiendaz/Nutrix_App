@@ -8,38 +8,39 @@ import SwiftUI
 
 struct NutritionGoalCard: View {
     let data: DailyNutrition
-    @State private var animatedCalories: Double = 0
-    @State private var animatedBurned: Double = 0
+    let goal: NutritionPlan
     
-    let goalCalories: Double = 22560
-    let goalProtein: Double = 128
-    let goalCarbs: Double = 224
-    let goalFat: Double = 128
+    @State private var animatedCalories: Double = 0
+    
+    // Logic xác định trạng thái vượt ngưỡng
+    private var isOverGoal: Bool {
+        data.totalCalories > goal.dailyCalories
+    }
     
     var body: some View {
         VStack(spacing: 20) {
-      
             HStack(alignment: .center) {
-              
-                CircularProgress(current: data.totalCalories, goal: goalCalories)
+                // Vòng tròn tiến độ
+                CircularProgress(current: data.totalCalories, goal: goal.dailyCalories)
                     .frame(width: 110, height: 110)
                 
                 Spacer(minLength: 25)
                 
-                // Cụm thông số bên phải
+                // Các chỉ số calo bên phải
                 VStack(alignment: .leading, spacing: 18) {
                     nutritionRow(label: "Đã ăn",
-                                 value: Int(data.totalCalories),
+                                 value: data.totalCalories,
                                  unit: "kcal",
                                  icon: "leaf.fill",
-                                 color: .green)
+                                 color: isOverGoal ? .red : .green)
                     
                     nutritionRow(label: "Đốt cháy",
-                                 value: Int(data.totalBurned ?? 0),
+                                 value: data.totalBurned ?? 0,
                                  unit: "kcal",
                                  icon: "flame.fill",
                                  color: .orange)
-                }.frame(minWidth: 120, alignment: .leading)
+                }
+                .frame(minWidth: 120, alignment: .leading)
                 Spacer()
             }
             .padding(.horizontal, 5)
@@ -47,16 +48,23 @@ struct NutritionGoalCard: View {
             Divider()
                 .padding(.vertical, 5)
             
-           
+            // Chỉ số Macro bên dưới
             HStack(spacing: 0) {
-                macroGroup(label: "Carbs", current: data.totalCarbs, goal: goalCarbs, color: .blue)
+                macroGroup(label: "Tinh bột", current: data.totalCarbs, goal: goal.carbs, color: .blue)
                 Spacer()
-                macroGroup(label: "Protein", current: data.totalProtein, goal: goalProtein, color: .red)
+                macroGroup(label: "Đạm", current: data.totalProtein, goal: goal.protein, color: .red)
                 Spacer()
-                macroGroup(label: "Fat", current: data.totalFat, goal: goalFat, color: .orange)
+                macroGroup(label: "Béo", current: data.totalFat, goal: goal.fat, color: .orange)
             }
             .padding(.horizontal, 10)
-        }.onAppear {
+            
+            // Cảnh báo thông minh khi vượt mức
+            if isOverGoal {
+                warningView
+                    .transition(.asymmetric(insertion: .scale.combined(with: .opacity), removal: .opacity))
+            }
+        }
+        .onAppear {
             withAnimation(.easeOut(duration: 0.8)) {
                 animatedCalories = data.totalCalories
             }
@@ -67,24 +75,51 @@ struct NutritionGoalCard: View {
             }
         }
         .padding(24)
-        .background(Color(.white))
+        .background(Color.white)
         .cornerRadius(30)
         .shadow(color: Color.black.opacity(0.06), radius: 20, x: 0, y: 10)
     }
     
+    // View cảnh báo khi ăn quá mức
+    private var warningView: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "exclamationmark.octagon.fill")
+                .foregroundColor(.red)
+                .font(.system(size: 20))
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Vượt mục tiêu \(Int(data.totalCalories - goal.dailyCalories)) kcal")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.red)
+                
+                Text("Bạn đã nạp quá calo quy định. Hãy cân nhắc tập thêm một bài vận động nhẹ.")
+                    .font(.system(size: 12))
+                    .foregroundColor(.black.opacity(0.7))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.red.opacity(0.08))
+        .cornerRadius(15)
+        .overlay(
+            RoundedRectangle(cornerRadius: 15)
+                .stroke(Color.red.opacity(0.2), lineWidth: 1)
+        )
+    }
+    
     @ViewBuilder
-    private func nutritionRow(label: String, value: Int, unit: String, icon: String, color: Color) -> some View {
+    private func nutritionRow(label: String, value: Double, unit: String, icon: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Label(label, systemImage: icon)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(color)
             
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Color.clear
-                    .frame(width: 0, height: 0)
-                    .rollingNumber(value: animatedCalories)
+                Text("\(Int(value))")
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.black)
+                
                 Text(unit)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.gray)

@@ -15,6 +15,7 @@ struct AIPlanInput {
 
 struct NutritionPlan: Codable, Hashable {
     var dailyCalories: Double
+    var activityCalories: Double
     var protein: Double
     var carbs: Double
     var fat: Double

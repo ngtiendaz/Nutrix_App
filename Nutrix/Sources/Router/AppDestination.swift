@@ -11,6 +11,6 @@ import UIKit
 
 
 enum AppDestination: Hashable {
-    case foodDetail(Food)
+    case foodDetail(Food, DiaryViewModel)
     case nutritionPlan(NutritionPlan)
 }
