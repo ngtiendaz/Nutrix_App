@@ -22,11 +22,13 @@ struct NutrixApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
     @StateObject  var router = AppRouter()
+    @StateObject var authService = FirebaseAuthService()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(router)
+                .environmentObject(authService)
                 .onOpenURL { url in
                     GIDSignIn.sharedInstance.handle(url)
                 }

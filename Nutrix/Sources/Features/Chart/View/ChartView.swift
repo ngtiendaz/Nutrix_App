@@ -4,9 +4,14 @@ import Charts
 struct ChartView: View {
     @Binding var selectedDate: Date
     @StateObject private var viewModel = StatisticsViewModel()
+    @EnvironmentObject var authService: FirebaseAuthService
     
     private let months = Array(1...12)
     private let years = Array(2024...2030)
+    
+    // MARK: - States quản lý xuất file báo cáo
+    @State private var exportURL: URL? = nil
+    @State private var showShareSheet = false
     
     var body: some View {
         ZStack {
@@ -42,11 +47,14 @@ struct ChartView: View {
                             let pointsForChart = viewModel.selectedTab == .month ? viewModel.visibleMonthPoints : (viewModel.report?.summaryPoints ?? [])
                             chartSection(points: pointsForChart)
                             
+                            
                             macroPieChartSection
+                            
+                            exportReportSection
                             
                             historyListSection(points: viewModel.report?.summaryPoints ?? [])
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 12)
                         .padding(.top, 16)
                         .padding(.bottom, 70)
                     }
@@ -57,11 +65,66 @@ struct ChartView: View {
         .onChange(of: viewModel.selectedTab) { _ in viewModel.loadStatistics(targetDate: viewModel.currentWeekStartDate) }
         .onChange(of: viewModel.selectedMonth) { _ in viewModel.loadStatistics(targetDate: selectedDate) }
         .onChange(of: viewModel.selectedYear) { _ in viewModel.loadStatistics(targetDate: selectedDate) }
+        // Gọi bảng Share Sheet hệ thống khi exportURL được khởi tạo thành công
+        .sheet(isPresented: $showShareSheet) {
+            if let url = exportURL {
+                ShareSheet(activityItems: [url])
+            }
+        }
     }
 }
 
 // MARK: - Subviews UI Components
 extension ChartView {
+    
+    // COMPONENT MỚI: Khối nút bấm chức năng Xuất báo cáo tối giản
+    private var exportReportSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Xuất dữ liệu báo cáo")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(.black)
+            
+            HStack(spacing: 12) {
+                // Nút xuất file Excel (CSV)
+                Button(action: {
+                    triggerExport(type: .excel)
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "tablecells.fill")
+                        Text("Xuất Excel")
+                    }
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(Color.App.primary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.App.primaryLight)
+                    .cornerRadius(12)
+                }
+                
+                // Nút xuất file văn bản PDF
+                Button(action: {
+                    triggerExport(type: .pdf)
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "doc.plaintext.fill")
+                        Text("Xuất file PDF")
+                    }
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.App.primary)
+                    .cornerRadius(12)
+                }
+            }
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(20)
+    }
+    
+    // Helper xử lý logic gom mảng điểm và gán tiêu đề động gửi cho Service
+    private enum ExportType { case excel, pdf }
     
     private var filterSegmentedControl: some View {
         HStack(spacing: 4) {
@@ -99,7 +162,6 @@ extension ChartView {
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.black)
                         
-                        // KHẮC PHỤC: Làm mờ nút Next nếu đang ở tuần hiện tại, chặn bấm tương lai
                         Button(action: { viewModel.changeWeek(by: 1) }) {
                             Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold))
                                 .foregroundColor(viewModel.isCurrentOrFutureWeek ? .gray.opacity(0.3) : .black)
@@ -118,12 +180,12 @@ extension ChartView {
                             Image(systemName: "arrow.left").font(.system(size: 11, weight: .bold)).foregroundColor(viewModel.monthSliceIndex == 0 ? .gray : .black)
                         }.disabled(viewModel.monthSliceIndex == 0)
                         
-                        // KHẮC PHỤC LỖI TRÀN CHỮ: Thu nhỏ font xuống 12 để hiển thị vừa vặn trong ô
                         Text(viewModel.monthSliceRangeString)
                             .font(.system(size: 12, weight: .bold))
                             .foregroundColor(.black)
                             .lineLimit(1)
-                            .frame(width: 95) // Cố định bề ngang text để nút arrow không bị xê dịch
+                            .multilineTextAlignment(.center)
+                            .frame(width: 100)
                         
                         Button(action: { if viewModel.monthSliceIndex < viewModel.maxMonthSliceIndex { viewModel.monthSliceIndex += 1 } }) {
                             Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundColor(viewModel.monthSliceIndex == viewModel.maxMonthSliceIndex ? .gray : .black)
@@ -146,31 +208,31 @@ extension ChartView {
     }
     
     private var datePickerSelectors: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             if viewModel.selectedTab == .month {
                 Picker("Tháng", selection: $viewModel.selectedMonth) {
                     ForEach(months, id: \.self) { Text("\($0)").tag($0) }
                 }.pickerStyle(.menu).tint(Color.App.primary)
-                .padding(.horizontal, 2).background(Color.App.background).cornerRadius(8)
+                    .padding(.horizontal, 4).background(Color.App.background).cornerRadius(8)
             }
             Picker("Năm", selection: $viewModel.selectedYear) {
                 ForEach(years, id: \.self) { Text(String($0)).tag($0) }
             }.pickerStyle(.menu).tint(Color.App.primary)
-            .padding(.horizontal, 2).background(Color.App.background).cornerRadius(8)
+                .padding(.horizontal, 4).background(Color.App.background).cornerRadius(8)
         }
     }
     
     private var overviewKPISection: some View {
         HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Trung bình nạp/ngày").font(.system(size: 11, weight: .semibold)).foregroundColor(.gray)
-                Text("\(viewModel.avgIntakePerDay) Kcal").font(.system(size: 18, weight: .black)).foregroundColor(Color.App.primary)
+                Text("Trung bình nạp").font(.system(size: 11, weight: .semibold)).foregroundColor(.gray)
+                Text("\(viewModel.avgIntakePerDay) Kcal/ngày").font(.system(size: 18, weight: .black)).foregroundColor(Color.App.primary)
             }
             .padding(14).frame(maxWidth: .infinity, alignment: .leading).background(Color.white).cornerRadius(16)
             
             VStack(alignment: .leading, spacing: 6) {
-                Text("Trung bình tiêu hao/ngày").font(.system(size: 11, weight: .semibold)).foregroundColor(.gray)
-                Text("\(viewModel.avgBurnedPerDay) Kcal").font(.system(size: 18, weight: .black)).foregroundColor(.orange)
+                Text("Trung bình tiêu hao").font(.system(size: 11, weight: .semibold)).foregroundColor(.gray)
+                Text("\(viewModel.avgBurnedPerDay) Kcal/ngày").font(.system(size: 18, weight: .black)).foregroundColor(.orange)
             }
             .padding(14).frame(maxWidth: .infinity, alignment: .leading).background(Color.white).cornerRadius(16)
         }
@@ -193,7 +255,7 @@ extension ChartView {
                     .background(viewModel.isTrendUp ? Color.App.primaryLight : Color.orange.opacity(0.1))
                     .cornerRadius(8)
                 }
-            }.padding(.bottom, 6)
+            }
             
             ZStack {
                 Chart {
@@ -205,8 +267,6 @@ extension ChartView {
                         )
                         .foregroundStyle(Color.App.primary.gradient)
                         .cornerRadius(4)
-                        
-                        // KHẮC PHỤC: ĐÃ XOÁ HOÀN TOÀN KHỐI LINEMARK ĐƯỜNG VÀNG MỤC TIÊU Ở ĐÂY
                     }
                 }
                 .chartXAxis {
@@ -224,7 +284,7 @@ extension ChartView {
                 
                 if viewModel.isDataEmpty {
                     Color.white.opacity(0.85)
-                    Text("Không có dữ liệu")
+                    Text("Không có dữ liệu chu kỳ này")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.gray)
                 }
@@ -269,7 +329,7 @@ extension ChartView {
                             .padding(.leading, 10)
                         
                         Spacer()
-                        Text("Không có dữ liệu")
+                        Text("Không có dữ liệu lộ trình")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.gray)
                         Spacer()
@@ -282,7 +342,6 @@ extension ChartView {
     }
     
     private func historyListSection(points: [MetricPoint]) -> some View {
-        // Lấy tất cả các ngày từ đầu chu kỳ cho đến ngày hiện tại (không lấy tương lai)
         let activePoints = points.filter { point in
             if let date = point.date { return date <= Date() }
             return true
@@ -304,7 +363,6 @@ extension ChartView {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(listLabel(for: point)).font(.system(size: 15, weight: .bold)).foregroundColor(.black)
                             
-                            // KHẮC PHỤC: Ẩn text mục tiêu Kcal nếu ngày đó không có lộ trình
                             if !point.hasPlan {
                                 Text("Nạp thực tế: \(Int(point.intakeCalories)) Kcal")
                                     .font(.system(size: 12, weight: .medium)).foregroundColor(.gray)
@@ -316,7 +374,6 @@ extension ChartView {
                         Spacer()
                         
                         VStack(alignment: .trailing, spacing: 4) {
-                            // KHẮC PHỤC: Nếu ngày đó KHÔNG CÓ LỘ TRÌNH -> Ẩn phần trăm %, hiện badge xám gọn gàng
                             if !point.hasPlan {
                                 Text("--").font(.system(size: 15, weight: .heavy)).foregroundColor(.gray)
                                 Text("Không có lộ trình")
@@ -326,8 +383,8 @@ extension ChartView {
                             } else {
                                 Text("\(Int(point.completionRate))%")
                                     .font(.system(size: 15, weight: .heavy)).foregroundColor(statusColor(point.status))
-                                Text(point.status.rawValue).foregroundColor(.white).font(.system(size: 10, weight: .bold))
-                                    .padding(.horizontal, 6).padding(.vertical, 3).background(statusColor(point.status).opacity(0.8)).cornerRadius(6)
+                                Text(point.status.rawValue).font(.system(size: 10, weight: .bold))
+                                    .padding(.horizontal, 6).padding(.vertical, 3).background(statusColor(point.status).opacity(0.1)).cornerRadius(6)
                             }
                         }
                     }
@@ -348,7 +405,6 @@ extension ChartView {
             return "Tháng \(point.label.replacingOccurrences(of: "T", with: ""))"
         }
     }
-}
     // Hàm phụ trợ map màu sắc tương ứng với mức độ hoàn thành dinh dưỡng
     private func statusColor(_ status: CompletionStatus) -> Color {
         switch status {
@@ -358,6 +414,31 @@ extension ChartView {
         case .noPlan: return .gray
         }
     }
+    private func triggerExport(type: ExportType) {
+        guard let points = viewModel.report?.summaryPoints, !points.isEmpty else { return }
+        
+        var reportTitle = ""
+        switch viewModel.selectedTab {
+        case .week: reportTitle = "Tuần \(viewModel.weekRangeString)"
+        case .month: reportTitle = "Tháng \(viewModel.selectedMonth)/\(viewModel.selectedYear)"
+        case .year: reportTitle = "Năm \(viewModel.selectedYear)"
+        }
+        
+        // THAY ĐỔI TẠI ĐÂY: Truyền thêm authService.currentUser vào hàm sinh file
+        switch type {
+        case .excel:
+            if let url = FirebaseService.shared.generateCSV(from: points, title: reportTitle, user: authService.currentUser) {
+                self.exportURL = url
+                self.showShareSheet = true
+            }
+        case .pdf:
+            if let url = FirebaseService.shared.generatePDF(from: points, title: reportTitle, user: authService.currentUser) {
+                self.exportURL = url
+                self.showShareSheet = true
+            }
+        }
+    }
+}
 
 // Extension helper ẩn bàn phím khi tương tác chạm ngoài
 #if canImport(UIKit)

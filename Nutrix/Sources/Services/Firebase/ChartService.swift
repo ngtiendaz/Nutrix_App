@@ -1,5 +1,6 @@
 import Foundation
 import FirebaseFirestore
+import UIKit
 
 extension FirebaseService {
     
@@ -216,4 +217,197 @@ extension FirebaseService {
                 completion(.success(StatisticsReport(summaryPoints: monthlyPoints)))
             }
     }
+    private var reportCreationTimeString: String {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "HH:mm - dd/MM/yyyy"
+            return formatter.string(from: Date())
+        }
+        
+        // MARK: - 1. XUẤT FILE EXCEL / CSV CHUẨN ĐỊNH DẠNG HÀNG CỘT
+        func generateCSV(from points: [MetricPoint], title: String, user: User?) -> URL? {
+            var csvString = ""
+            
+            // --- THÔNG TIN USER & PLAN (HEADER METADATA) ---
+            csvString += "BÁO CÁO TIẾN ĐỘ DINH DƯỠNG NUTRIX\n"
+            csvString += "Chu kỳ thống kê:,\(title)\n"
+            csvString += "Họ và tên khách hàng:,\(user?.name ?? "Khách vãng lai")\n"
+            csvString += "Email đăng ký:,\(user?.email ?? "Chưa cập nhật")\n"
+            csvString += "Chiều cao hiện tại:,\(user?.height ?? 0) cm\n"
+            csvString += "Cân nặng hiện tại:,\(user?.weight ?? 0) kg\n"
+            csvString += "Thời gian xuất bản:,\(reportCreationTimeString)\n"
+            csvString += "\n"
+            
+            // --- TIÊU ĐỀ BẢNG DỮ LIỆU ---
+            csvString += "Thời gian,Kcal Nạp Vào,Kcal Mục Tiêu,Kcal Tiêu Hao,Protein (g),Carbs (g),Fat (g),Trạng thái Lộ trình\n"
+            
+            // --- DUYỆT QUA TỪNG NGÀY ĐỂ ĐỔ DỮ LIỆU ---
+            for point in points {
+                let label = point.label
+                let intake = String(format: "%.0f", point.intakeCalories)
+                let burned = String(format: "%.0f", point.burnedCalories)
+                
+                let target = point.hasPlan ? String(format: "%.0f", point.targetCalories) : "--"
+                let protein = point.hasPlan ? String(format: "%.1f", point.protein) : "--"
+                let carbs = point.hasPlan ? String(format: "%.1f", point.carbs) : "--"
+                let fat = point.hasPlan ? String(format: "%.1f", point.fat) : "--"
+                let status = point.hasPlan ? point.status.rawValue : "Không có lộ trình"
+                
+                csvString += "\(label),\(intake),\(target),\(burned),\(protein),\(carbs),\(fat),\(status)\n"
+            }
+            
+            let fileName = "Nutrix_Data_Report_\(UUID().uuidString.prefix(6)).csv"
+            let path = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+            
+            do {
+                let utf8WithBOM = NSMutableData()
+                let bom = [UInt8]([0xEF, 0xBB, 0xBF]) // Thêm BOM chống lỗi font tiếng Việt trên Excel Windows
+                utf8WithBOM.append(bom, length: 3)
+                
+                if let data = csvString.data(using: .utf8) {
+                    utf8WithBOM.append(data)
+                    try utf8WithBOM.write(to: path, options: .atomic)
+                    return path
+                }
+            } catch {
+                print("Lỗi ghi file CSV: \(error)")
+            }
+            return nil
+        }
+        
+        // MARK: - 2. XUẤT FILE PDF CHUYÊN NGHIỆP (Bố cục tạp chí, màu chữ đen rõ nét)
+        func generatePDF(from points: [MetricPoint], title: String, user: User?) -> URL? {
+            let pdfMetaData = ["Author": "Nutrix App", "Title": "Báo cáo tiến độ - Nutrix"]
+            let format = UIGraphicsPDFRendererFormat()
+            format.documentInfo = pdfMetaData
+            
+            let pageRect = CGRect(x: 0, y: 0, width: 595.2, height: 841.8) // Khổ giấy A4 tiêu chuẩn
+            let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: format)
+            
+            let fileName = "Nutrix_Health_Report_\(UUID().uuidString.prefix(6)).pdf"
+            let path = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+            
+            do {
+                try renderer.writePDF(to: path) { context in
+                    context.beginPage()
+                    
+                    // --- THIẾT LẬP GRAPHICS & CẤU HÌNH COLOR ---
+                    let primaryColor = UIColor(red: 74/255, green: 124/255, blue: 89/255, alpha: 1.0) // Màu xanh chủ đạo Nutrix
+                    let blackColor = UIColor.black
+                    let grayColor = UIColor.darkGray
+                    
+                    // 1. VẼ TIÊU ĐỀ CHÍNH
+                    let titleAttr: [NSAttributedString.Key: Any] = [.font: UIFont.boldSystemFont(ofSize: 22), .foregroundColor: primaryColor]
+                    "NUTRIX - BÁO CÁO TIẾN ĐỘ DINH DƯỠNG".draw(at: CGPoint(x: 40, y: 40), withAttributes: titleAttr)
+                    
+                    let subAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 12), .foregroundColor: grayColor]
+                    "Giai đoạn: \(title)".draw(at: CGPoint(x: 40, y: 68), withAttributes: subAttr)
+                    
+                    // FIX LỖI 1: Loại bỏ thuộc tính lai tạp .gradient không tồn tại trên UIColor
+                    context.cgContext.setStrokeColor(primaryColor.cgColor)
+                    context.cgContext.setLineWidth(2)
+                    context.cgContext.move(to: CGPoint(x: 40, y: 90))
+                    context.cgContext.addLine(to: CGPoint(x: 555, y: 90))
+                    context.cgContext.strokePath()
+                    
+                    // 2. VẼ KHỐI HỒ SƠ NGƯỜI DÙNG & LỘ TRÌNH (USER PROFILE CARD)
+                    let sectionTitleAttr: [NSAttributedString.Key: Any] = [.font: UIFont.boldSystemFont(ofSize: 13), .foregroundColor: primaryColor]
+                    "1. THÔNG TIN KHÁCH HÀNG & LỘ TRÌNH".draw(at: CGPoint(x: 40, y: 105), withAttributes: sectionTitleAttr)
+                    
+                    let boldLabelAttr: [NSAttributedString.Key: Any] = [.font: UIFont.boldSystemFont(ofSize: 11), .foregroundColor: blackColor]
+                    let normalValueAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 11), .foregroundColor: blackColor]
+                    
+                    // Cột trái: Thông tin cá nhân
+                    "Người dùng:".draw(at: CGPoint(x: 50, y: 132), withAttributes: boldLabelAttr)
+                    "\(user?.name ?? "Không có dữ liệu")".draw(at: CGPoint(x: 140, y: 132), withAttributes: normalValueAttr)
+                    
+                    "Email:".draw(at: CGPoint(x: 50, y: 152), withAttributes: boldLabelAttr)
+                    "\(user?.email ?? "Chưa liên kết")".draw(at: CGPoint(x: 140, y: 152), withAttributes: normalValueAttr)
+                    
+                    "Chỉ số hiện tại:".draw(at: CGPoint(x: 50, y: 172), withAttributes: boldLabelAttr)
+                    let userHeight = user?.height ?? 0
+                    let userWeight = user?.weight ?? 0
+                    let heightText = userHeight > 0 ? "\(Int(userHeight)) cm" : "-- cm"
+                    let weightText = userWeight > 0 ? "\(Int(userWeight)) kg" : "-- kg"
+                    "\(heightText)  |  \(weightText)".draw(at: CGPoint(x: 140, y: 172), withAttributes: normalValueAttr)
+                    let activePlanPoint = points.first(where: { $0.hasPlan && $0.targetCalories > 0 })
+                    let currentPlanText = activePlanPoint != nil ? "\(Int(activePlanPoint!.targetCalories)) Kcal/ngày" : "Chưa có lộ trình"
+                    
+                    "Lộ trình mục tiêu:".draw(at: CGPoint(x: 320, y: 132), withAttributes: boldLabelAttr)
+                    "\(currentPlanText)".draw(at: CGPoint(x: 435, y: 132), withAttributes: normalValueAttr)
+                    
+                    "Trạng thái:".draw(at: CGPoint(x: 320, y: 152), withAttributes: boldLabelAttr)
+                    "\(activePlanPoint != nil ? "Đang áp dụng" : "Không có")".draw(at: CGPoint(x: 435, y: 152), withAttributes: normalValueAttr)
+                    
+                    "Thời gian tạo:".draw(at: CGPoint(x: 320, y: 172), withAttributes: boldLabelAttr)
+                    "\(reportCreationTimeString)".draw(at: CGPoint(x: 435, y: 172), withAttributes: normalValueAttr)
+                    
+                    // Khung viền bao bọc thông tin user
+                    context.cgContext.setStrokeColor(UIColor.lightGray.withAlphaComponent(0.4).cgColor)
+                    context.cgContext.setLineWidth(1)
+                    context.cgContext.addRect(CGRect(x: 40, y: 122, width: 515, height: 66))
+                    context.cgContext.strokePath()
+                    
+                    // 3. VẼ BẢNG SỐ LIỆU CHI TIẾT TIẾN ĐỘ CHU KỲ
+                    var currentY: CGFloat = 210
+                    "2. CHI TIẾT BIẾN ĐỘNG DINH DƯỠNG".draw(at: CGPoint(x: 40, y: currentY), withAttributes: sectionTitleAttr)
+                    
+                    currentY += 24
+                    
+                    let tableHeaderAttr: [NSAttributedString.Key: Any] = [.font: UIFont.boldSystemFont(ofSize: 10), .foregroundColor: blackColor]
+                    let tableCellAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 10), .foregroundColor: blackColor]
+                    
+                    let headers = ["Thời gian", "Nạp vào", "Mục tiêu", "Tiêu hao", "Protein", "Carbs", "Fat"]
+                    let widths: [CGFloat] = [70, 75, 75, 75, 55, 55, 55]
+                    
+                    var currentX: CGFloat = 40
+                    for (idx, header) in headers.enumerated() {
+                        header.draw(at: CGPoint(x: currentX, y: currentY), withAttributes: tableHeaderAttr)
+                        currentX += widths[idx]
+                    }
+                    
+                    // Đường thẳng mảnh ngăn cách hàng Header của bảng
+                    context.cgContext.setStrokeColor(blackColor.cgColor)
+                    context.cgContext.setLineWidth(1.2)
+                    context.cgContext.move(to: CGPoint(x: 40, y: currentY + 16))
+                    context.cgContext.addLine(to: CGPoint(x: 555, y: currentY + 16))
+                    context.cgContext.strokePath()
+                    
+                    currentY += 26
+                    
+                    for point in points {
+                        if currentY > 800 {
+                            context.beginPage()
+                            currentY = 40
+                        }
+                        
+                        let targetStr = point.hasPlan ? String(format: "%.0f Kcal", point.targetCalories) : "--"
+                        let proStr = point.hasPlan ? String(format: "%.1fg", point.protein) : "--"
+                        let carbStr = point.hasPlan ? String(format: "%.1fg", point.carbs) : "--"
+                        let fatStr = point.hasPlan ? String(format: "%.1fg", point.fat) : "--"
+                        
+                        let rowData = [
+                            point.label,
+                            String(format: "%.0f Kcal", point.intakeCalories),
+                            targetStr,
+                            String(format: "%.0f Kcal", point.burnedCalories),
+                            proStr,
+                            carbStr,
+                            fatStr
+                        ]
+                        
+                        var xPos: CGFloat = 40
+                        for (idx, text) in rowData.enumerated() {
+                            text.draw(at: CGPoint(x: xPos, y: currentY), withAttributes: tableCellAttr)
+                            xPos += widths[idx]
+                        }
+                        currentY += 22
+                    }
+                }
+                return path
+            } catch {
+                // FIX LỖI 2: Đổi từ biến cục bộ ảo 'context' thành hằng số bắt lỗi hệ thống 'error'
+                print("Lỗi render PDF: \(error)")
+                return nil
+            }
+        }
 }

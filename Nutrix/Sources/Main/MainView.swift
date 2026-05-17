@@ -10,7 +10,9 @@ import SwiftUI
 struct MainView: View {
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject var diaryViewModel: DiaryViewModel
+    @EnvironmentObject var authService: FirebaseAuthService
     @State private var selectedDate = Date()
+    
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -56,7 +58,7 @@ struct MainView: View {
                         .navigationDestination(for: AppDestination.self) { destination in
                             buildDestinationView(destination)
                         }
-                }
+                }.environmentObject(authService)
             case .barcode:
                 NavigationStack(path: $router.barcodePath) {
                     NutritionView(selectedDate: $selectedDate)
