@@ -1,0 +1,52 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Người dùng" as User
+boundary "GD_LichSuSucKhoe" as Boundary
+control "Ctrl_LichSu" as Control
+entity "Database" as DB
+
+activate User
+
+' --- 1. Người dùng bấm vào chức năng ---
+User -> Boundary : 1: Chọn chức năng xem lịch sử sức khỏe
+activate Boundary
+
+Boundary -> Control : 2: Yêu cầu truy xuất toàn bộ dữ liệu lịch sử chiều cao, cân nặng
+activate Control
+
+' --- 2. Truy vấn dữ liệu từ CSDL ---
+Control -> DB : 3: Truy vấn danh sách lịch sử sức khỏe của người dùng
+activate DB
+DB --> Control : 4: Trả về kết quả truy vấn dữ liệu từ hệ thống
+deactivate DB
+
+' --- 3. Kiểm tra dữ liệu và rẽ nhánh hiển thị ---
+alt Trường hợp ĐÃ CÓ dữ liệu lịch sử
+    Control -> Control : 5: Thực hiện tính toán tỷ lệ chênh lệch và xu hướng
+    activate Control
+    Control --> Control : 6: Hoàn tất xử lý dữ liệu nghiệp vụ
+    deactivate Control
+    
+    Control --> Boundary : 7: Phản hồi danh sách dữ liệu đã qua xử lý
+    
+    Boundary --> User : 8: Hiển thị danh sách lịch sử và biểu đồ xu hướng thể chất
+    
+
+else Trường hợp CHƯA CÓ dữ liệu (Dữ liệu trống)
+    Control --> Boundary : 9: Phản hồi thông báo hệ thống chưa có dữ liệu lịch sử
+    deactivate Control
+    
+    Boundary --> User : 10: Hiển thị màn hình trống kèm thông báo "Chưa có dữ liệu"
+    deactivate Boundary
+end
+
+deactivate User
+@enduml

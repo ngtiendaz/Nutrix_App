@@ -1,0 +1,68 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Người dùng" as User
+boundary "GD_ThongTinCaNhan" as Boundary
+control "Ctrl_ThongTinCaNhan" as Control
+entity "Database" as DB
+
+' --- GIAI ĐOẠN KHỞI TẠO (NẰM NGOÀI VÒNG LẶP) ---
+User -> Boundary : 1: Yêu cầu truy cập màn hình thông tin cá nhân
+activate Boundary
+
+Boundary -> Control : 2: Yêu cầu lấy dữ liệu hồ sơ hiện tại
+activate Control
+
+Control -> DB : 3: Truy vấn thông tin người dùng từ hệ thống
+activate DB
+DB --> Control : 4: Trả về dữ liệu người dùng hiện tại
+deactivate DB
+
+Control --> Boundary : 5: Phản hồi dữ liệu thông tin cá nhân
+deactivate Control
+
+Boundary --> User : 6: Hiển thị thông tin lên giao diện xem hồ sơ
+deactivate Boundary
+
+' --- GIAI ĐOẠN CẬP NHẬT (CHỨA KHỐI VÒNG LẶP KIỂM TRA LỖI) ---
+loop Chỉnh sửa cho đến khi thông tin hợp lệ và lưu thành công
+    User -> Boundary : 7: Thực hiện chỉnh sửa và nhấn nút Lưu thay đổi
+    activate Boundary
+    
+    Boundary -> Control : 8: Gửi yêu cầu cập nhật thông tin cá nhân mới
+    activate Control
+    
+    Control -> Control : 9: Thực hiện kiểm tra tính hợp lệ của dữ liệu đầu vào
+    activate Control
+    Control --> Control : 10: Hoàn tất quy trình kiểm tra dữ liệu
+    deactivate Control
+    
+    alt Trường hợp Dữ liệu SAI hoặc KHÔNG HỢP LỆ
+        Control --> Boundary : 11: Phản hồi thông báo lỗi chi tiết từng trường dữ liệu
+        Boundary --> User : 12: Hiển thị lỗi và giữ người dùng tại chế độ chỉnh sửa
+        deactivate Control
+        deactivate Boundary
+        
+    else Trường hợp Dữ liệu ĐÚNG và HỢP LỆ
+        Control -> DB : 13: Gửi yêu cầu ghi đè thông tin mới vào hệ thống
+        activate DB
+        DB --> Control : 14: Xác nhận dữ liệu đã được lưu trữ bền vững
+        deactivate DB
+        
+        break break loop
+            Control --> Boundary : 15: Phản hồi kết quả cập nhật thành công
+            Boundary --> User : 16: Thông báo thành công và chuyển về chế độ xem hồ sơ
+            deactivate Control
+            deactivate Boundary
+        end
+    end
+end
+
+@enduml

@@ -1,0 +1,78 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Người dùng" as User
+boundary "GD_CapNhatHoatDong" as Boundary
+control "Ctrl_HoatDong" as Control
+entity "Database" as DB
+
+' --- GIAI ĐOẠN KHỞI TẠO (NGOÀI VÒNG LẶP) ---
+User -> Boundary : 1: Yêu cầu chỉnh sửa một hoạt động đã ghi nhận
+activate Boundary
+
+Boundary -> Control : 2: Yêu cầu lấy thông tin chi tiết của hoạt động
+activate Control
+
+Control -> DB : 3: Truy vấn dữ liệu hoạt động và chỉ số cơ thể hiện tại
+activate DB
+DB --> Control : 4: Trả về dữ liệu hoạt động và thông tin cân nặng, tuổi
+deactivate DB
+
+Control --> Boundary : 5: Phản hồi dữ liệu chi tiết hoạt động
+deactivate Control
+
+Boundary --> User : 6: Hiển thị biểu mẫu chỉnh sửa với thời gian hiện tại
+deactivate Boundary
+
+' --- GIAI ĐOẠN CẬP NHẬT (TRONG VÒNG LẶP KIỂM TRA LỖI) ---
+loop Chỉnh sửa cho đến khi dữ liệu hợp lệ và cập nhật thành công
+    User -> Boundary : 7: Nhập số phút hoạt động mới và nhấn nút Lưu
+    activate Boundary
+    
+    Boundary -> Control : 8: Gửi yêu cầu cập nhật thời gian hoạt động
+    activate Control
+    
+    Control -> Control : 9: Thực hiện kiểm tra tính hợp lệ của thời gian nhập vào
+    activate Control
+    Control --> Control : 10: Hoàn tất kiểm tra logic dữ liệu
+    deactivate Control
+    
+    alt Trường hợp Thời gian KHÔNG HỢP LỆ (Số âm hoặc bằng 0)
+        Control --> Boundary : 11: Phản hồi thông báo lỗi thời gian không hợp lệ
+        Boundary --> User : 12: Hiển thị cảnh báo và giữ người dùng tại màn hình sửa
+        deactivate Control
+        deactivate Boundary
+        
+    else Trường hợp Thời gian ĐÚNG và HỢP LỆ
+        Control -> Control : 13: Tính toán lại lượng năng lượng tiêu thụ dựa trên thời gian mới
+        activate Control
+        Control --> Control : 14: Hoàn tất tính toán chỉ số năng lượng
+        deactivate Control
+        
+        Control -> DB : 15: Gửi yêu cầu cập nhật bản ghi hoạt động trong hệ thống
+        activate DB
+        DB --> Control : 16: Xác nhận thông tin hoạt động đã được cập nhật
+        deactivate DB
+        
+        Control -> DB : 17: Yêu cầu điều chỉnh tổng năng lượng tiêu thụ trong thống kê ngày
+        activate DB
+        DB --> Control : 18: Xác nhận cập nhật thống kê ngày thành công
+        deactivate DB
+        
+        break break loop
+            Control --> Boundary : 19: Phản hồi kết quả cập nhật thành công
+            Boundary --> User : 20: Thông báo thành công và quay lại màn hình danh sách hoạt động
+            deactivate Control
+            deactivate Boundary
+        end
+    end
+end
+
+@enduml

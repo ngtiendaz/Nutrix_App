@@ -1,0 +1,73 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Người dùng" as User
+boundary "GD_DanhSachHoatDong" as Boundary
+control "Ctrl_HoatDong" as Control
+entity "Database" as DB
+
+activate User
+
+' --- 1. HIỂN THỊ CHI TIẾT HOẠT ĐỘNG ---
+User -> Boundary : 1: Chọn một hoạt động và yêu cầu xem chi tiết để xóa
+activate Boundary
+
+Boundary -> Control : 2: Yêu cầu lấy thông tin chi tiết của hoạt động
+activate Control
+
+Control -> DB : 3: Truy vấn dữ liệu hoạt động từ hệ thống
+activate DB
+DB --> Control : 4: Trả về dữ liệu chi tiết hoạt động (Tên, thời gian, năng lượng)
+deactivate DB
+
+Control --> Boundary : 5: Phản hồi dữ liệu hoạt động
+deactivate Control
+
+Boundary --> User : 6: Hiển thị chi tiết và bảng hỏi xác nhận xóa
+deactivate Boundary
+
+' --- 2. THỰC HIỆN QUY TRÌNH XÓA HOẠT ĐỘNG ---
+User -> Boundary : 7: Nhấn nút xác nhận đồng ý xóa hoạt động
+activate Boundary
+
+Boundary -> Control : 8: Gửi yêu cầu thực hiện quy trình xóa hoạt động
+activate Control
+
+Control -> Control : 9: Thực hiện kiểm tra tính hợp lệ của yêu cầu xóa
+activate Control
+Control --> Control : 10: Hoàn tất kiểm tra logic nghiệp vụ nội bộ
+deactivate Control
+
+' --- 3. RẼ NHÁNH KẾT QUẢ XÓA ---
+alt Trường hợp XÓA THÀNH CÔNG
+    Control -> DB : 11: Gửi lệnh loại bỏ bản ghi hoạt động khỏi hệ thống
+    activate DB
+    DB --> Control : 12: Xác nhận dữ liệu hoạt động đã được xóa
+    deactivate DB
+    
+    Control -> DB : 13: Yêu cầu trừ đi lượng năng lượng đã đốt trong thống kê ngày
+    activate DB
+    DB --> Control : 14: Xác nhận đã cập nhật lại số liệu thống kê thành công
+    deactivate DB
+    
+    Control --> Boundary : 15: Phản hồi thông báo xóa hoạt động hoàn tất
+    
+    Boundary --> User : 16: Thông báo thành công và tự động quay về danh sách chính
+
+else Trường hợp XÓA THẤT BẠI (Yêu cầu sai hoặc lỗi truy cập dữ liệu)
+    Control --> Boundary : 17: Phản hồi thông báo lỗi không thể thực hiện việc xóa
+    deactivate Control
+    
+    Boundary --> User : 18: Hiển thị cảnh báo lỗi và yêu cầu người dùng thử lại
+    deactivate Boundary
+end
+
+deactivate User
+@enduml

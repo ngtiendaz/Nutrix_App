@@ -1,0 +1,64 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Người dùng" as User
+boundary "GD_ThemHoatDong" as UI
+control "Ctrl_HoatDong" as Logic
+entity "Database" as DB
+
+User -> UI : 1. Chọn hoạt động, nhập thời gian và nhấn xác nhận lưu
+activate UI
+
+UI -> UI : 2. Kiểm tra tính hợp lệ của thông tin nhập vào
+
+alt Kịch bản dữ liệu hợp lệ
+    UI -> Logic : 3. Gửi yêu cầu thêm hoạt động thể chất mới
+    activate Logic
+    
+    Logic -> DB : 4. Yêu cầu truy xuất chỉ số cơ thể của người dùng
+    activate DB
+    DB --> Logic : 5. Trả về thông tin chỉ số cơ thể
+    deactivate DB
+    
+    Logic -> Logic : 6. Tính toán lượng năng lượng dự kiến tiêu hao
+    
+    Logic -> DB : 7. Gửi yêu cầu lưu nhật ký hoạt động vào hệ thống
+    activate DB
+    
+    alt Kịch bản lưu trữ thành công
+        DB --> Logic : 8. Trả về kết quả lưu nhật ký thành công
+        
+        Logic -> DB : 9. Yêu cầu cập nhật cộng dồn năng lượng vào thống kê ngày
+        DB --> Logic : 10. Xác nhận cập nhật thống kê thành công
+        deactivate DB
+        
+        Logic --> UI : 11. Phản hồi quá trình xử lý hoàn tất
+        deactivate Logic
+        
+        UI --> User : 12. Hiển thị thông báo thành công và đóng giao diện
+        deactivate UI
+        
+    else Kịch bản lỗi hệ thống
+        DB --> Logic : 13. Trả về thông báo lỗi lưu trữ
+        deactivate DB
+        
+        Logic --> UI : 14. Phản hồi quá trình xử lý thất bại
+        deactivate Logic
+        
+        UI --> User : 15. Hiển thị thông báo lỗi cho người dùng
+        deactivate UI
+    end
+    
+else Kịch bản dữ liệu không hợp lệ
+    UI --> User : 16. Hiển thị cảnh báo yêu cầu nhập đúng thông tin
+    deactivate UI
+end
+
+@enduml

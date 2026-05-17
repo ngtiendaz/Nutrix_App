@@ -26,10 +26,16 @@ struct FoodDetailView: View {
                             imageSection
                             
                             VStack(alignment: .leading, spacing: 20) {
-                                Text(foodDetailViewModel.originalFood.name.uppercased())
-                                    .font(.system(size: 24, weight: .black))
-                                    .foregroundColor(.black)
-                                    .padding(.horizontal)
+                                // Tên món ăn và ngày giờ sử dụng
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(foodDetailViewModel.originalFood.name.uppercased())
+                                        .font(.system(size: 24, weight: .black))
+                                        .foregroundColor(.black)
+                                    
+                                    // SECTION MỚI: Hiển thị ngày giờ dùng món
+                                    timeSection
+                                }
+                                .padding(.horizontal)
                                 
                                 nutritionCards
                                 
@@ -38,17 +44,14 @@ struct FoodDetailView: View {
                                 
                                 deleteButton
                                 
-                                
                                 Spacer().frame(height: focusedField != nil ? 150 : 10)
                             }
                         }
-                        .padding(.bottom, 70) // Giảm padding thừa khi đã có xử lý phím
+                        .padding(.bottom, 70)
                     }
                     .onChange(of: focusedField) { newValue in
                         if newValue != nil {
-                            
                             withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
-                                // Anchor là .bottom giúp đẩy nội dung lên sát trên bàn phím
                                 proxy.scrollTo("inputs", anchor: .bottom)
                             }
                         }
@@ -56,7 +59,7 @@ struct FoodDetailView: View {
                 }
             }
             
-            // 2. Loading Overlay (Hiển thị khi ViewModel đang xử lý)
+            // 2. Loading Overlay
             if foodDetailViewModel.isLoading {
                 LoadingOverlay()
                     .transition(.opacity.animation(.easeInOut(duration: 0.2)))
@@ -66,16 +69,16 @@ struct FoodDetailView: View {
         .onTapGesture { focusedField = nil }
         .ignoresSafeArea(.all, edges: .top)
         .onChange(of: foodDetailViewModel.shouldDismiss) { newValue in
-                    if newValue {
-                        if foodDetailViewModel.lastAction == .delete {
-                            router.showToast(message: "Đã xóa món ăn khỏi nhật ký", type: .success)
-                        } else {
-                            router.showToast(message: "Cập nhật thành công", type: .success)
-                        }
-                        diaryViewModel.refreshData()
-                        dismiss() // Đóng màn hình chi tiết
-                    }
+            if newValue {
+                if foodDetailViewModel.lastAction == .delete {
+                    router.showToast(message: "Đã xóa món ăn khỏi nhật ký", type: .success)
+                } else {
+                    router.showToast(message: "Cập nhật thành công", type: .success)
                 }
+                diaryViewModel.refreshData()
+                dismiss()
+            }
+        }
         .alert("Xác nhận xóa", isPresented: $showDeleteConfirmation) {
             Button("Hủy", role: .cancel) {}
             Button("Xóa", role: .destructive) { foodDetailViewModel.deleteFood() }
@@ -84,11 +87,34 @@ struct FoodDetailView: View {
         }
     }
 }
+
 // MARK: - Subviews
 extension FoodDetailView {
+    
+    // View con hiển thị thời gian ăn uống
+    private var timeSection: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "clock.fill")
+                .font(.system(size: 13))
+                .foregroundColor(Color.App.primary.opacity(0.8))
+            
+            Text(formattedDateString)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.gray)
+        }
+    }
+    
+    // Helper format ngày giờ bằng Tiếng Việt
+    private var formattedDateString: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "vi_VN")
+        // Định dạng xuất ra: "15:30 - Thứ Hai, 15/04/2026"
+        formatter.dateFormat = "HH:mm - EEEE, dd/MM/yyyy"
+        return formatter.string(from: foodDetailViewModel.originalFood.createdAt)
+    }
+
     private var headerView: some View {
         HStack {
-            // Nút bên trái - Cố định frame 80px
             HStack {
                 Button { dismiss() } label: {
                     Image(systemName: "chevron.left")
@@ -111,12 +137,11 @@ extension FoodDetailView {
             
             Spacer()
             
-            // Nút bên phải - Cố định frame 80px để cân bằng với bên trái
             HStack {
                 Spacer()
                 if foodDetailViewModel.hasChanges {
                     Button {
-                        focusedField = nil // Ẩn phím trước khi lưu
+                        focusedField = nil
                         foodDetailViewModel.updateFood()
                     } label: {
                         Text("Lưu")
@@ -132,7 +157,7 @@ extension FoodDetailView {
             .frame(width: 80)
         }
         .padding(.horizontal)
-        .padding(.top, safeAreaTop) // Sử dụng biến helper hoặc chuẩn hóa padding
+        .padding(.top, safeAreaTop)
         .padding(.bottom, 12)
         .background(Color.App.background)
     }
@@ -184,42 +209,41 @@ extension FoodDetailView {
     }
 
     private var portionInputSection: some View {
-            HStack(spacing: 16) {
-                inputField(title: "Khối lượng (g)", value: $foodDetailViewModel.currentWeight, icon: "scalemass", field: .weight)
-                inputField(title: "Số lượng", value: $foodDetailViewModel.currentQuantity, icon: "number", field: .quantity)
-            }
-            .padding(.horizontal, 16)
+        HStack(spacing: 16) {
+            inputField(title: "Khối lượng (g)", value: $foodDetailViewModel.currentWeight, icon: "scalemass", field: .weight)
+            inputField(title: "Số lượng", value: $foodDetailViewModel.currentQuantity, icon: "number", field: .quantity)
         }
+        .padding(.horizontal, 16)
+    }
 
-        private func inputField(title: String, value: Binding<Double>, icon: String, field: FoodDetailViewModel.Field) -> some View {
-            VStack(spacing: 8) {
-                HStack(spacing: 8) {
-                    Image(systemName: icon)
-                        .font(.system(size: 14))
-                        .foregroundColor(.gray)
-                    TextField("", value: value, format: .number)
-                        .keyboardType(.decimalPad)
-                        .focused($focusedField, equals: field)
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.black)
-                        .multilineTextAlignment(.leading)
-                }
-                .padding(14)
-                .background(Color.black.opacity(0.04))
-                .cornerRadius(12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(focusedField == field ? Color.App.primary.opacity(0.5) : Color.clear, lineWidth: 2)
-                )
-                
-                Text(title)
-                    .font(.system(size: 12, weight: .medium))
+    private func inputField(title: String, value: Binding<Double>, icon: String, field: FoodDetailViewModel.Field) -> some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
                     .foregroundColor(.gray)
+                TextField("", value: value, format: .number)
+                    .keyboardType(.decimalPad)
+                    .focused($focusedField, equals: field)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.black)
+                    .multilineTextAlignment(.leading)
             }
-            .frame(maxWidth: .infinity)
-            .animation(.easeInOut(duration: 0.2), value: focusedField)
+            .padding(14)
+            .background(Color.black.opacity(0.04))
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(focusedField == field ? Color.App.primary.opacity(0.5) : Color.clear, lineWidth: 2)
+            )
+            
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.gray)
         }
-    
+        .frame(maxWidth: .infinity)
+        .animation(.easeInOut(duration: 0.2), value: focusedField)
+    }
 
     private var deleteButton: some View {
         Button { showDeleteConfirmation = true } label: {

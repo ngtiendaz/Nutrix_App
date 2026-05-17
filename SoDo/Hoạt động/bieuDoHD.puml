@@ -1,0 +1,76 @@
+@startuml
+skinparam Style strictuml
+skinparam SequenceMessageAlignment center
+skinparam DefaultFontName "Arial"
+skinparam shadowing false
+skinparam NoteBackgroundColor #FEFECE
+skinparam NoteBorderColor #A80036
+
+title Biểu đồ hoạt động: Chức năng thêm đồ ăn vào nhật ký (NutriX AI)
+
+|Người dùng|
+start
+:Nhấn nút (+) "Thêm món" tại DiaryView;
+
+|Hệ thống|
+:Hiển thị menu chọn nguồn ảnh (OptionDetail);
+
+|Người dùng|
+if (Lựa chọn nguồn ảnh?) then (Chụp ảnh)
+    |Hệ thống|
+    :Kiểm tra quyền Camera (PermissionManager);
+    if (Đã cấp quyền?) then (Không)
+        :Hiển thị Alert yêu cầu cấp quyền;
+        stop
+    else (Có)
+        :Mở Camera hệ thống;
+        |Người dùng|
+        :Chụp ảnh món ăn;
+    endif
+else (Thư viện)
+    |Hệ thống|
+    :Mở Thư viện ảnh (ImagePicker);
+    |Người dùng|
+    :Chọn ảnh từ thư viện;
+endif
+
+|Hệ thống|
+:Hiển thị màn hình Phân tích (FoodAnalysisView);
+:NutriX AI tiến hành phân tích hình ảnh;
+fork
+    :Nhận diện tên món ăn;
+    :Tính toán Calo & Macrons (Carbs, Protein, Fat);
+fork again
+    :Phân tích mức độ tin cậy (Confidence Bar);
+    :Tìm kiếm các món ăn gợi ý tương đương;
+end fork
+:Hiển thị kết quả phân tích và lời khuyên (AI Advice);
+
+|Người dùng|
+repeat
+    if (Kết quả nhận diện đúng?) then (Sai)
+        :Chọn món ăn từ danh sách gợi ý;
+        |Hệ thống|
+        :Cập nhật lại tên món & tính toán lại dinh dưỡng;
+    else (Đúng)
+        |Người dùng|
+        :Điều chỉnh Khối lượng (gram) hoặc Số lượng;
+        |Hệ thống|
+        :Tự động tính toán lại các chỉ số Calo/Macrons;
+    endif
+backward: Kiểm tra lại thông tin;
+repeat while (Xác nhận thông tin?) is (Chỉnh sửa thêm) not (Sẵn sàng lưu)
+
+|Người dùng|
+:Nhấn nút "Lưu nhật ký";
+
+|Hệ thống|
+:Hiển thị Loading Overlay;
+:Lưu dữ liệu món ăn vào Firebase Service;
+:Hiển thị Toast thông báo "Đã lưu thành công";
+:Đóng màn hình Phân tích;
+:Cập nhật danh sách món ăn tại màn hình Diary;
+
+|Người dùng|
+stop
+@enduml

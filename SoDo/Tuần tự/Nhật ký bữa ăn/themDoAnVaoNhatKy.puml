@@ -1,0 +1,62 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Người dùng" as User
+boundary "GD_ThemBuaAn" as Boundary
+control "Ctrl_NhatKy" as Control
+entity "Database" as DB
+
+' --- GIAI ĐOẠN KHỞI TẠO (NGOÀI VÒNG LẶP) ---
+User -> Boundary : 1: Yêu cầu truy cập màn hình thêm bữa ăn
+activate Boundary
+
+Boundary --> User : 2: Hiển thị biểu mẫu chọn món ăn và nhập số lượng
+deactivate Boundary
+
+' --- GIAI ĐOẠN XỬ LÝ (TRONG VÒNG LẶP) ---
+loop Chỉnh sửa cho đến khi thông tin món ăn hợp lệ và lưu thành công
+    User -> Boundary : 3: Chọn món ăn, nhập khối lượng và nhấn nút Thêm
+    activate Boundary
+    
+    Boundary -> Control : 4: Yêu cầu xử lý ghi nhận món ăn vào nhật ký
+    activate Control
+    
+    Control -> Control : 5: Thực hiện kiểm tra tính hợp lệ của khối lượng và loại bữa ăn
+    activate Control
+    Control --> Control : 6: Hoàn tất kiểm tra logic nghiệp vụ đầu vào
+    deactivate Control
+    
+    alt Trường hợp Dữ liệu SAI (Ví dụ: Khối lượng không hợp lệ)
+        Control --> Boundary : 7: Phản hồi thông báo lỗi nhập liệu chi tiết
+        Boundary --> User : 8: Hiển thị cảnh báo và yêu cầu chỉnh sửa thông tin
+        deactivate Control
+        deactivate Boundary
+        
+    else Trường hợp Dữ liệu ĐÚNG và HỢP LỆ
+        Control -> DB : 9: Yêu cầu lưu trữ thông tin món ăn vào CSDL nhật ký bữa ăn
+        activate DB
+        DB --> Control : 10: Xác nhận lưu trữ món ăn thành công
+        deactivate DB
+        
+        Control -> DB : 11: Yêu cầu cập nhật tổng chỉ số dinh dưỡng trong ngày
+        activate DB
+        DB --> Control : 12: Xác nhận cập nhật thống kê dinh dưỡng thành công
+        deactivate DB
+        
+        break break loop
+            Control --> Boundary : 13: Phản hồi kết quả thêm bữa ăn thành công
+            Boundary --> User : 14: Thông báo thành công và quay trở về màn hình nhật ký
+            deactivate Control
+            deactivate Boundary
+        end
+    end
+end
+
+@enduml

@@ -1,0 +1,67 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Người dùng" as User
+boundary "GD_DangNhap" as Boundary
+control "Ctrl_XacThuc" as Control
+entity "Database" as DB
+
+' --- GIAI ĐOẠN KHỞI TẠO (NGOÀI VÒNG LẶP) ---
+User -> Boundary : 1: Yêu cầu truy cập màn hình đăng nhập
+activate Boundary
+
+Boundary --> User : 2: Hiển thị biểu mẫu nhập tài khoản và mật khẩu
+deactivate Boundary
+
+' --- GIAI ĐOẠN XỬ LÝ XÁC THỰC (TRONG VÒNG LẶP) ---
+loop Nhập liệu cho đến khi thông tin chính xác và đăng nhập thành công
+    User -> Boundary : 3: Nhập địa chỉ Email, Mật khẩu và nhấn nút Đăng nhập
+    activate Boundary
+    
+    Boundary -> Control : 4: Yêu cầu thực hiện quy trình xác thực tài khoản
+    activate Control
+    
+    Control -> Control : 5: Thực hiện kiểm tra định dạng dữ liệu đầu vào
+    activate Control
+    Control --> Control : 6: Hoàn tất kiểm tra định dạng
+    deactivate Control
+    
+    Control -> DB : 7: Yêu cầu truy vấn thông tin tài khoản theo Email
+    activate DB
+    DB --> Control : 8: Trả về thông tin tài khoản và mật khẩu mã hóa
+    deactivate DB
+    
+    Control -> Control : 9: Thực hiện so khớp mật khẩu và kiểm tra trạng thái tài khoản
+    activate Control
+    Control --> Control : 10: Hoàn tất đối soát thông tin
+    deactivate Control
+    
+    alt Trường hợp Thông tin SAI hoặc Tài khoản bị khóa
+        Control --> Boundary : 11: Phản hồi thông báo lỗi đăng nhập không thành công
+        Boundary --> User : 12: Hiển thị cảnh báo lỗi và yêu cầu nhập lại thông tin
+        deactivate Control
+        deactivate Boundary
+        
+    else Trường hợp Thông tin ĐÚNG và HỢP LỆ
+        Control -> DB : 13: Yêu cầu truy xuất dữ liệu hồ sơ cá nhân người dùng
+        activate DB
+        DB --> Control : 14: Trả về thông tin hồ sơ chi tiết
+        deactivate DB
+        
+        break break loop
+            Control --> Boundary : 15: Phản hồi kết quả xác thực thành công
+            Boundary --> User : 16: Thông báo thành công và chuyển hướng đến màn hình chính
+            deactivate Control
+            deactivate Boundary
+        end
+    end
+end
+
+@enduml

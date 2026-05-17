@@ -1,0 +1,67 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Người dùng" as User
+boundary "GD_DangKy" as Boundary
+control "Ctrl_DangKy" as Control
+entity "Database" as DB
+
+' --- GIAI ĐOẠN KHỞI TẠO (NẰM NGOÀI VÒNG LẶP) ---
+User -> Boundary : 1: Yêu cầu truy cập màn hình đăng ký tài khoản
+activate Boundary
+
+Boundary --> User : 2: Hiển thị biểu mẫu đăng ký (Email, Mật khẩu, Xác nhận mật khẩu)
+deactivate Boundary
+
+' --- GIAI ĐOẠN XỬ LÝ (CHỨA KHỐI VÒNG LẶP KIỂM TRA LỖI) ---
+loop Chỉnh sửa cho đến khi thông tin hợp lệ và đăng ký thành công
+    User -> Boundary : 3: Nhập thông tin và nhấn nút Đăng ký
+    activate Boundary
+    
+    Boundary -> Control : 4: Yêu cầu thực hiện quy trình đăng ký tài khoản mới
+    activate Control
+    
+    Control -> Control : 5: Thực hiện kiểm tra tính hợp lệ của dữ liệu đầu vào
+    activate Control
+    Control --> Control : 6: Hoàn tất quy trình kiểm tra logic nội bộ
+    deactivate Control
+    
+    Control -> DB : 7: Yêu cầu kiểm tra sự tồn tại của Email trong hệ thống
+    activate DB
+    DB --> Control : 8: Phản hồi thông tin về trạng thái Email
+    deactivate DB
+    
+    alt Trường hợp Thông tin SAI hoặc Email đã tồn tại
+        Control --> Boundary : 9: Phản hồi thông báo lỗi chi tiết (Dữ liệu sai/Email trùng)
+        Boundary --> User : 10: Hiển thị cảnh báo lỗi và yêu cầu chỉnh sửa thông tin
+        deactivate Control
+        deactivate Boundary
+        
+    else Trường hợp Thông tin ĐÚNG và HỢP LỆ
+        Control -> DB : 11: Yêu cầu khởi tạo tài khoản xác thực mới trên hệ thống
+        activate DB
+        DB --> Control : 12: Xác nhận tạo tài khoản thành công
+        deactivate DB
+        
+        Control -> DB : 13: Yêu cầu khởi tạo hồ sơ dữ liệu người dùng mặc định
+        activate DB
+        DB --> Control : 14: Xác nhận lưu trữ hồ sơ thành công
+        deactivate DB
+        
+        break break loop
+            Control --> Boundary : 15: Phản hồi kết quả đăng ký thành công
+            Boundary --> User : 16: Thông báo thành công và tự động chuyển hướng màn hình
+            deactivate Control
+            deactivate Boundary
+        end
+    end
+end
+
+@enduml

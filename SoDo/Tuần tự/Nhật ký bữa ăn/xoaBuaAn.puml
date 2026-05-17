@@ -1,0 +1,74 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Người dùng" as User
+boundary "GD_ChiTietBuaAn" as Boundary
+control "Ctrl_NhatKy" as Control
+entity "Database" as DB
+
+activate User
+
+' --- 1. HIỂN THỊ CHI TIẾT MÓN ĂN ---
+User -> Boundary : 1: Yêu cầu xem chi tiết món ăn cần xóa
+activate Boundary
+
+Boundary -> Control : 2: Gửi yêu cầu lấy dữ liệu món ăn chi tiết
+activate Control
+
+Control -> DB : 3: Truy vấn thông tin món ăn từ hệ thống dữ liệu
+activate DB
+DB --> Control : 4: Trả về dữ liệu món ăn (Tên, Calo, Thời gian)
+deactivate DB
+
+Control --> Boundary : 5: Phản hồi dữ liệu thông tin bữa ăn
+deactivate Control
+
+Boundary --> User : 6: Hiển thị thông tin món ăn và nút chức năng xóa
+deactivate Boundary
+
+' --- 2. THỰC HIỆN QUY TRÌNH XÓA MÓN ĂN ---
+User -> Boundary : 7: Nhấn nút Xóa và xác nhận đồng ý xóa món ăn
+activate Boundary
+
+Boundary -> Control : 8: Gửi yêu cầu thực hiện quy trình xóa bữa ăn
+activate Control
+
+Control -> Control : 9: Thực hiện kiểm tra tính hợp lệ của yêu cầu xóa
+activate Control
+Control --> Control : 10: Xác nhận yêu cầu xóa là hợp lệ
+deactivate Control
+
+' --- 3. RẼ NHÁNH KẾT QUẢ XÓA ---
+alt Trường hợp XÓA THÀNH CÔNG
+    Control -> DB : 11: Gửi lệnh loại bỏ dữ liệu món ăn khỏi CSDL nhật ký
+    activate DB
+    DB --> Control : 12: Xác nhận dữ liệu món ăn đã được xóa thành công
+    deactivate DB
+    
+    Control -> DB : 13: Gửi lệnh trừ các chỉ số dinh dưỡng trong bảng thống kê ngày
+    activate DB
+    DB --> Control : 14: Xác nhận đã cập nhật lại thống kê dinh dưỡng
+    deactivate DB
+    
+    Control --> Boundary : 15: Phản hồi thông báo xóa món ăn hoàn tất
+    
+    Boundary --> User : 16: Thông báo thành công và tự động quay về trang nhật ký chính
+    
+
+else Trường hợp XÓA THẤT BẠI (Lỗi hệ thống hoặc kết nối)
+    Control --> Boundary : 17: Phản hồi thông báo lỗi không thể thực hiện việc xóa
+    deactivate Control
+    
+    Boundary --> User : 18: Hiển thị cảnh báo lỗi xóa thất bại và yêu cầu thử lại
+    deactivate Boundary
+end
+
+deactivate User
+@enduml

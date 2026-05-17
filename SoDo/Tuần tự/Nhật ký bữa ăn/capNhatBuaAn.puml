@@ -1,0 +1,73 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Người dùng" as User
+boundary "GD_ChiTietBuaAn" as Boundary
+control "Ctrl_NhatKy" as Control
+entity "Database" as DB
+
+' --- GIAI ĐOẠN KHỞI TẠO (NGOÀI VÒNG LẶP) ---
+User -> Boundary : 1: Yêu cầu xem chi tiết món ăn trong nhật ký
+activate Boundary
+
+Boundary -> Control : 2: Yêu cầu lấy thông tin chi tiết món ăn đã lưu
+activate Control
+
+Control -> DB : 3: Truy vấn dữ liệu món ăn từ hệ thống
+activate DB
+DB --> Control : 4: Trả về thông tin chi tiết (Khối lượng, Calo, Dinh dưỡng)
+deactivate DB
+
+Control --> Boundary : 5: Phản hồi dữ liệu chi tiết bữa ăn
+deactivate Control
+
+Boundary --> User : 6: Hiển thị thông tin lên giao diện chỉnh sửa
+deactivate Boundary
+
+' --- GIAI ĐOẠN CẬP NHẬT (CHỨA KHỐI VÒNG LẶP KIỂM TRA LỖI) ---
+loop Chỉnh sửa cho đến khi dữ liệu hợp lệ và cập nhật thành công
+    User -> Boundary : 7: Thay đổi khối lượng/số lượng và nhấn nút Lưu
+    activate Boundary
+    
+    Boundary -> Control : 8: Yêu cầu cập nhật thông tin bữa ăn mới
+    activate Control
+    
+    Control -> Control : 9: Thực hiện tính toán lại dinh dưỡng và kiểm tra tính hợp lệ
+    activate Control
+    Control --> Control : 10: Hoàn tất kiểm tra logic dữ liệu
+    deactivate Control
+    
+    alt Trường hợp Dữ liệu SAI (Ví dụ: Khối lượng bằng 0 hoặc không hợp lệ)
+        Control --> Boundary : 11: Phản hồi thông báo lỗi nhập liệu chi tiết
+        Boundary --> User : 12: Hiển thị cảnh báo và yêu cầu chỉnh sửa lại
+        deactivate Control
+        deactivate Boundary
+        
+    else Trường hợp Dữ liệu ĐÚNG và HỢP LỆ
+        Control -> DB : 13: Gửi yêu cầu cập nhật thông tin món ăn vào CSDL nhật ký
+        activate DB
+        DB --> Control : 14: Xác nhận cập nhật món ăn thành công
+        deactivate DB
+        
+        Control -> DB : 15: Yêu cầu cập nhật độ chênh lệch vào tổng dinh dưỡng ngày
+        activate DB
+        DB --> Control : 16: Xác nhận cập nhật thống kê dinh dưỡng thành công
+        deactivate DB
+        
+        break break loop
+            Control --> Boundary : 17: Phản hồi kết quả cập nhật thành công
+            Boundary --> User : 18: Thông báo thành công và quay trở về màn hình nhật ký chính
+            deactivate Control
+            deactivate Boundary
+        end
+    end
+end
+
+@enduml
