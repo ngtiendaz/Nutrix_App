@@ -77,7 +77,7 @@ class AppRouter: ObservableObject {
         switch selectedTab {
         case .diary: diaryPath.append(destination)
         case .chart: chartPath.append(destination)
-        case .barcode: barcodePath.append(destination)
+//        case .barcode: barcodePath.append(destination)
         case .profile: profilePath.append(destination)
         case .activity: activityPath.append(destination)
         default: break
@@ -88,7 +88,7 @@ class AppRouter: ObservableObject {
         switch selectedTab {
         case .diary: if !diaryPath.isEmpty { diaryPath.removeLast() }
         case .chart: if !chartPath.isEmpty { chartPath.removeLast() }
-        case .barcode: if !barcodePath.isEmpty { barcodePath.removeLast() }
+//        case .barcode: if !barcodePath.isEmpty { barcodePath.removeLast() }
         case .profile: if !profilePath.isEmpty { profilePath.removeLast() }
         case .activity: if !activityPath.isEmpty { activityPath.removeLast() }
         default: break

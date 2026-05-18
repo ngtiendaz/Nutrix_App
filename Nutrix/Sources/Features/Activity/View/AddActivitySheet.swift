@@ -5,7 +5,7 @@ struct AddActivitySheet: View {
     @ObservedObject var viewModel: ActivityViewModel
     let userId: String
     let date: Date
-    
+    @State private var isExpanded = false
     @State private var searchText = ""
     @State private var selectedActivity: Activity?
     @State private var duration: Int = 30
@@ -25,7 +25,7 @@ struct AddActivitySheet: View {
         
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor.white // Nền trắng rõ ràng cho header
+        appearance.backgroundColor = UIColor.white
         appearance.titleTextAttributes = [
             .foregroundColor: UIColor.black,
             .font: UIFont.systemFont(ofSize: 18, weight: .bold)
@@ -41,13 +41,13 @@ struct AddActivitySheet: View {
                 Color.App.background.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // 1. Thanh tìm kiếm nổi bật hơn
+                    // 1. Thanh tìm kiếm
                     searchBar
                         .padding(.top, 15)
                         .padding(.bottom, 20)
                     
                     ScrollView(showsIndicators: false) {
-                        VStack(alignment: .leading, spacing: 30) {
+                        VStack(spacing: 30) {
                             
                             // 2. Section: Chọn loại hoạt động
                             VStack(alignment: .leading, spacing: 16) {
@@ -69,7 +69,12 @@ struct AddActivitySheet: View {
                                                 )
                                                 .onTapGesture {
                                                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                                                        selectedActivity = activity
+                                                        // Cơ chế Toggle: Bấm lại mục cũ thì hủy chọn hoàn toàn
+                                                        if selectedActivity?.id == activity.id {
+                                                            selectedActivity = nil
+                                                        } else {
+                                                            selectedActivity = activity
+                                                        }
                                                     }
                                                 }
                                             }
@@ -90,18 +95,22 @@ struct AddActivitySheet: View {
                                 timeAdjustmentCard
                             }
                             
-                            // 4. Section: Hiển thị Calo dự kiến (chỉ hiện khi đã chọn hoạt động)
+                            // 4. Section: Hiển thị Calo dự kiến & Khối Chú thích Công thức hệ thống
                             if selectedActivity != nil {
-                                estimatedCaloriesView
-                                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                                VStack(alignment: .leading, spacing: 14) {
+                                    estimatedCaloriesView
+                                    
+                                    formulaExplanationCard
+                                }
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
                             }
                         }
                         .padding(.horizontal, 12)
-                        .padding(.bottom, 100) // Tránh đè lên nút Save
+                        .padding(.bottom, 120)
                     }
                 }
                 
-                // Nút Lưu nằm đè lên dưới cùng với hiệu ứng mờ nền
+                // Nút Lưu cố định dưới đáy với dải màu mờ nền
                 VStack {
                     Spacer()
                     saveButton
@@ -117,15 +126,19 @@ struct AddActivitySheet: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Hủy") { dismiss() }
-                        .foregroundColor(.red) // Màu đỏ cho nút hủy để rõ chức năng
+                        .foregroundColor(.red)
                         .fontWeight(.medium)
                 }
             }
         }
+        .onAppear {
+            // Đảm bảo đồng bộ và tải lại chỉ số cơ thể sạch ngay từ đầu chu kỳ mở bạt sheet
+            viewModel.getUserLogs(userId: userId, date: date)
+        }
     }
 }
 
-// MARK: - Components mở rộng
+// MARK: - Components mở rộng Giao Diện
 extension AddActivitySheet {
     
     private var searchBar: some View {
@@ -134,7 +147,7 @@ extension AddActivitySheet {
                 .foregroundColor(.gray)
                 .font(.system(size: 18, weight: .bold))
             
-            TextField("", text: $searchText, prompt: Text("Tìm kiếm bài tập...").foregroundColor(.gray))
+            TextField("", text: $searchText, prompt: Text("Tìm kiếm hoạt động...").foregroundColor(.gray))
                 .foregroundColor(.black)
                 .font(.system(size: 16))
             
@@ -200,42 +213,190 @@ extension AddActivitySheet {
         .shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: 4)
     }
     
+    // TỐI ƯU MỚI: Hiển thị minh bạch Kcal, hệ số MET, và số liệu chiều cao cân nặng thực tế
     private var estimatedCaloriesView: some View {
-        HStack(spacing: 16) {
-            ZStack {
-                Circle()
-                    .fill(Color.orange.opacity(0.15))
-                    .frame(width: 48, height: 48)
-                Image(systemName: "flame.fill")
-                    .foregroundColor(.orange)
-                    .font(.system(size: 20))
-            }
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Năng lượng tiêu thụ")
-                    .font(.system(size: 13))
-                    .foregroundColor(.gray)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(Color.orange.opacity(0.15))
+                        .frame(width: 46, height: 46)
+                    Image(systemName: "flame.fill")
+                        .foregroundColor(.orange)
+                        .font(.system(size: 18))
+                }
                 
-                let calories = (selectedActivity?.metValue ?? 5.0) * Double(duration)
-                Text("~\(Int(calories)) kcal")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.black)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Năng lượng tiêu thụ")
+                        .font(.system(size: 12))
+                        .foregroundColor(.gray)
+                    
+                    let calories = (selectedActivity?.metValue ?? 5.0) * Double(duration)
+                    Text("~\(Int(calories)) Kcal")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundColor(.black)
+                }
+                
+                Spacer()
+                
+                Text("Dự tính")
+                    .font(.system(size: 11, weight: .bold))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.App.secondaryBackground)
+                    .cornerRadius(6)
             }
             
-            Spacer()
+            Divider().background(Color.black.opacity(0.04))
             
-            Text("Dự tính")
-                .font(.system(size: 12, weight: .bold))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(Color.App.secondaryBackground)
-                .cornerRadius(8)
+            // Bộ ba khối kén màu sắc thể hiện các mốc chỉ số áp dụng
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Chỉ số áp dụng tính toán:")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.black.opacity(0.7))
+                
+                HStack(spacing: 8) {
+                    // Thẻ MET của bài tập
+                    HStack(spacing: 4) {
+                        Image(systemName: "bolt.heart.fill").font(.system(size: 10))
+                        Text("MET: \(String(format: "%.1f", selectedActivity?.metValue ?? 5.0))")
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .background(Color.orange.opacity(0.08)).foregroundColor(.orange).cornerRadius(8)
+                    
+                    // Thẻ Cân nặng từ ViewModel
+                    HStack(spacing: 4) {
+                        Image(systemName: "scalemass.fill").font(.system(size: 10))
+                        Text("Nặng: \(viewModel.userWeight > 0 ? "\(Int(viewModel.userWeight)) kg" : "-- kg")")
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .background(Color.blue.opacity(0.08)).foregroundColor(.blue).cornerRadius(8)
+                    
+                    // Thẻ Chiều cao từ ViewModel
+                    HStack(spacing: 4) {
+                        Image(systemName: "figure.stand").font(.system(size: 10))
+                        Text("Cao: \(viewModel.userHeight > 0 ? "\(Int(viewModel.userHeight)) cm" : "-- cm")")
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .background(Color.purple.opacity(0.08)).foregroundColor(.purple).cornerRadius(8)
+                }
+            }
         }
         .padding(16)
         .background(Color.white)
         .cornerRadius(20)
-        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.orange.opacity(0.3), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.orange.opacity(0.2), lineWidth: 1))
     }
+    // COMPONENT NÂNG CẤP: Ẩn/Hiện một phần công thức tính toán với nút "Xem thêm"
+        private var formulaExplanationCard: some View {
+            VStack(alignment: .leading, spacing: 12) {
+                // Header cố định luôn hiển thị
+                HStack(spacing: 6) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(Color.App.primary)
+                    Text("Cơ sở tính toán khoa học")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.black)
+                    
+                    Spacer()
+                    
+                    // Nút bấm Xem thêm / Thu gọn tối giản
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            isExpanded.toggle()
+                        }
+                    }) {
+                        HStack(spacing: 4) {
+                            Text(isExpanded ? "Thu gọn" : "Xem thêm")
+                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        }
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(Color.App.primary)
+                    }
+                }
+                
+                Text("Lượng tiêu hao được ước tính tự động dựa trên chỉ số trao đổi chất cốt lõi (BMR) kết hợp với cường độ gắng sức (MET) của bài tập:")
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+                    .lineSpacing(4)
+                
+                // Công thức tổng quát (Luôn hiển thị để người dùng nắm được tinh thần cốt lõi)
+                VStack(spacing: 4) {
+                    Text("Calories = (BMR / 1440) × MET × Thời gian")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .foregroundColor(Color.App.primary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(Color.App.primaryLight.opacity(0.4))
+                .cornerRadius(10)
+                
+                // KHỐI NỘI DUNG ẨN: Chỉ bung mở ra khi người dùng nhấn "Xem thêm" (isExpanded == true)
+                if isExpanded {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Cách tính chỉ số BMR cụ thể (Harris-Benedict):")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.black.opacity(0.8))
+                            .padding(.top, 4)
+                        
+                        // Nhánh công thức dành cho Nam
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 6) {
+                                Circle().fill(Color.blue).frame(width: 6, height: 6)
+                                Text("Đối với Nam giới:")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.blue)
+                            }
+                            Text("66.47 + (13.75 × W) + (5.003 × H) - (6.755 × A)")
+                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                .foregroundColor(.black.opacity(0.8))
+                                .padding(.leading, 12)
+                        }
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.blue.opacity(0.04))
+                        .cornerRadius(8)
+                        
+                        // Nhánh công thức dành cho Nữ
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 6) {
+                                Circle().fill(Color.red).frame(width: 6, height: 6)
+                                Text("Đối với Nữ giới:")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.red)
+                            }
+                            Text("655.1 + (9.563 × W) + (1.85 × H) - (4.676 × A)")
+                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                .foregroundColor(.black.opacity(0.8))
+                                .padding(.leading, 12)
+                        }
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.red.opacity(0.04))
+                        .cornerRadius(8)
+                        
+                        // Ký hiệu biến
+                        HStack(spacing: 12) {
+                            Text("• W: Cân nặng (kg)").foregroundColor(.gray)
+                            Text("• H: Chiều cao (cm)").foregroundColor(.gray)
+                            Text("• A: Tuổi của bạn").foregroundColor(.gray)
+                        }
+                        .font(.system(size: 10, weight: .medium))
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 4)
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top))) // Hiệu ứng cuộn bung mở mượt mà
+                }
+            }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(20)
+            .shadow(color: Color.black.opacity(0.02), radius: 6, x: 0, y: 3)
+        }
     
     private var emptySearchView: some View {
         VStack(spacing: 12) {
@@ -277,7 +438,7 @@ extension AddActivitySheet {
     }
 }
 
-// MARK: - ActivityTypeItem (Tối ưu giao diện)
+// MARK: - ActivityTypeItem
 struct ActivityTypeItem: View {
     let title: String
     let icon: String

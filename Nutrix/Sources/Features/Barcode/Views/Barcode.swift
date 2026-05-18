@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-struct NutritionView: View {
+struct Barcode: View {
     @Binding var selectedDate: Date
     
     var body: some View {
@@ -20,7 +20,7 @@ struct NutritionView: View {
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 25) {
-                    TopBar(selectedTab: .constant(.barcode), selectedDate: $selectedDate)
+                    TopBar(selectedTab: .constant(.chart), selectedDate: $selectedDate)
                     
                 }
             }.padding(.horizontal, 12)

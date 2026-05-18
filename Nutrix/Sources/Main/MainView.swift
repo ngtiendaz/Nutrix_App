@@ -59,13 +59,13 @@ struct MainView: View {
                             buildDestinationView(destination)
                         }
                 }.environmentObject(authService)
-            case .barcode:
-                NavigationStack(path: $router.barcodePath) {
-                    NutritionView(selectedDate: $selectedDate)
-                        .navigationDestination(for: AppDestination.self) { destination in
-                            buildDestinationView(destination)
-                        }
-                }
+//            case .barcode:
+//                NavigationStack(path: $router.barcodePath) {
+//                    NutritionView(selectedDate: $selectedDate)
+//                        .navigationDestination(for: AppDestination.self) { destination in
+//                            buildDestinationView(destination)
+//                        }
+//                }
             case .profile:
                 NavigationStack(path: $router.profilePath) {
                     ProfileView(selectedDate: $selectedDate)

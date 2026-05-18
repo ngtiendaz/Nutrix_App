@@ -10,6 +10,22 @@ import FirebaseFirestore
 
 extension FirebaseService {
     
+    func fetchUserBodyMetrics(userId: String, completion: @escaping (Result<(height: Double, weight: Double), Error>) -> Void) {
+            db.collection("users").document(userId).getDocument { snapshot, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                guard let data = snapshot?.data() else {
+                    completion(.success((height: 0.0, weight: 0.0)))
+                    return
+                }
+                let height = data["height"] as? Double ?? 0.0
+                let weight = data["weight"] as? Double ?? 0.0
+                completion(.success((height: height, weight: weight)))
+            }
+        }
+    
     // MARK: - 1. Get Activity Dataset (Dành cho User chọn bài tập)
     /// Lấy danh sách các loại hoạt động mẫu do Admin quản lý
     func fetchActivityDataset(completion: @escaping (Result<[Activity], Error>) -> Void) {
