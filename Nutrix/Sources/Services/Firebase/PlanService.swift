@@ -138,28 +138,28 @@ extension FirebaseService {
             }
     }
     
-    // MARK: - Delete/Deactivate Plan
-    func deleteCurrentPlan(userId: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        // Thay vì xóa sổ, ta nên lưu nó vào lịch sử với trạng thái "cancelled"
-        // để phục vụ thống kê tại sao người dùng bỏ cuộc giữa chừng.
-        fetchCurrentPlan(userId: userId) { [weak self] result in
-            if case .success(let plan) = result, let plan = plan {
-                self?.archivePlanToHistory(userId: userId, plan: plan, status: "cancelled")
-            }
-            
-            self?.db.collection("users")
-                .document(userId)
-                .collection("plans")
-                .document("current_plan")
-                .delete { error in
-                    if let error = error {
-                        completion(.failure(error))
-                    } else {
-                        completion(.success(()))
-                    }
-                }
-        }
-    }
+//    // MARK: - Delete/Deactivate Plan
+//    func deleteCurrentPlan(userId: String, completion: @escaping (Result<Void, Error>) -> Void) {
+//        // Thay vì xóa sổ, ta nên lưu nó vào lịch sử với trạng thái "cancelled"
+//        // để phục vụ thống kê tại sao người dùng bỏ cuộc giữa chừng.
+//        fetchCurrentPlan(userId: userId) { [weak self] result in
+//            if case .success(let plan) = result, let plan = plan {
+//                self?.archivePlanToHistory(userId: userId, plan: plan, status: "cancelled")
+//            }
+//            
+//            self?.db.collection("users")
+//                .document(userId)
+//                .collection("plans")
+//                .document("current_plan")
+//                .delete { error in
+//                    if let error = error {
+//                        completion(.failure(error))
+//                    } else {
+//                        completion(.success(()))
+//                    }
+//                }
+//        }
+//    }
     
     // MARK: - Private Helpers
     
@@ -292,4 +292,108 @@ extension FirebaseService {
                     }
             }
     }
+    
+    func updateCurrentPlan(
+            userId: String,
+            plan: NutritionPlan,
+            startDate: Date,
+            endDate: Date,
+            currentWeight: Double,
+            targetWeight: Double,
+            isActive: Bool,
+            completion: @escaping (Result<Void, Error>) -> Void
+        ) {
+            let planData: [String: Any] = [
+                "dailyCalories": plan.dailyCalories,
+                "activityCalories": plan.activityCalories,
+                "protein": plan.protein,
+                "carbs": plan.carbs,
+                "fat": plan.fat,
+                "advice": plan.advice,
+                "exercisePlan": plan.exercisePlan,
+                "startDate": Timestamp(date: startDate),
+                "endDate": Timestamp(date: endDate),
+                "currentWeight": currentWeight,
+                "targetWeight": targetWeight,
+                "isActive": isActive,
+                "updatedAt": FieldValue.serverTimestamp()
+            ]
+            
+            db.collection("users")
+                .document(userId)
+                .collection("plans")
+                .document("current_plan")
+                .setData(planData, merge: true) { [weak self] error in
+                    if let error = error {
+                        completion(.failure(error))
+                    } else {
+                        // Đồng bộ lại mục tiêu sang DailySummary của ngày hôm nay sau khi cập nhật thành công
+                        self?.syncPlanToDailySummary(userId: userId, plan: plan)
+                        completion(.success(()))
+                    }
+                }
+        }
+        
+        // MARK: - DELETE PLAN (KEEP SUMMARIES)
+        /// Xóa lộ trình hiện tại (Chuyển sang lịch sử hủy), không ảnh hưởng đến dữ liệu daily_summaries cũ
+        func deleteCurrentPlan(userId: String, completion: @escaping (Result<Void, Error>) -> Void) {
+            fetchCurrentPlan(userId: userId) { [weak self] result in
+                guard let self = self else { return }
+                
+                if case .success(let plan) = result, let plan = plan {
+                    // Lưu vào lịch sử với trạng thái huỷ bỏ "cancelled" trước khi xóa document
+                    self.archivePlanToHistory(userId: userId, plan: plan, status: "cancelled")
+                }
+                
+                // Tiến hành xóa cứng document current_plan để App biết hiện tại không có lộ trình hoạt động
+                self.db.collection("users")
+                    .document(userId)
+                    .collection("plans")
+                    .document("current_plan")
+                    .delete { error in
+                        if let error = error {
+                            completion(.failure(error))
+                        } else {
+                            completion(.success(()))
+                        }
+                    }
+            }
+        }
+        
+        // MARK: - FETCH ALL HISTORY PLANS
+        /// Lấy danh sách tất cả các lộ trình cũ trong lịch sử để hiển thị danh sách phía dưới
+        func fetchHistoryPlans(userId: String, completion: @escaping (Result<[NutritionPlan], Error>) -> Void) {
+            db.collection("users")
+                .document(userId)
+                .collection("history_plans")
+                .order(by: "archivedAt", descending: true)
+                .getDocuments { querySnapshot, error in
+                    if let error = error {
+                        completion(.failure(error))
+                        return
+                    }
+                    
+                    let plans = querySnapshot?.documents.compactMap { doc -> NutritionPlan? in
+                        let data = doc.data()
+                        let startDate = (data["startDate"] as? Timestamp)?.dateValue()
+                        let endDate = (data["endDate"] as? Timestamp)?.dateValue()
+                        
+                        return NutritionPlan(
+                            dailyCalories: data["dailyCalories"] as? Double ?? 0,
+                            activityCalories: data["activityCalories"] as? Double ?? 0,
+                            protein: data["protein"] as? Double ?? 0,
+                            carbs: data["carbs"] as? Double ?? 0,
+                            fat: data["fat"] as? Double ?? 0,
+                            advice: data["advice"] as? String ?? "",
+                            exercisePlan: data["exercisePlan"] as? String ?? "",
+                            startDate: startDate,
+                            endDate: endDate,
+                            currentWeight: data["currentWeight"] as? Double ?? 0,
+                            targetWeight: data["targetWeight"] as? Double ?? 0,
+                            status: data["status"] as? String ?? "completed" // Thêm thuộc tính status nếu struct của b
+                        )
+                    } ?? []
+                    completion(.success(plans))
+                }
+        }
 }

@@ -6,13 +6,15 @@
 //
 
 import SwiftUI
+import FirebaseAuth
+import FirebaseAuth
+import FirebaseFirestore
 
 struct NutritionPlanView: View {
     let plan: NutritionPlan
     @EnvironmentObject var router: AppRouter
-    @Environment(\.dismiss) var dismiss
-    @EnvironmentObject var loginViewModel: LoginViewModel
     @EnvironmentObject var diaryViewModel: DiaryViewModel
+    @EnvironmentObject var planViewModel: PlanViewModel
     
     @StateObject private var viewModel = NutritionPlanViewModel()
     
@@ -20,96 +22,105 @@ struct NutritionPlanView: View {
     @State private var selectedDuration: Int = 1
     @State private var showButtons = false
     
+    // ✅ Định nghĩa 2 closures điều khiển luồng ra ngoài
+    var onBackToSetup: () -> Void
     var onApplied: () -> Void
     
     var body: some View {
-        ZStack {
-            Color.App.background.ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 28) {
-                        
-                        // Header Section
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Phân tích từ Nutrix")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(Color.App.primary)
-                                .textCase(.uppercase)
-                                .tracking(1.2)
+        NavigationView {
+            ZStack {
+                Color.App.background.ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 28) {
                             
-                            Text("Lộ trình dinh dưỡng")
-                                .font(.system(size: 28, weight: .black))
-                                .foregroundColor(.black)
-                        }
-                        .padding(.top, 10)
-                        
-                        // 1. Grid Chỉ số dinh dưỡng (Thiết kế lại hiện đại hơn)
-                        VStack(alignment: .leading, spacing: 15) {
-                            Text("Mục tiêu hằng ngày")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.black)
-                            
-                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                                nutritionCard(title: "Năng lượng", value: "\(Int(plan.dailyCalories))", unit: "kcal", icon: "bolt.fill", color: .orange)
-                                nutritionCard(title: "Chất đạm", value: "\(Int(plan.protein))", unit: "g", icon: "leaf.fill", color: Color.App.primary)
-                                nutritionCard(title: "Tinh bột", value: "\(Int(plan.carbs))", unit: "g", icon: "cup.and.saucer.fill", color: .blue)
-                                nutritionCard(title: "Chất béo", value: "\(Int(plan.fat))", unit: "g", icon: "drop.fill", color: .yellow)
-                                nutritionCard(
-                                    title: "Calo cần tiêu thụ",
-                                    value: "\(Int(plan.activityCalories))",
-                                    unit: "kcal",
-                                    icon: "flame.fill",
-                                    color: .red
-                                )
-                            }
-                        }
-                        
-                        // 2. Lời khuyên AI (Typing Effect Area)
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack {
-                                Image(systemName: "sparkles")
-                                    .foregroundColor(.orange)
-                                Text("Lời khuyên chuyên gia")
-                                    .font(.system(size: 16, weight: .bold))
+                            // Header Section
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Phân tích từ Nutrix")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(Color.App.primary)
+                                    .textCase(.uppercase)
+                                    .tracking(1.2)
+                                
+                                Text("Lộ trình dinh dưỡng")
+                                    .font(.system(size: 28, weight: .black))
                                     .foregroundColor(.black)
                             }
+                            .padding(.top, 10)
                             
-                            Text(displayedAdvice)
-                                .font(.system(size: 16, design: .rounded))
-                                .foregroundColor(.black.opacity(0.8))
-                                .lineSpacing(8)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .fixedSize(horizontal: false, vertical: true)
+                            // 1. Grid Chỉ số dinh dưỡng
+                            VStack(alignment: .leading, spacing: 15) {
+                                Text("Mục tiêu hằng ngày")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.black)
+                                
+                                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                                    nutritionCard(title: "Năng lượng", value: "\(Int(plan.dailyCalories))", unit: "kcal", icon: "bolt.fill", color: .orange)
+                                    nutritionCard(title: "Chất đạm", value: "\(Int(plan.protein))", unit: "g", icon: "leaf.fill", color: Color.App.primary)
+                                    nutritionCard(title: "Tinh bột", value: "\(Int(plan.carbs))", unit: "g", icon: "cup.and.saucer.fill", color: .blue)
+                                    nutritionCard(title: "Chất béo", value: "\(Int(plan.fat))", unit: "g", icon: "drop.fill", color: .yellow)
+                                    nutritionCard(title: "Calo cần tiêu thụ", value: "\(Int(plan.activityCalories))", unit: "kcal", icon: "flame.fill", color: .red)
+                                }
+                            }
+                            
+                            // 2. Lời khuyên AI (Typing Effect)
+                            VStack(alignment: .leading, spacing: 16) {
+                                HStack {
+                                    Image(systemName: "sparkles")
+                                        .foregroundColor(.orange)
+                                    Text("Lời khuyên chuyên gia")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.black)
+                                }
+                                
+                                Text(displayedAdvice)
+                                    .font(.system(size: 16, design: .rounded))
+                                    .foregroundColor(.black.opacity(0.8))
+                                    .lineSpacing(8)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(20)
+                            .background(Color.white)
+                            .cornerRadius(24)
+                            .shadow(color: .black.opacity(0.03), radius: 10, x: 0, y: 5)
+                            
+                            // 3. Hoạt động đề xuất
+                            VStack(alignment: .leading, spacing: 12) {
+                                Label("Hoạt động thể chất", systemImage: "figure.run")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.black)
+                                
+                                Text(plan.exercisePlan)
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.black.opacity(0.6))
+                                    .lineSpacing(4)
+                            }
+                            .padding(.bottom, 100)
                         }
                         .padding(20)
-                        .background(Color.white)
-                        .cornerRadius(24)
-                        .shadow(color: .black.opacity(0.03), radius: 10, x: 0, y: 5)
-                        
-                        // 3. Hoạt động đề xuất
-                        VStack(alignment: .leading, spacing: 12) {
-                            Label("Hoạt động thể chất", systemImage: "figure.run")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.black)
-                            
-                            Text(plan.exercisePlan)
-                                .font(.system(size: 15))
-                                .foregroundColor(.black.opacity(0.6))
-                                .lineSpacing(4)
-                        }
-                        .padding(.bottom, 100) // Tạo khoảng trống cho nút bấm phía dưới
                     }
-                    .padding(20)
+                    
+                    // Bottom Action Buttons
+                    if showButtons {
+                        actionButtonsArea
+                    }
                 }
-                
-                // Bottom Action Buttons
-                if showButtons {
-                    actionButtonsArea
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: onBackToSetup) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                            Text("Chỉnh sửa số liệu")
+                        }
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(Color.App.primary)
+                    }
                 }
             }
         }
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if let planDuration = plan.duration {
                 self.selectedDuration = planDuration
@@ -124,7 +135,6 @@ struct NutritionPlanView: View {
     }
     
     // MARK: - Components
-    
     private func nutritionCard(title: String, value: String, unit: String, icon: String, color: Color) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
@@ -158,15 +168,13 @@ struct NutritionPlanView: View {
     
     private var actionButtonsArea: some View {
         HStack(spacing: 15) {
-            // NÚT HỦY BỎ
+            // NÚT HỦY BỎ hoàn toàn cụm modal cover
             Button(action: {
-                // Hiển thị loading nhẹ trước khi thoát để tạo cảm giác xử lý mượt mà
                 router.showLoading()
-                
-                // Delay cực ngắn để người dùng thấy loading rồi dismiss/pop
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                     router.hideLoading()
-                    dismiss() // Đóng fullScreenCover
+                    // Gọi hàm đóng modal cover của dòng DiaryView/PlanView truyền vào
+                    onApplied()
                 }
             }) {
                 Text("Hủy bỏ")
@@ -193,9 +201,9 @@ struct NutritionPlanView: View {
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
-                .background(Color.black)
+                .background(Color.App.primary) // Sử dụng màu xanh Forest của app
                 .cornerRadius(18)
-                .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
+                .shadow(color: Color.App.primary.opacity(0.2), radius: 10, y: 5)
             }
             .disabled(viewModel.isSaving)
         }
@@ -208,43 +216,37 @@ struct NutritionPlanView: View {
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
-    // MARK: - Logic cập nhật
-    // MARK: - Logic cập nhật
-        private func savePlanWithViewModel() {
-            guard let userId = loginViewModel.authService.currentUser?.userId else { return }
+    private func savePlanWithViewModel() {
+        // Lấy Uid trực tiếp từ nguồn hệ thống FirebaseAuth an toàn
+        guard let userId = FirebaseFirestore.Firestore.firestore().app.options.clientID != nil ?
+                (Auth.auth().currentUser?.uid) : nil else { return }
+        
+        router.showLoading()
+        
+        viewModel.handleSavePlan(
+            userId: userId,
+            plan: plan,
+            durationMonths: selectedDuration,
+            currentWeight: plan.currentWeight ?? 0.0,
+            targetWeight: plan.targetWeight ?? 0.0
+        ) { success in
+            router.hideLoading()
             
-            router.showLoading()
-            
-            // Truyền thêm các tham số còn thiếu
-            viewModel.handleSavePlan(
-                userId: userId,
-                plan: plan,
-                durationMonths: selectedDuration, // Sử dụng biến state
-                currentWeight: plan.currentWeight ?? 0.0,
-                targetWeight: plan.targetWeight ?? 0.0
-            ) { success in
-                router.hideLoading()
+            if success {
+                router.showToast(message: "Đã cập nhật lộ trình mới!", type: .success)
+                diaryViewModel.refreshData()
                 
-                if success {
-                    onApplied()
-                    router.showToast(message: "Đã cập nhật lộ trình mới!", type: .success)
-                    
-                    // 1. Reload data trước
-                    diaryViewModel.refreshData()
-                    
-                    // 2. Delay một nhịp cực ngắn để đảm bảo ViewModel đã nhận lệnh rồi mới đóng View
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        router.hideLoading()
-                        dismiss()
-                    }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    onApplied() // Gọi callback thoát dứt điểm Modal Cover ra ngoài màn hình chính
                 }
             }
         }
+    }
     
     private func startTypingEffect() {
         let chars = plan.advice.map { String($0) }
         var index = 0
-        Timer.scheduledTimer(withTimeInterval: 0.015, repeats: true) { timer in
+        Timer.scheduledTimer(withTimeInterval: 0.012, repeats: true) { timer in
             if index < chars.count {
                 displayedAdvice += chars[index]
                 index += 1

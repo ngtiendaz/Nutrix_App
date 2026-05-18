@@ -20,7 +20,7 @@ class AppRouter: ObservableObject {
     @Published var currentRoot: AppRoot = .splash
     @Published var diaryPath = NavigationPath()
     @Published var chartPath = NavigationPath()
-    @Published var barcodePath = NavigationPath()
+    @Published var planPath = NavigationPath()
     @Published var profilePath = NavigationPath()
     @Published var activityPath = NavigationPath()
     @Published var selectedTab: Tab = .diary
@@ -77,7 +77,7 @@ class AppRouter: ObservableObject {
         switch selectedTab {
         case .diary: diaryPath.append(destination)
         case .chart: chartPath.append(destination)
-//        case .barcode: barcodePath.append(destination)
+        case .plan: planPath.append(destination)
         case .profile: profilePath.append(destination)
         case .activity: activityPath.append(destination)
         default: break
@@ -88,7 +88,7 @@ class AppRouter: ObservableObject {
         switch selectedTab {
         case .diary: if !diaryPath.isEmpty { diaryPath.removeLast() }
         case .chart: if !chartPath.isEmpty { chartPath.removeLast() }
-//        case .barcode: if !barcodePath.isEmpty { barcodePath.removeLast() }
+        case .plan: if !planPath.isEmpty { planPath.removeLast() }
         case .profile: if !profilePath.isEmpty { profilePath.removeLast() }
         case .activity: if !activityPath.isEmpty { activityPath.removeLast() }
         default: break
@@ -107,7 +107,7 @@ class AppRouter: ObservableObject {
         DispatchQueue.main.async {
             self.diaryPath = NavigationPath()
             self.chartPath = NavigationPath()
-            self.barcodePath = NavigationPath()
+            self.planPath = NavigationPath()
             self.profilePath = NavigationPath()
             self.activityPath = NavigationPath()
             self.selectedTab = .diary

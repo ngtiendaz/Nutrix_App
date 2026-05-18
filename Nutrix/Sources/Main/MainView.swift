@@ -59,13 +59,13 @@ struct MainView: View {
                             buildDestinationView(destination)
                         }
                 }.environmentObject(authService)
-//            case .barcode:
-//                NavigationStack(path: $router.barcodePath) {
-//                    NutritionView(selectedDate: $selectedDate)
-//                        .navigationDestination(for: AppDestination.self) { destination in
-//                            buildDestinationView(destination)
-//                        }
-//                }
+            case .plan:
+                NavigationStack(path: $router.planPath) {
+                    PlanView(selectedDate: $selectedDate, authService: authService)
+                        .navigationDestination(for: AppDestination.self) { destination in
+                            buildDestinationView(destination)
+                        }
+                }
             case .profile:
                 NavigationStack(path: $router.profilePath) {
                     ProfileView(selectedDate: $selectedDate)
@@ -93,11 +93,16 @@ struct MainView: View {
                     .environmentObject(router)
                     .environmentObject(diaryVM)
         case .nutritionPlan(let plan):
-            NutritionPlanView(plan: plan, onApplied: {
-
-            })
-            .environmentObject(router)
-            .environmentObject(diaryViewModel)
+                    // ✅ CẬP NHẬT Ở ĐÂY: Bổ sung tham số onBackToSetup còn thiếu
+                    NutritionPlanView(plan: plan) {
+                        // Hành động khi nhấn nút Back: Pop màn hình quay lại danh sách trước đó
+                        router.pop()
+                    } onApplied: {
+                        // Hành động khi nhấn Áp dụng hoặc Hủy bỏ: Cũng quay lại màn hình trước đó
+                        router.pop()
+                    }
+                    .environmentObject(router)
+                    .environmentObject(diaryViewModel)
         default:
             VStack {
                 Image(systemName: "hammer.fill")

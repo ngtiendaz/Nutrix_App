@@ -26,6 +26,7 @@ struct NutritionPlan: Codable, Hashable {
     var currentWeight: Double?
     var targetWeight: Double?
     var duration: Int?
+    var status: String?
 }
 struct PlanSummary {
     let startDate: Date

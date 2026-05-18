@@ -54,7 +54,7 @@ struct ChartView: View {
                             
                             historyListSection(points: viewModel.report?.summaryPoints ?? [])
                         }
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, 16)
                         .padding(.top, 16)
                         .padding(.bottom, 70)
                     }

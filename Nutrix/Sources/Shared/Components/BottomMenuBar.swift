@@ -9,7 +9,7 @@ import SwiftUI
 enum Tab: String, CaseIterable {
     case diary = "list.bullet.rectangle"
     case chart = "chart.bar.xaxis"
-//    case barcode = "barcode.viewfinder"
+    case plan = "leaf"
     case activity = "figure.run"
     case profile = "person.crop.circle"
  
@@ -19,7 +19,7 @@ enum Tab: String, CaseIterable {
         switch self {
         case .diary: return "Nhật ký"
         case .chart: return "Thống kê"
-//        case .barcode: return "Thực phẩm"
+        case .plan: return "Lộ trình"
         case .activity: return "Hoạt động"
         case .profile: return "Cá nhân"
         }
@@ -31,9 +31,6 @@ enum Tab: String, CaseIterable {
         if self == .activity {
             return self.rawValue
         }
-//        if self == .barcode {
-//            return self.rawValue
-//        }
             return self.rawValue + ".fill"
         }
 }
