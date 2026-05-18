@@ -18,26 +18,27 @@ struct AppNotificationView: View {
     var body: some View {
         if let data = data {
             VStack {
-                // Toàn bộ khối nội dung Banner thông báo
-                HStack(spacing: 16) {
-                    // Vùng chứa Icon với vòng tròn bọc ngoài tăng độ tương phản
+                // Toàn bộ khối nội dung Banner thông báo (Đã thu gọn padding)
+                HStack(spacing: 12) {
+                    // Vùng chứa Icon (Thu nhỏ từ 22x22 padded 10 xuống 15x15 padded 7)
                     Image(systemName: data.type == .success ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(.system(size: 15, weight: .bold))
                         .foregroundColor(data.type == .success ? Color.App.primary : Color(hex: "BC4749"))
-                        .padding(10)
+                        .padding(7)
                         .background(Color.white)
                         .clipShape(Circle())
-                        .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+                        .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
                     
-                    // Nội dung Text (Tiêu đề & Tin nhắn)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(data.type == .success ? "Thành công" : "Có lỗi xảy ra")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white.opacity(0.75))
+                    // Nội dung Text - Tinh chỉnh size chữ nhỏ gọn, sang trọng hơn
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(data.type == .success ? "Thành công" : "Thông báo")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.white.opacity(0.7))
                             .textCase(.uppercase)
+                            .tracking(0.5)
                         
                         Text(data.message)
-                            .font(.system(size: 15, weight: .bold))
+                            .font(.system(size: 13, weight: .semibold)) // Giảm từ 15 xuống 13
                             .foregroundColor(.white)
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
@@ -46,67 +47,68 @@ struct AppNotificationView: View {
                     
                     Spacer()
                     
-                    // Icon gợi ý nhỏ để người dùng biết có thể vuốt lên để đóng
+                    // Icon chevrons siêu mảnh thanh lịch
                     Image(systemName: "chevron.compact.up")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.4))
-                        .padding(.trailing, 4)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.35))
+                        .padding(.trailing, 2)
                 }
-                .padding(.vertical, 14)
-                .padding(.horizontal, 16)
-                .frame(maxWidth: UIScreen.main.bounds.width - 32)
+                .padding(.vertical, 10) // Thu hẹp độ dày từ 14 xuống 10
+                .padding(.horizontal, 14)
+                .frame(maxWidth: UIScreen.main.bounds.width - 40) // Bo gọn chiều rộng hơn một chút
                 .background(
                     ZStack {
-                        // Nền màu đồng bộ cao cấp dựa trên mã màu App.primary
                         LinearGradient(
                             colors: [
                                 data.type == .success ? Color.App.primary : Color(hex: "BC4749"),
-                                data.type == .success ? Color.App.primary.opacity(0.9) : Color(hex: "A34848")
+                                data.type == .success ? Color.App.primary.opacity(0.92) : Color(hex: "A34848")
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                         
-                        // Hiệu ứng Glossy/Bắt sáng nhẹ phía trên
+                        // Đường bắt sáng nhẹ tinh tế
                         Capsule()
-                            .fill(Color.white.opacity(0.08))
-                            .frame(height: 35)
-                            .offset(y: -22)
-                            .blur(radius: 8)
+                            .fill(Color.white.opacity(0.06))
+                            .frame(height: 25)
+                            .offset(y: -16)
+                            .blur(radius: 6)
                     }
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                // Đổ bóng mềm hiện đại
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)) // Góc bo mượt mà hơn
                 .shadow(
-                    color: (data.type == .success ? Color.App.primary : Color(hex: "BC4749")).opacity(0.25),
-                    radius: 12, x: 0, y: 6
+                    color: (data.type == .success ? Color.App.primary : Color(hex: "BC4749")).opacity(0.18),
+                    radius: 10, x: 0, y: 5
                 )
                 .padding(.top, safeAreaTop)
-                // Áp dụng khoảng cách ngón tay kéo lên trực tiếp vào ViewY Offset
                 .offset(y: dragOffset)
-                // Cấu hình hiệu ứng trượt xuất hiện từ đỉnh màn hình và thu nhỏ khi biến mất
+                // Hiệu ứng di chuyển mượt mà không bị khựng hình
                 .transition(.asymmetric(
                     insertion: .move(edge: .top).combined(with: .opacity),
                     removal: .move(edge: .top).combined(with: .opacity)
                 ))
-                // Giao thức Gesture xử lý kéo vuốt (Swipe)
                 .gesture(
                     DragGesture()
                         .onChanged { value in
-                            // Chỉ cho phép vuốt kéo lên trên (translation nhỏ hơn 0)
+                            // Chỉ cho phép kéo ngược lên trên
                             if value.translation.height < 0 {
                                 dragOffset = value.translation.height
                             }
                         }
                         .onEnded { value in
-                            // Nếu vuốt lên quá -30pt thì kích hoạt xóa / đóng Toast lập tức
-                            if value.translation.height < -30 {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            // Sử dụng predictedEndTranslation để tính toán lực vuốt (Velocity)
+                            // Người dùng chỉ cần hất nhẹ (bất kể khoảng cách ngắn) là banner tự bay mất mượt mà
+                            let swipeForce = value.predictedEndTranslation.height
+                            
+                            if swipeForce < -30 || value.translation.height < -20 {
+                                // Hiệu ứng biến mất dạng "flick" tốc độ cao cực mượt
+                                withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) {
+                                    dragOffset = -150
                                     router.toast = nil
                                 }
                             } else {
-                                // Nếu vuốt chưa đủ tầm, trả view về vị trí cũ một cách mượt mà
-                                withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+                                // Trả về vị trí cũ nếu lực vuốt không đủ
+                                withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
                                     dragOffset = 0
                                 }
                             }
@@ -119,32 +121,19 @@ struct AppNotificationView: View {
                 triggerHaptic(type: data.type)
             }
             .onDisappear {
-                // Reset lại toạ độ kéo về 0 chuẩn bị cho lần hiển thị thông báo kế tiếp
                 dragOffset = 0
             }
         }
     }
     
-    // Lấy khoảng cách an toàn phía trên (Hỗ trợ tốt Tai thỏ / Dynamic Island)
     private var safeAreaTop: CGFloat {
         let scenes = UIApplication.shared.connectedScenes
         let windowScene = scenes.first as? UIWindowScene
-        return (windowScene?.windows.first?.safeAreaInsets.top ?? 44) + 6
+        return (windowScene?.windows.first?.safeAreaInsets.top ?? 44) + 4
     }
     
-    // Phản hồi rung vật lý chất lượng cao (Haptic Feedback)
     private func triggerHaptic(type: ToastType) {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(type == .success ? .success : .error)
     }
-}
-
-// Giả định ToastType của bạn có 2 case này
-enum ToastType {
-    case success, error
-}
-
-struct ToastData {
-    let message: String
-    let type: ToastType
 }

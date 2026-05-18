@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 struct PlanView: View {
     @Binding var selectedDate: Date
@@ -9,14 +10,14 @@ struct PlanView: View {
     @EnvironmentObject var planViewModel: PlanViewModel
     
     @State private var showAISetup = false
-    @State private var showDeleteConfirmation = false // Quản lý đóng mở cửa sổ hủy lộ trình
+    @State private var showDeleteConfirmation = false
     
     var body: some View {
         ZStack {
             Color.App.background.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Thanh tác vụ đầu trang
+                // Top Bar
                 TopBar(selectedTab: .constant(.plan), selectedDate: $selectedDate)
                     .padding(.horizontal, 16)
                     .padding(.top, 10)
@@ -39,11 +40,15 @@ struct PlanView: View {
                             
                             // 1. KHỐI LỘ TRÌNH ĐANG THỰC HIỆN
                             if let plan = planViewModel.currentPlan {
-                                VStack(alignment: .leading, spacing: 18) {                                    
+                                VStack(alignment: .leading, spacing: 18) {
+                    
                                     currentPlanDetailedCard(plan: plan)
                                     
-                                    // 2. KHỐI NHẬT KÝ TUẦN ĐỘNG (THỰC TẾ TỪ FIREBASE)
+                                    // 2. KHỐI NHẬT KÝ TUẦN ĐỘNG
                                     miniStreakSection
+                                    
+                                    // 3. KHỐI BIỂU ĐỒ XU HƯỚNG CÂN NẶNG
+                                    weightTrendChartSection(plan: plan)
                                 }
                             } else {
                                 AIPlanPromoCard {
@@ -53,7 +58,7 @@ struct PlanView: View {
                                 }
                             }
                             
-                            // 3. KHỐI LỊCH SỬ LỘ TRÌNH GẦN ĐÂY
+                            // 4. KHỐI LỊCH SỬ LỘ TRÌNH GẦN ĐÂY
                             if !planViewModel.historyPlans.isEmpty {
                                 VStack(alignment: .leading, spacing: 16) {
                                     Text("Lịch sử lộ trình gần đây")
@@ -76,7 +81,7 @@ struct PlanView: View {
                 }
             }
             
-            // Khắc phục triệt để lỗi nút bấm đơ bằng cách gắn Alert tại cây thư mục ZStack gốc ngoài cùng
+            // Khắc phục triệt để lỗi chặn Tap Gesture
             .alert(isPresented: $showDeleteConfirmation) {
                 Alert(
                     title: Text("Xác nhận hủy lộ trình"),
@@ -113,8 +118,8 @@ struct PlanView: View {
         let goalType = planViewModel.getPlanGoalType(current: plan.currentWeight ?? 0.0, target: plan.targetWeight ?? 0.0)
         
         return VStack(spacing: 22) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) { // Đã sửa từ withAlignment thành alignment
                     HStack(spacing: 6) {
                         Circle().fill(Color.App.primary).frame(width: 8, height: 8)
                         Text(goalType.uppercased())
@@ -125,6 +130,10 @@ struct PlanView: View {
                     Text("Mục tiêu: \(String(format: "%.1f", plan.targetWeight ?? 0)) kg")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.black)
+                    
+                    Text("Thời gian: \(formatFullDate(plan.startDate)) - \(formatFullDate(plan.endDate))")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.gray)
                 }
                 Spacer()
                 
@@ -171,7 +180,6 @@ struct PlanView: View {
             
             // HỆ THỐNG BA NÚT ĐIỀU HƯỚNG / HÀNH ĐỘNG
             VStack(spacing: 12) {
-                // 1. Nút Đánh giá & hiệu chỉnh dinh dưỡng hàng ngày tự động bằng AI
                 Button(action: {
                     router.showToast(message: "Tính năng phân tích hiệu chỉnh dinh dưỡng thiếu hụt bằng AI đang được phát triển!", type: .success)
                 }) {
@@ -189,7 +197,6 @@ struct PlanView: View {
                 }
                 
                 HStack(spacing: 12) {
-                    // 2. Nút Cập nhật sửa đổi chỉ số
                     Button(action: {
                         if planViewModel.isEditingPlan {
                             planViewModel.savePlanUpdates()
@@ -210,7 +217,6 @@ struct PlanView: View {
                         .cornerRadius(12)
                     }
                     
-                    // 3. Nút Xóa / Huỷ bỏ lộ trình hiện tại
                     Button(action: {
                         showDeleteConfirmation = true
                     }) {
@@ -233,10 +239,118 @@ struct PlanView: View {
         .cornerRadius(24)
         .shadow(color: .black.opacity(0.02), radius: 15, x: 0, y: 8)
     }
+    // Đổi 'var' thành 'func' ở đây
+    private func weightTrendChartSection(plan: NutritionPlan) -> some View {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Xu hướng thay đổi cân nặng")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 4)
+                
+                VStack(alignment: .leading, spacing: 15) {
+                    if planViewModel.weightChartData.count < 2 {
+                        HStack {
+                            Spacer()
+                            VStack(spacing: 8) {
+                                Image(systemName: "chart.line.uptrend.xyaxis")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.gray.opacity(0.5))
+                                Text("Cần tối thiểu 2 mốc lộ trình ghi nhận để vẽ biểu đồ.")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.gray)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .padding(.vertical, 30)
+                            Spacer()
+                        }
+                    } else {
+                        Chart {
+                            ForEach(planViewModel.weightChartData) { point in
+                                LineMark(
+                                    x: .value("Giai đoạn", point.dateLabel),
+                                    y: .value("Cân nặng", point.weight)
+                                )
+                                .foregroundStyle(Color.App.primary)
+                                .interpolationMethod(.catmullRom)
+                                .lineStyle(StrokeStyle(lineWidth: 3))
+                                
+                                AreaMark(
+                                    x: .value("Giai đoạn", point.dateLabel),
+                                    y: .value("Cân nặng", point.weight)
+                                )
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [Color.App.primary.opacity(0.15), Color.App.primary.opacity(0.01)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                                .interpolationMethod(.catmullRom)
+                                
+                                PointMark(
+                                    x: .value("Giai đoạn", point.dateLabel),
+                                    y: .value("Cân nặng", point.weight)
+                                )
+                                .foregroundStyle(Color.App.primary)
+                                .annotation(position: .top) {
+                                    Text("\(String(format: "%.1f", point.weight))kg")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundColor(.black)
+                                }
+                            }
+                        }
+                        .frame(height: 140)
+                        .chartXAxis {
+                            AxisMarks(values: .automatic) { _ in
+                                AxisValueLabel()
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(.gray)
+                            }
+                        }
+                        .chartYAxis {
+                            AxisMarks(values: .automatic) { value in
+                                AxisGridLine().foregroundStyle(Color.black.opacity(0.03))
+                                AxisValueLabel {
+                                    if let intValue = value.as(Double.self) {
+                                        Text("\(Int(intValue)) kg")
+                                            .font(.system(size: 10))
+                                            .foregroundColor(.gray)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    HStack(spacing: 16) {
+                        HStack(spacing: 6) {
+                            Circle().fill(Color.App.primary).frame(width: 8, height: 8)
+                            Text("Mốc cân nặng đầu lộ trình")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.gray)
+                        }
+                        
+                        if let target = plan.targetWeight {
+                            HStack(spacing: 6) {
+                                Image(systemName: "flag.fill")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.orange)
+                                Text("Mục tiêu đạt: \(String(format: "%.1f", target)) kg")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.black)
+                            }
+                        }
+                    }
+                    .padding(.top, 5)
+                }
+                .padding(18)
+                .background(Color.white)
+                .cornerRadius(20)
+                .shadow(color: .black.opacity(0.01), radius: 10, y: 4)
+            }
+        }
     
-    // Khối hiển thị chuỗi ngày thực hiện trong tuần (Dữ liệu thật từ Firebase)
     private var miniStreakSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) { // Đã sửa từ withAlignment thành alignment
             Text("Nhật ký thực hiện tuần này")
                 .font(.system(size: 14, weight: .bold))
                 .foregroundColor(.black)
@@ -358,50 +472,11 @@ struct PlanView: View {
         formatter.dateFormat = "dd/MM/yy"
         return formatter.string(from: date)
     }
-}
-// MARK: - Helper Views
-
-struct AIPlanPromoCard: View {
-    var action: () -> Void
     
-    var body: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 36, weight: .semibold))
-                .foregroundColor(Color.App.primary)
-                .padding(22)
-                .background(Color.App.primaryLight)
-                .clipShape(Circle())
-            
-            VStack(spacing: 10) {
-                Text("Thiết kế lộ trình với AI")
-                    .font(.system(size: 22, weight: .black))
-                    .foregroundColor(.black)
-                Text("Hãy để Nutrix AI phân tích chỉ số cơ thể chuyên sâu và xây dựng mục tiêu dinh dưỡng cá nhân hoá phù hợp nhất dành riêng cho bạn.")
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
-                    .lineSpacing(4)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.horizontal, 10)
-            
-            Button(action: action) {
-                HStack(spacing: 8) {
-                    Text("Bắt đầu phân tích")
-                    Image(systemName: "arrow.right")
-                }
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Color.App.primary)
-                .cornerRadius(16)
-                .shadow(color: Color.App.primary.opacity(0.25), radius: 10, y: 6)
-            }
-        }
-        .padding(28)
-        .background(Color.white)
-        .cornerRadius(28)
-        .shadow(color: .black.opacity(0.02), radius: 20, x: 0, y: 10)
+    private func formatFullDate(_ date: Date?) -> String {
+        guard let date = date else { return "--/--/----" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        return formatter.string(from: date)
     }
 }

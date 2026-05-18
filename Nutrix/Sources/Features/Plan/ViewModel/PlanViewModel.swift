@@ -1,12 +1,20 @@
 import Foundation
 import Combine
 import FirebaseAuth
-import FirebaseFirestore // Thêm thư viện Firestore để quét bộ nhật ký ngày
+import FirebaseFirestore
+
+// Cấu trúc dữ liệu cho điểm biểu đồ xu hướng cân nặng
+struct WeightChartPoint: Identifiable {
+    let id = UUID()
+    let dateLabel: String
+    let weight: Double
+    let type: String // "Hiện tại" hoặc "Mục tiêu"
+}
 
 class PlanViewModel: ObservableObject {
     @Published var currentPlan: NutritionPlan? = nil
     @Published var historyPlans: [NutritionPlan] = []
-    @Published var weeklyStreak: [(dayName: String, isCompleted: Bool)] = [] // Khối mảng lưu trữ chuỗi ngày thực tế
+    @Published var weeklyStreak: [(dayName: String, isCompleted: Bool)] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
     
@@ -26,11 +34,37 @@ class PlanViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let authService: FirebaseAuthService
     
-    // Sử dụng Dependency Injection để lấy instance của FirebaseAuthService
+    // Computed property chuyển đổi danh sách lộ trình thành dữ liệu vẽ biểu đồ đường
+    var weightChartData: [WeightChartPoint] {
+        var points: [WeightChartPoint] = []
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM"
+        
+        // 1. Lấy chỉ số từ các lộ trình cũ trong lịch sử (đảo ngược để chạy tuyến tính từ cũ đến mới nhất)
+        let sortedHistory = historyPlans.reversed()
+        for plan in sortedHistory {
+            if let start = plan.startDate {
+                let label = formatter.string(from: start)
+                if let currentW = plan.currentWeight {
+                    points.append(WeightChartPoint(dateLabel: label, weight: currentW, type: "Cân nặng"))
+                }
+            }
+        }
+        
+        // 2. Thêm chỉ số của lộ trình đang kích hoạt hiện tại ở cuối biểu đồ
+        if let currentPlan = currentPlan, let start = currentPlan.startDate {
+            let label = formatter.string(from: start)
+            if let currentW = currentPlan.currentWeight {
+                points.append(WeightChartPoint(dateLabel: label, weight: currentW, type: "Cân nặng"))
+            }
+        }
+        
+        return points
+    }
+    
     init(authService: FirebaseAuthService = FirebaseAuthService()) {
         self.authService = authService
         
-        // Lắng nghe sự thay đổi của currentUser từ FirebaseAuthService
         authService.$currentUser
             .receive(on: DispatchQueue.main)
             .sink { [weak self] updatedUser in
@@ -44,10 +78,8 @@ class PlanViewModel: ObservableObject {
         self.isLoading = true
         let group = DispatchGroup()
         
-        // Trigger fetch lại thông tin user từ Firestore để đảm bảo chỉ số mới nhất
         authService.fetchUserData(userId: userId)
         
-        // 1. Tải lộ trình hiện tại (Current Plan)
         group.enter()
         firebaseService.fetchCurrentPlan(userId: userId) { [weak self] result in
             DispatchQueue.main.async {
@@ -64,7 +96,6 @@ class PlanViewModel: ObservableObject {
             }
         }
         
-        // 2. Tải chuỗi lịch sử lộ trình (History Plans)
         group.enter()
         firebaseService.fetchHistoryPlans(userId: userId) { [weak self] result in
             DispatchQueue.main.async {
@@ -78,7 +109,6 @@ class PlanViewModel: ObservableObject {
             }
         }
         
-        // 3. Tải dữ liệu chuỗi ngày hoàn thành thực tế trong tuần (Weekly Streak)
         group.enter()
         fetchRealWeeklyStreak(userId: userId) {
             group.leave()
@@ -89,14 +119,12 @@ class PlanViewModel: ObservableObject {
         }
     }
     
-    // Hàm quét bộ tài liệu nhật ký 7 ngày gần nhất từ Firestore thay cho MockData
     private func fetchRealWeeklyStreak(userId: String, completion: @escaping () -> Void) {
         let db = Firestore.firestore()
         let calendar = Calendar.current
         let today = Date()
         
         var targetDays: [(dayName: String, dateKey: String)] = []
-        
         let keyFormatter = DateFormatter()
         keyFormatter.dateFormat = "yyyy-MM-dd"
         
@@ -104,13 +132,11 @@ class PlanViewModel: ObservableObject {
         weekdayFormatter.locale = Locale(identifier: "vi_VN")
         weekdayFormatter.dateFormat = "E"
         
-        // Vòng lặp lấy thông tin ngược về 6 ngày trước cho đến hôm nay (đủ 7 ngày)
         for i in (0...6).reversed() {
             if let date = calendar.date(byAdding: .day, value: -i, to: today) {
                 let dateKey = keyFormatter.string(from: date)
                 var name = weekdayFormatter.string(from: date)
                 
-                // Chuẩn hóa chuỗi hiển thị thứ tiếng Việt: "Th 2" -> "T2", "Chủ Nhật" -> "CN"
                 name = name.replacingOccurrences(of: "Th ", with: "T")
                 if name.contains("Chủ") || name.contains("CN") { name = "CN" }
                 
@@ -129,13 +155,11 @@ class PlanViewModel: ObservableObject {
                 let documents = snapshot?.documents ?? []
                 
                 for day in targetDays {
-                    // Ngày được tính là Hoàn thành (true) nếu tài liệu tồn tại và tổng Calo nạp vào > 0
                     if let doc = documents.first(where: { $0.documentID == day.dateKey }) {
                         let data = doc.data()
                         let totalCalories = data["totalCalories"] as? Double ?? data["intakeCalories"] as? Double ?? 0.0
                         updatedStreak.append((dayName: day.dayName, isCompleted: totalCalories > 0))
                     } else {
-                        // Không có dữ liệu ghi chép ăn uống đồng nghĩa ngày đó bị bỏ dở
                         updatedStreak.append((dayName: day.dayName, isCompleted: false))
                     }
                 }
@@ -214,7 +238,6 @@ class PlanViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Helper Logic Calculation
     func getPlanGoalType(current: Double, target: Double) -> String {
         if target < current { return "Giảm cân" }
         if target > current { return "Tăng cân" }

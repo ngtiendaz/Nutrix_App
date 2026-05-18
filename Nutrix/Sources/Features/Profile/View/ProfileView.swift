@@ -41,16 +41,6 @@ struct ProfileView: View {
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.black.opacity(0.7))
                             .padding(.leading, 4)
-                        
-                        AIPlanCard(onStartPlan: {
-                            // ✅ 2. Kích hoạt hiển thị sheet
-                            isShowingAISetup = true
-                        })
-                        .fullScreenCover(isPresented: $isShowingAISetup) {
-                            if let user = loginViewModel.authService.currentUser {
-                                AIPlanSetupView(user: user)
-                            }
-                        }
                     }
                     
                     // 4. Settings List
