@@ -24,6 +24,8 @@ class ImageCache {
     }
     
     func set(_ image: UIImage, forKey key: String) {
-            cache.setObject(image, forKey: key as NSString)
-        }
+        // Tính toán chi phí bộ nhớ xấp xỉ của ảnh: width * height * 4 (bytes per pixel cho RGBA)
+        let cost = Int(image.size.width * image.size.height * 4)
+        cache.setObject(image, forKey: key as NSString, cost: cost)
+    }
 }

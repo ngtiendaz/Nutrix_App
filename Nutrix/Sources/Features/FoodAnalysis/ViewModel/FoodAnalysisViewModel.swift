@@ -104,8 +104,9 @@ class FoodAnalysisViewModel: ObservableObject {
         errorMessage = nil
         self.advice = nil
         
-        visionService.analyzeImage(uiImage: selectedImage) { result in
+        visionService.analyzeImage(uiImage: selectedImage) { [weak self] result in
             DispatchQueue.main.async {
+                guard let self = self else { return }
                 switch result {
                 case .success(let visionResponse):
                     let filteredLabels = (visionResponse.responses.first?.labelAnnotations ?? [])
@@ -194,7 +195,8 @@ class FoodAnalysisViewModel: ObservableObject {
             
             isSaving = true
             
-            FirebaseService.shared.uploadFoodImage(image: selectedImage) { result in
+            FirebaseService.shared.uploadFoodImage(image: selectedImage) { [weak self] result in
+                guard let self = self else { return }
                 switch result {
                 case .success(let imageUrl):
                     let finalFood = Food(
@@ -215,8 +217,9 @@ class FoodAnalysisViewModel: ObservableObject {
                         mealType: self.selectedMealType,
                         mealDate: self.mealDate,
                         food: finalFood
-                    ) { result in
+                    ) { [weak self] result in
                         DispatchQueue.main.async {
+                            guard let self = self else { return }
                             self.isSaving = false
                             switch result {
                             case .success:
@@ -234,5 +237,4 @@ class FoodAnalysisViewModel: ObservableObject {
                 }
             }
         }
-    
 }

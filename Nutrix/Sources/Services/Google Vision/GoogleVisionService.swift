@@ -15,8 +15,22 @@ class GoogleVisionService {
 
     func analyzeImage(uiImage: UIImage, completion: @escaping (Result<VisionResponse, Error>) -> Void) {
         
-        // 1. Chuyển ảnh sang chuỗi Base64
-        guard let imageData = uiImage.jpegData(compressionQuality: 0.8) else {
+        // 1. Resize ảnh xuống kích thước tối đa 1024x1024 để tiết kiệm RAM và băng thông
+        let maxDimension: CGFloat = 1024.0
+        var resizedImage = uiImage
+        if uiImage.size.width > maxDimension || uiImage.size.height > maxDimension {
+            let ratio = uiImage.size.width / uiImage.size.height
+            let newSize = ratio > 1 ? CGSize(width: maxDimension, height: maxDimension / ratio) : CGSize(width: maxDimension * ratio, height: maxDimension)
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = 1.0
+            let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
+            resizedImage = renderer.image { _ in
+                uiImage.draw(in: CGRect(origin: .zero, size: newSize))
+            }
+        }
+        
+        // 2. Chuyển ảnh sang chuỗi Base64
+        guard let imageData = resizedImage.jpegData(compressionQuality: 0.7) else {
             let error = NSError(domain: "ImageError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Không thể chuyển đổi ảnh sang dữ liệu"])
             completion(.failure(error))
             return

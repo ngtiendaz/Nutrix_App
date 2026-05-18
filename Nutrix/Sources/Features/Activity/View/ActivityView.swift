@@ -48,7 +48,7 @@ struct ActivityView: View {
                         mainStatsCard
 
                         // --- SECTION: LỊCH SỬ HOẠT ĐỘNG ---
-                        VStack(alignment: .leading, spacing: 18) {
+                        LazyVStack(alignment: .leading, spacing: 18) {
                             HStack {
                                 Text("Lịch sử hoạt động")
                                     .font(.system(size: 18, weight: .bold))

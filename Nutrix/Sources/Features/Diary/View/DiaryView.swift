@@ -138,7 +138,7 @@ struct DiaryView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 40)
             } else {
-                VStack(spacing: 12) {
+                LazyVStack(spacing: 12) {
                     ForEach(diaryViewModel.allFoods) { food in
                         FoodItem(food: food)
                             .contentShape(Rectangle())

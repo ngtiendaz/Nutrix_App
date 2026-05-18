@@ -144,14 +144,16 @@ extension FoodDetailView {
     }
 
     private var imageSection: some View {
-        AsyncImage(url: URL(string: foodDetailViewModel.originalFood.imageUrl ?? "")) { image in
-            image.resizable().scaledToFill()
-        } placeholder: {
-            Color.gray.opacity(0.1).overlay(ProgressView())
-        }
-        .frame(width: UIScreen.main.bounds.width - 32, height: 240)
-        .clipShape(RoundedRectangle(cornerRadius: 24))
-        .padding(.horizontal)
+        CachedImage(
+                urlString: foodDetailViewModel.originalFood.imageUrl,
+                width: UIScreen.main.bounds.width - 32, // Tự động lấy toàn bộ chiều rộng màn hình (trừ đi padding 2 bên)
+                height: 220 // Tăng chiều cao lên 220 để ảnh to và rõ nét hơn
+            )
+            .aspectRatio(contentMode: .fill) // Ép ảnh lấp đầy khung hình mà không bị mất tỉ lệ
+            .frame(width: UIScreen.main.bounds.width - 32, height: 220) // Đảm bảo khung hình cố định đúng kích thước
+            .cornerRadius(16) // Bo góc nhẹ cho hài hòa với giao diện hiện tại
+            .clipped() // Cắt bỏ các phần ảnh thừa bị tràn ra ngoài khung bo
+            .padding(.horizontal, 16)
     }
 
     private var nutritionCards: some View {
