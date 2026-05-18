@@ -9,15 +9,21 @@ import SwiftUI
 
 struct MainView: View {
     @EnvironmentObject var router: AppRouter
-    @EnvironmentObject var diaryViewModel: DiaryViewModel
     @EnvironmentObject var authService: FirebaseAuthService
+    @StateObject var diaryViewModel = DiaryViewModel()
+    @StateObject var planViewModel: PlanViewModel
     @State private var selectedDate = Date()
     
+    init(authService: FirebaseAuthService) {
+        self._planViewModel = StateObject(wrappedValue: PlanViewModel(authService: authService))
+    }
     
     var body: some View {
         ZStack(alignment: .bottom) {
             // Lớp 1: Nội dung chính hiển thị toàn màn hình
             contentView
+                .environmentObject(diaryViewModel)
+                .environmentObject(planViewModel)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             // Lớp 2: Thanh Menu dưới đáy
@@ -58,10 +64,10 @@ struct MainView: View {
                         .navigationDestination(for: AppDestination.self) { destination in
                             buildDestinationView(destination)
                         }
-                }.environmentObject(authService)
+                }
             case .plan:
                 NavigationStack(path: $router.planPath) {
-                    PlanView(selectedDate: $selectedDate, authService: authService)
+                    PlanView(selectedDate: $selectedDate)
                         .navigationDestination(for: AppDestination.self) { destination in
                             buildDestinationView(destination)
                         }
@@ -90,8 +96,6 @@ struct MainView: View {
         switch destination {
         case .foodDetail(let food, let diaryVM): // Nhận diaryVM từ destination
                 FoodDetailView(food: food, mealDate: selectedDate)
-                    .environmentObject(router)
-                    .environmentObject(diaryVM)
         case .nutritionPlan(let plan):
                     // ✅ CẬP NHẬT Ở ĐÂY: Bổ sung tham số onBackToSetup còn thiếu
                     NutritionPlanView(plan: plan) {
@@ -101,8 +105,6 @@ struct MainView: View {
                         // Hành động khi nhấn Áp dụng hoặc Hủy bỏ: Cũng quay lại màn hình trước đó
                         router.pop()
                     }
-                    .environmentObject(router)
-                    .environmentObject(diaryViewModel)
         default:
             VStack {
                 Image(systemName: "hammer.fill")

@@ -1,29 +1,16 @@
-//
-//  PlanViewModel.swift
-//  Nutrix
-//
-//  Created by Daz on 18/5/26.
-//
-
-
-//
-//  PlanViewModel.swift
-//  Nutrix
-//
-//  Created by Daz on 18/5/26.
-//
-
 import Foundation
 import Combine
 import FirebaseAuth
+import FirebaseFirestore // Thêm thư viện Firestore để quét bộ nhật ký ngày
 
 class PlanViewModel: ObservableObject {
     @Published var currentPlan: NutritionPlan? = nil
     @Published var historyPlans: [NutritionPlan] = []
+    @Published var weeklyStreak: [(dayName: String, isCompleted: Bool)] = [] // Khối mảng lưu trữ chuỗi ngày thực tế
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
     
-    // ✅ Lưu trữ thông tin User thực tế lấy từ FirebaseAuthService
+    // Lưu trữ thông tin User thực tế lấy từ FirebaseAuthService
     @Published var user: User? = nil
     
     // Input tạm phục vụ cho chế độ Edit toàn bộ Plan
@@ -39,7 +26,7 @@ class PlanViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let authService: FirebaseAuthService
     
-    // ✅ Sử dụng Dependency Injection để lấy instance của FirebaseAuthService
+    // Sử dụng Dependency Injection để lấy instance của FirebaseAuthService
     init(authService: FirebaseAuthService = FirebaseAuthService()) {
         self.authService = authService
         
@@ -57,10 +44,10 @@ class PlanViewModel: ObservableObject {
         self.isLoading = true
         let group = DispatchGroup()
         
-        // Trigger fetch lại thông tin user từ Firestore để đảm bảo chỉ số mới nhất (nếu cần)
+        // Trigger fetch lại thông tin user từ Firestore để đảm bảo chỉ số mới nhất
         authService.fetchUserData(userId: userId)
         
-        // 1. Load Current Plan
+        // 1. Tải lộ trình hiện tại (Current Plan)
         group.enter()
         firebaseService.fetchCurrentPlan(userId: userId) { [weak self] result in
             DispatchQueue.main.async {
@@ -77,7 +64,7 @@ class PlanViewModel: ObservableObject {
             }
         }
         
-        // 2. Load History Plans
+        // 2. Tải chuỗi lịch sử lộ trình (History Plans)
         group.enter()
         firebaseService.fetchHistoryPlans(userId: userId) { [weak self] result in
             DispatchQueue.main.async {
@@ -91,9 +78,73 @@ class PlanViewModel: ObservableObject {
             }
         }
         
+        // 3. Tải dữ liệu chuỗi ngày hoàn thành thực tế trong tuần (Weekly Streak)
+        group.enter()
+        fetchRealWeeklyStreak(userId: userId) {
+            group.leave()
+        }
+        
         group.notify(queue: .main) {
             self.isLoading = false
         }
+    }
+    
+    // Hàm quét bộ tài liệu nhật ký 7 ngày gần nhất từ Firestore thay cho MockData
+    private func fetchRealWeeklyStreak(userId: String, completion: @escaping () -> Void) {
+        let db = Firestore.firestore()
+        let calendar = Calendar.current
+        let today = Date()
+        
+        var targetDays: [(dayName: String, dateKey: String)] = []
+        
+        let keyFormatter = DateFormatter()
+        keyFormatter.dateFormat = "yyyy-MM-dd"
+        
+        let weekdayFormatter = DateFormatter()
+        weekdayFormatter.locale = Locale(identifier: "vi_VN")
+        weekdayFormatter.dateFormat = "E"
+        
+        // Vòng lặp lấy thông tin ngược về 6 ngày trước cho đến hôm nay (đủ 7 ngày)
+        for i in (0...6).reversed() {
+            if let date = calendar.date(byAdding: .day, value: -i, to: today) {
+                let dateKey = keyFormatter.string(from: date)
+                var name = weekdayFormatter.string(from: date)
+                
+                // Chuẩn hóa chuỗi hiển thị thứ tiếng Việt: "Th 2" -> "T2", "Chủ Nhật" -> "CN"
+                name = name.replacingOccurrences(of: "Th ", with: "T")
+                if name.contains("Chủ") || name.contains("CN") { name = "CN" }
+                
+                targetDays.append((dayName: name, dateKey: dateKey))
+            }
+        }
+        
+        db.collection("users").document(userId).collection("daily_summaries")
+            .getDocuments { [weak self] snapshot, error in
+                guard let self = self else {
+                    completion()
+                    return
+                }
+                
+                var updatedStreak: [(dayName: String, isCompleted: Bool)] = []
+                let documents = snapshot?.documents ?? []
+                
+                for day in targetDays {
+                    // Ngày được tính là Hoàn thành (true) nếu tài liệu tồn tại và tổng Calo nạp vào > 0
+                    if let doc = documents.first(where: { $0.documentID == day.dateKey }) {
+                        let data = doc.data()
+                        let totalCalories = data["totalCalories"] as? Double ?? data["intakeCalories"] as? Double ?? 0.0
+                        updatedStreak.append((dayName: day.dayName, isCompleted: totalCalories > 0))
+                    } else {
+                        // Không có dữ liệu ghi chép ăn uống đồng nghĩa ngày đó bị bỏ dở
+                        updatedStreak.append((dayName: day.dayName, isCompleted: false))
+                    }
+                }
+                
+                DispatchQueue.main.async {
+                    self.weeklyStreak = updatedStreak
+                    completion()
+                }
+            }
     }
     
     func setupEditFields(from plan: NutritionPlan) {

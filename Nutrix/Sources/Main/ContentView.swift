@@ -10,6 +10,7 @@ import CoreData
 
 struct ContentView: View {
     @EnvironmentObject var router: AppRouter
+    @EnvironmentObject var authService: FirebaseAuthService
     @StateObject private var viewModel = LoginViewModel()
     
     var body: some View {
@@ -21,7 +22,7 @@ struct ContentView: View {
                 case .login:
                     LoginView(viewModel: viewModel)
                 case .main:
-                    MainView()
+                    MainView(authService: authService)
                         .environmentObject(viewModel)
                 }
             }

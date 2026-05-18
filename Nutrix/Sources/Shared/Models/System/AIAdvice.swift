@@ -13,3 +13,9 @@ struct AIAdvice {
     let statusColor: Color
     let iconName: String
 }
+
+
+struct IdentifiableError: Identifiable {
+    let id = UUID()
+    let message: String
+}

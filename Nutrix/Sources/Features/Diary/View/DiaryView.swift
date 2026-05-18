@@ -2,9 +2,10 @@ import SwiftUI
 
 struct DiaryView: View {
     @EnvironmentObject var router: AppRouter
+    @EnvironmentObject var diaryViewModel: DiaryViewModel
+    @EnvironmentObject var planViewModel: PlanViewModel
     @State private var isShowingAddFood = false
     @State private var animateButton = false
-    @StateObject var diaryViewModel = DiaryViewModel()
     @Binding var selectedDate: Date
     
     @State private var isShowingAISetup = false
@@ -72,6 +73,9 @@ struct DiaryView: View {
                             if let user = loginViewModel.authService.currentUser {
                                 AIPlanSetupView(user: user)
                                     .environmentObject(diaryViewModel)
+                                    .environmentObject(planViewModel)
+                                    .environmentObject(router)
+                                    .environmentObject(loginViewModel)
                             }
                         }
             
