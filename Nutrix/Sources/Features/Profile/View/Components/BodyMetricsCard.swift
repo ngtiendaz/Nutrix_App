@@ -26,7 +26,7 @@ struct BodyMetricsCard: View {
                         Image(systemName: "clock.arrow.circlepath")
                         Text("Lịch sử")
                     }
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.App.body)
                     .foregroundColor(.gray)
                     .frame(maxWidth: .infinity)
                     .frame(height: 44)
@@ -38,7 +38,7 @@ struct BodyMetricsCard: View {
                 Button(action: onUpdate) {
                     // Sửa từ isEditing sang isEditingMetrics để nút đổi chữ đúng lúc
                     Text(vm.isEditingMetrics ? "Lưu chỉ số" : "Cập nhật")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.App.sectionHeader)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
@@ -66,27 +66,27 @@ struct MetricBox: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: icon)
-                    .font(.system(size: 12))
+                    .font(.App.captionMedium)
                     .foregroundColor(Color.App.primary)
                 Text(label)
-                    .font(.system(size: 13))
+                    .font(.App.subheadlineRegular)
                     .foregroundColor(.gray)
             }
             
             HStack(alignment: .bottom, spacing: 4) {
                 if isEditing {
                     TextField("0", text: $value)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.App.title2)
                         .keyboardType(.decimalPad)
                         .foregroundColor(.black)
                 } else {
                     Text(value.isEmpty ? "--" : value)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.App.title2)
                         .foregroundColor(.black)
                 }
                 
                 Text(unit)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.App.body)
                     .foregroundColor(.gray)
                     .padding(.bottom, 2)
                 

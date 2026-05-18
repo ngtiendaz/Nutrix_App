@@ -17,7 +17,7 @@ struct InfoRow: View {
         HStack(spacing: 0) {
             // Nhãn cố định 100pt
             Text(label)
-                .font(.system(size: 15, weight: .medium))
+                .font(.App.headline)
                 .foregroundColor(.black)
                 .frame(width: 100, alignment: .leading)
             
@@ -29,13 +29,13 @@ struct InfoRow: View {
                 if isEditing {
                     HStack(spacing: 5) {
                         TextField(placeholder, text: $value)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.App.headline)
                             .foregroundColor(.black)
                             .keyboardType(unit != nil ? .decimalPad : .default)
                         
                         if let unit = unit {
                             Text(unit)
-                                .font(.system(size: 14))
+                                .font(.App.body)
                                 .foregroundColor(.gray)
                         }
                     }
@@ -46,12 +46,12 @@ struct InfoRow: View {
                 } else {
                     HStack(spacing: 4) {
                         Text(value.isEmpty ? "--" : value)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.App.headline)
                             .foregroundColor(.black)
                         
                         if let unit = unit, !value.isEmpty {
                             Text(unit)
-                                .font(.system(size: 14))
+                                .font(.App.body)
                                 .foregroundColor(.gray)
                         }
                         Spacer()

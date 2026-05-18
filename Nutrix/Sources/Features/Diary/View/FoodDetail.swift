@@ -27,7 +27,7 @@ struct FoodDetailView: View {
                             
                             VStack(alignment: .leading, spacing: 20) {
                                 Text(foodDetailViewModel.originalFood.name.uppercased())
-                                    .font(.system(size: 24, weight: .black))
+                                    .font(.App.header)
                                     .foregroundColor(.black)
                                     .padding(.horizontal)
                                 
@@ -92,7 +92,7 @@ extension FoodDetailView {
             HStack {
                 Button { dismiss() } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.App.bodyBold)
                         .foregroundColor(Color.App.primary)
                         .padding(10)
                         .background(Color.App.primaryLight.opacity(0.5))
@@ -105,7 +105,7 @@ extension FoodDetailView {
             Spacer()
             
             Text("Chi tiết món ăn")
-                .font(.system(size: 17, weight: .bold))
+                .font(.App.bodyBold)
                 .foregroundColor(.black)
                 .lineLimit(1)
             
@@ -120,7 +120,7 @@ extension FoodDetailView {
                         foodDetailViewModel.updateFood()
                     } label: {
                         Text("Lưu")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.App.sectionHeader)
                             .foregroundColor(.white)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
@@ -161,15 +161,15 @@ extension FoodDetailView {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("\(foodDetailViewModel.displayCalories)")
-                        .font(.system(size: 38, weight: .bold))
+                        .font(.App.large)
                         .foregroundColor(Color.App.primary)
                     Text("Tổng Calo (Kcal)")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.App.body)
                         .foregroundColor(.gray)
                 }
                 Spacer()
                 Image(systemName: "flame.fill")
-                    .font(.system(size: 36))
+                    .font(.App.display)
                     .foregroundColor(.orange.opacity(0.8))
             }
             Divider()
@@ -197,12 +197,12 @@ extension FoodDetailView {
             VStack(spacing: 8) {
                 HStack(spacing: 8) {
                     Image(systemName: icon)
-                        .font(.system(size: 14))
+                        .font(.App.body)
                         .foregroundColor(.gray)
                     TextField("", value: value, format: .number)
                         .keyboardType(.decimalPad)
                         .focused($focusedField, equals: field)
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.App.title)
                         .foregroundColor(.black)
                         .multilineTextAlignment(.leading)
                 }
@@ -215,7 +215,7 @@ extension FoodDetailView {
                 )
                 
                 Text(title)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.App.captionMedium)
                     .foregroundColor(.gray)
             }
             .frame(maxWidth: .infinity)
@@ -229,7 +229,7 @@ extension FoodDetailView {
                 Image(systemName: "trash.fill")
                 Text("Xóa khỏi nhật ký")
             }
-            .font(.system(size: 16, weight: .bold))
+            .font(.App.bodyBold)
             .foregroundColor(.red)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)

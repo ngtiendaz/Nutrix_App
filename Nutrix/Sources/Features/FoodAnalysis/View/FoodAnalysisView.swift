@@ -119,13 +119,13 @@ struct FoodAnalysisView: View {
     private var headerView: some View {
         ZStack {
             Text("Phân tích dinh dưỡng")
-                .font(.system(size: 18, weight: .bold))
+                .font(.App.title)
                 .foregroundColor(.black)
             
             HStack {
                 Button { dismiss() } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.App.title2)
                         .foregroundColor(Color.App.primary)
                         .padding(8)
                         .background(Color.App.primaryLight.opacity(0.5))
@@ -190,7 +190,7 @@ struct FoodAnalysisView: View {
         VStack(spacing: 15) {
             ProgressView().tint(Color.App.primary)
             Text("NutriX AI đang phân tích...")
-                .font(.system(size: 15, weight: .medium))
+                .font(.App.headline)
                 .foregroundColor(Color.App.lightGray)
         }
         .padding(.top, 40)
@@ -199,7 +199,7 @@ struct FoodAnalysisView: View {
     private func foodHeader(food: Food) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(food.name.uppercased())
-                .font(.system(size: 24, weight: .black))
+                .font(.App.header)
                 .foregroundColor(.black)
             ConfidenceBar(value: foodAnalysisViewModel.confidence)
             if !foodAnalysisViewModel.suggestions.isEmpty {
@@ -214,7 +214,7 @@ struct FoodAnalysisView: View {
                                 }
                             } label: {
                                 Text(suggestion)
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.App.subheadlineRegular)
                                     .padding(.horizontal, 15)
                                     .padding(.vertical, 8)
                                     .background(Color.App.primaryLight)
@@ -234,15 +234,15 @@ struct FoodAnalysisView: View {
             HStack {
                 VStack(alignment: .leading) {
                     Text("\(Int(foodAnalysisViewModel.valueFor(food.calories)))")
-                        .font(.system(size: 40, weight: .bold))
+                        .font(.App.large)
                         .foregroundColor(Color.App.primary)
                     Text("Tổng Kcal")
-                        .font(.system(size: 14))
+                        .font(.App.body)
                         .foregroundColor(Color.App.lightGray)
                 }
                 Spacer()
                 Image(systemName: "flame.fill")
-                    .font(.system(size: 40))
+                    .font(.App.large)
                     .foregroundColor(.orange.opacity(0.8))
             }
             Divider()
@@ -269,7 +269,7 @@ struct FoodAnalysisView: View {
                     TextField("", value: $foodAnalysisViewModel.weight, format: .number)
                         .keyboardType(.decimalPad)
                         .focused($focusedField, equals: .weight)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.App.title2)
                         .multilineTextAlignment(.center)
                         .padding(.vertical, 12)
                         .background(Color.black.opacity(0.05))
@@ -278,7 +278,7 @@ struct FoodAnalysisView: View {
                 }
                 
                 Text("Grams")
-                    .font(.system(size: 12))
+                    .font(.App.captionMedium)
                     .foregroundColor(.gray)
             }
             
@@ -290,7 +290,7 @@ struct FoodAnalysisView: View {
                     TextField("", value: $foodAnalysisViewModel.quantity, format: .number)
                         .keyboardType(.decimalPad)
                         .focused($focusedField, equals: .quantity)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.App.title2)
                         .multilineTextAlignment(.center)
                         .padding(.vertical, 12)
                         .background(Color.black.opacity(0.05))
@@ -298,7 +298,7 @@ struct FoodAnalysisView: View {
                 }
                 
                 Text("Số lượng")
-                    .font(.system(size: 12))
+                    .font(.App.captionMedium)
                     .foregroundColor(.gray)
             }
         }
@@ -316,7 +316,7 @@ struct FoodAnalysisView: View {
             VStack(alignment: .leading, spacing: 15) {
                 HStack(spacing: 12) {
                     Image(systemName: advice.iconName)
-                        .font(.system(size: 20))
+                        .font(.App.title2)
                         .foregroundColor(advice.statusColor)
                         .padding(10)
                         .background(advice.statusColor.opacity(0.1))
@@ -324,10 +324,10 @@ struct FoodAnalysisView: View {
                     
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Khuyến nghị từ NutriX")
-                            .font(.system(size: 14))
+                            .font(.App.body)
                             .foregroundColor(.gray)
                         Text(advice.title)
-                            .font(.system(size: 18, weight: .bold))
+                            .font(.App.title)
                             .foregroundColor(advice.statusColor)
                     }
                     
@@ -337,7 +337,7 @@ struct FoodAnalysisView: View {
                 Divider()
                 
                 Text(advice.message)
-                    .font(.system(size: 15))
+                    .font(.App.headline)
                     .foregroundColor(.black.opacity(0.8))
                     .lineSpacing(6)
                     .multilineTextAlignment(.leading)
@@ -357,7 +357,7 @@ struct FoodAnalysisView: View {
             HStack(spacing: 15) {
                 Button { dismiss() } label: {
                     Text("Hủy")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.App.bodyBold)
                         .foregroundColor(.black)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
@@ -384,7 +384,7 @@ struct FoodAnalysisView: View {
                     }
                 } label: {
                     Text("Lưu nhật ký")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.App.bodyBold)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
@@ -408,16 +408,16 @@ struct FoodAnalysisView: View {
             VStack(spacing: 25) {
                 VStack(spacing: 15) {
                     Image(systemName: "camera.viewfinder")
-                        .font(.system(size: 60))
+                        .font(.App.huge)
                         .foregroundColor(Color.App.lightGray)
                         .padding(.top, 20)
                     
                     Text("Không nhận diện được")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.App.title2)
                         .foregroundColor(.black)
                     
                     Text(message)
-                        .font(.system(size: 15))
+                        .font(.App.headline)
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
@@ -431,7 +431,7 @@ struct FoodAnalysisView: View {
                         Image(systemName: "arrow.left")
                         Text("Thử lại với ảnh khác")
                     }
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.App.bodyBold)
                     .foregroundColor(Color.App.primary)
                     .padding(.horizontal, 30)
                     .padding(.vertical, 15)
@@ -475,7 +475,7 @@ struct FoodAnalysisView: View {
                 
                 Text(foodAnalysisViewModel.selectedMealType.displayName)
             }
-            .font(.system(size: 16, weight: .medium))
+            .font(.App.bodyLarge)
             .foregroundColor(Color.App.primary)
             .padding(.horizontal, 16)
             .padding(.vertical, 10)

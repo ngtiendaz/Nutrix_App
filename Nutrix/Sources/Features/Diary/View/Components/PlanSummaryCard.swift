@@ -15,14 +15,14 @@ struct PlanSummaryCard: View {
             // Row 1: Tiêu đề và Trạng thái
             HStack {
                 Text("Lộ trình hiện tại")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.App.sectionHeader)
                     .foregroundColor(.black.opacity(0.8))
                 
                 Spacer()
                 
                 // Badge trạng thái mini
                 Text(summary.isActive ? "Đang thực hiện" : "Đã hoàn tất")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.App.tiny)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(summary.isActive ? Color.App.primary.opacity(0.1) : Color.App.lightGray.opacity(0.1))
@@ -33,19 +33,19 @@ struct PlanSummaryCard: View {
             // Row 2: Cân nặng mục tiêu
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text("\(summary.currentWeight, specifier: "%.1f")")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.App.title2)
                     .foregroundColor(Color.black)
                 
                 Image(systemName: "arrow.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.App.caption)
                     .foregroundColor(Color.App.primary.opacity(0.5))
                 
                 Text("\(summary.targetWeight, specifier: "%.1f")")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.App.title2)
                     .foregroundColor(Color.App.primary)
                 
                 Text("kg")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.App.captionMedium)
                     .foregroundColor(Color.App.lightGray)
                 
                 Spacer()
@@ -55,14 +55,14 @@ struct PlanSummaryCard: View {
             VStack(spacing: 8) {
                 HStack {
                     Text("\(formatDate(summary.startDate)) — \(formatDate(summary.endDate))")
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(.App.captionMedium)
                         .foregroundColor(Color.App.lightGray)
                     
                     Spacer()
                     
                     // Hiển thị % dựa trên số ngày thực tế
                     Text("\(Int(calculateProgress() * 100))%")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.App.caption)
                         .foregroundColor(Color.App.primary)
                 }
                 
@@ -85,7 +85,7 @@ struct PlanSummaryCard: View {
             if summary.isActive {
                 HStack {
                     Text("Đã thực hiện được \(daysElapsed()) ngày")
-                        .font(.system(size: 11))
+                        .font(.App.smallSemibold)
                         .foregroundColor(Color.App.lightGray)
                     Spacer()
                 }

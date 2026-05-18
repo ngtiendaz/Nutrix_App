@@ -15,12 +15,12 @@ struct FoodItem: View {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(alignment: .top){
                             Text(food.name)
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.App.title)
                                 .foregroundColor(Color(hex: "333333"))
                             
                             Spacer()
                             Text("\(food.createdAt, format: .dateTime.hour().minute())")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(.App.tiny)
                                     .foregroundColor(Color.App.primary)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
@@ -29,7 +29,7 @@ struct FoodItem: View {
                         }
                         let totalWeight = food.servingSize * food.quantity
                         Text("\(totalWeight.formatted()) \(food.servingUnit)")
-                            .font(.caption)
+                            .font(.App.captionMedium)
                             .foregroundColor(Color.App.lightGray)
                     }
                     
@@ -43,21 +43,21 @@ struct FoodItem: View {
                     // Calories Row
                     HStack(spacing: 4) {
                         Image(systemName: "flame.fill")
-                            .font(.system(size: 12))
+                            .font(.App.captionMedium)
                             .foregroundColor(Color.App.primary)
                         
                         Text(String(format: "%.1f", food.calories))
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.App.bodyBold)
                             .foregroundColor(Color.App.primary)
                         
                         Text("Kcal")
-                            .font(.system(size: 12))
+                            .font(.App.captionMedium)
                             .foregroundColor(Color.App.lightGray)
                         
                         Spacer()
                         
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.App.caption)
                             .foregroundColor(Color.App.lightGray)
                     }
                 }

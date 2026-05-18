@@ -29,7 +29,7 @@ struct NutritionPlanView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
                                 Text("Kết quả phân tích")
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(.App.sectionHeader)
                                     .foregroundColor(Color.App.primary)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 6)
@@ -39,7 +39,7 @@ struct NutritionPlanView: View {
                             }
                             
                             Text("Lộ trình dinh dưỡng\ncá nhân hóa")
-                                .font(.system(size: 28, weight: .black))
+                                .font(.App.display)
                                 .foregroundColor(.black)
                                 .lineSpacing(2)
                         }
@@ -48,7 +48,7 @@ struct NutritionPlanView: View {
                         // 1. Chỉ số đa lượng (Macros)
                         VStack(alignment: .leading, spacing: 18) {
                             Label("Mục tiêu dinh dưỡng", systemImage: "target")
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.App.title)
                                 .foregroundColor(.black)
                             
                             nutritionHighlights
@@ -60,12 +60,12 @@ struct NutritionPlanView: View {
                                 Image(systemName: "sparkles")
                                     .foregroundColor(.orange)
                                 Text("Lời khuyên từ Nutrix AI")
-                                    .font(.system(size: 16, weight: .bold))
+                                    .font(.App.bodyBold)
                                     .foregroundColor(.black)
                             }
                             
                             Text(displayedAdvice)
-                                .font(.system(size: 15, design: .rounded))
+                                .font(.App.headline)
                                 .foregroundColor(.black.opacity(0.8))
                                 .lineSpacing(6)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -80,11 +80,11 @@ struct NutritionPlanView: View {
                         // 3. Kế hoạch tập luyện
                         VStack(alignment: .leading, spacing: 18) {
                             Label("Hoạt động thể chất", systemImage: "figure.run")
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.App.title)
                                 .foregroundColor(.black)
                             
                             Text(plan.exercisePlan)
-                                .font(.system(size: 15))
+                                .font(.App.headline)
                                 .foregroundColor(.black.opacity(0.7))
                                 .lineSpacing(5)
                                 .padding(20)
@@ -115,7 +115,7 @@ struct NutritionPlanView: View {
         .overlay(alignment: .topLeading) {
             Button(action: onBackToSetup) {
                 Image(systemName: "arrow.left")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.App.title)
                     .foregroundColor(.black)
                     .padding(12)
                     .background(Color.white)
@@ -146,21 +146,21 @@ struct NutritionPlanView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Lượng calo mỗi ngày")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.App.subheadlineRegular)
                         .foregroundColor(.gray)
                     HStack(alignment: .bottom, spacing: 4) {
                         Text("\(Int(plan.dailyCalories))")
-                            .font(.system(size: 32, weight: .black))
+                            .font(.App.display)
                             .foregroundColor(Color.App.primary)
                         Text("kcal")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.App.sectionHeader)
                             .foregroundColor(.gray)
                             .padding(.bottom, 6)
                     }
                 }
                 Spacer()
                 Image(systemName: "flame.fill")
-                    .font(.system(size: 30))
+                    .font(.App.display)
                     .foregroundColor(.orange)
                     .padding(15)
                     .background(Color.orange.opacity(0.1))
@@ -183,18 +183,18 @@ struct NutritionPlanView: View {
     private func macroSmallBox(title: String, value: String, color: Color, icon: String) -> some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 12))
+                .font(.App.captionMedium)
                 .foregroundColor(color)
                 .padding(8)
                 .background(color.opacity(0.1))
                 .clipShape(Circle())
             
             Text(title)
-                .font(.system(size: 11))
+                .font(.App.smallSemibold)
                 .foregroundColor(.gray)
             
             Text(value)
-                .font(.system(size: 16, weight: .bold))
+                .font(.App.bodyBold)
                 .foregroundColor(.black)
         }
         .frame(maxWidth: .infinity)
@@ -209,7 +209,7 @@ struct NutritionPlanView: View {
             Button(action: { savePlanWithViewModel() }) {
                 HStack {
                     Text("ÁP DỤNG LỘ TRÌNH NÀY")
-                        .font(.system(size: 16, weight: .black))
+                        .font(.App.bodyLarge)
                     Image(systemName: "checkmark.circle.fill")
                 }
                 .foregroundColor(.white)
@@ -224,7 +224,7 @@ struct NutritionPlanView: View {
             
             Button(action: { onApplied() }) {
                 Text("Bỏ qua")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.App.headline)
                     .foregroundColor(.gray)
             }
             .disabled(router.isLoading)

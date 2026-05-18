@@ -13,7 +13,7 @@ struct AIPlanPromoCard: View {
     var body: some View {
         VStack(spacing: 24) {
             Image(systemName: "sparkles")
-                .font(.system(size: 36, weight: .semibold))
+                .font(.App.display)
                 .foregroundColor(Color.App.primary)
                 .padding(22)
                 .background(Color.App.primaryLight)
@@ -21,10 +21,10 @@ struct AIPlanPromoCard: View {
             
             VStack(spacing: 10) {
                 Text("Thiết kế lộ trình với AI")
-                    .font(.system(size: 22, weight: .black))
+                    .font(.App.title2)
                     .foregroundColor(.black)
                 Text("Hãy để Nutrix AI phân tích chỉ số cơ thể chuyên sâu và xây dựng mục tiêu dinh dưỡng cá nhân hoá phù hợp nhất dành riêng cho bạn.")
-                    .font(.system(size: 14))
+                    .font(.App.body)
                     .foregroundColor(.gray)
                     .lineSpacing(4)
                     .multilineTextAlignment(.center)
@@ -36,7 +36,7 @@ struct AIPlanPromoCard: View {
                     Text("Bắt đầu phân tích")
                     Image(systemName: "arrow.right")
                 }
-                .font(.system(size: 16, weight: .bold))
+                .font(.App.bodyBold)
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)

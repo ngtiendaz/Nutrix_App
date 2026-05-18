@@ -11,7 +11,7 @@ struct StepperButton: View {
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            Image(systemName: icon).font(.system(size: 18, weight: .bold)).foregroundColor(Color.App.primary)
+            Image(systemName: icon).font(.App.title).foregroundColor(Color.App.primary)
                 .frame(width: 44, height: 44).background(Color.App.primaryLight).clipShape(Circle())
         }
     }

@@ -54,7 +54,7 @@ struct AIPlanSetupView: View {
                                         // Phần nhập mục tiêu
                                         VStack(alignment: .leading, spacing: 16) {
                                             Text("Thiết lập mục tiêu")
-                                                .font(.system(size: 16, weight: .bold))
+                                                .font(.App.bodyBold)
                                                 .foregroundColor(.black)
                                                 .padding(.horizontal, 4)
                                             
@@ -76,7 +76,7 @@ struct AIPlanSetupView: View {
                                     createButton
                                     
                                     Text("Dữ liệu được phân tích bởi Nutrix AI dựa trên chỉ số khoa học")
-                                        .font(.system(size: 11))
+                                        .font(.App.smallSemibold)
                                         .foregroundColor(.gray)
                                         .multilineTextAlignment(.center)
                                 }
@@ -90,7 +90,7 @@ struct AIPlanSetupView: View {
                             ToolbarItem(placement: .navigationBarTrailing) {
                                 Button("Đóng") { dismiss() }
                                     .foregroundColor(.gray)
-                                    .font(.system(size: 16, weight: .medium))
+                                    .font(.App.bodyLarge)
                             }
                         }
                     }
@@ -119,7 +119,7 @@ struct AIPlanSetupView: View {
         VStack(spacing: 8) {
             HStack(spacing: 10) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.App.title2)
                     .foregroundColor(Color.App.primary)
                     .padding(10)
                     .background(Color.App.primaryLight)
@@ -127,10 +127,10 @@ struct AIPlanSetupView: View {
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Nutrix AI Plan")
-                        .font(.system(size: 20, weight: .black))
+                        .font(.App.title2)
                         .foregroundColor(.black)
                     Text("Thiết kế lộ trình cá nhân hóa")
-                        .font(.system(size: 13))
+                        .font(.App.subheadlineRegular)
                         .foregroundColor(.gray)
                 }
                 Spacer()
@@ -144,7 +144,7 @@ struct AIPlanSetupView: View {
     private var currentMetricsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Chỉ số hiện tại")
-                .font(.system(size: 14, weight: .bold))
+                .font(.App.sectionHeader)
                 .foregroundColor(.gray)
                 .textCase(.uppercase)
             
@@ -160,19 +160,19 @@ struct AIPlanSetupView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 5) {
                 Image(systemName: icon)
-                    .font(.system(size: 10))
+                    .font(.App.tinyMedium)
                     .foregroundColor(Color.App.primary)
                 Text(title)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.App.smallSemibold)
                     .foregroundColor(.gray)
             }
             
             HStack(alignment: .bottom, spacing: 2) {
                 Text(value)
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.App.title)
                     .foregroundColor(.black)
                 Text(unit)
-                    .font(.system(size: 11))
+                    .font(.App.smallSemibold)
                     .foregroundColor(.gray)
                     .padding(.bottom, 2)
             }
@@ -189,10 +189,10 @@ struct AIPlanSetupView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Cân nặng mục tiêu")
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.App.headline)
                         .foregroundColor(.black)
                     Text("Số cân nặng bạn muốn đạt được")
-                        .font(.system(size: 12))
+                        .font(.App.captionMedium)
                         .foregroundColor(.gray)
                 }
                 Spacer()
@@ -201,12 +201,12 @@ struct AIPlanSetupView: View {
                     TextField("0.0", text: $vm.targetWeight)
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
-                        .font(.system(size: 28, weight: .black))
+                        .font(.App.display)
                         .foregroundColor(.black)
                         .frame(width: 80)
                     
                     Text("kg")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.App.bodyBold)
                         .foregroundColor(.gray)
                         .padding(.bottom, 5)
                 }
@@ -216,10 +216,10 @@ struct AIPlanSetupView: View {
             
             HStack {
                 Image(systemName: "info.circle.fill")
-                    .font(.system(size: 14))
+                    .font(.App.body)
                     .foregroundColor(goalStatus.color)
                 Text(goalStatus.text)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.App.subheadline)
                     .foregroundColor(goalStatus.color)
                 Spacer()
             }
@@ -240,7 +240,7 @@ struct AIPlanSetupView: View {
                 Image(systemName: "clock.fill")
                     .foregroundColor(.orange)
                 Text("Tập luyện")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.App.sectionHeader)
                     .foregroundColor(.black)
             }
             
@@ -258,7 +258,7 @@ struct AIPlanSetupView: View {
             .cornerRadius(12)
             
             Text("phút/ngày")
-                .font(.system(size: 11))
+                .font(.App.smallSemibold)
                 .foregroundColor(.gray)
                 .frame(maxWidth: .infinity, alignment: .center)
         }
@@ -274,7 +274,7 @@ struct AIPlanSetupView: View {
                 Image(systemName: "calendar")
                     .foregroundColor(.blue)
                 Text("Thời hạn")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.App.sectionHeader)
                     .foregroundColor(.black)
             }
             
@@ -286,7 +286,7 @@ struct AIPlanSetupView: View {
                 
                 Spacer()
                 Text("\(Int(vm.duration))")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.App.title2)
                     .foregroundColor(.black)
                 Spacer()
                 
@@ -298,7 +298,7 @@ struct AIPlanSetupView: View {
             .padding(.vertical, 8)
             
             Text("tháng")
-                .font(.system(size: 11))
+                .font(.App.smallSemibold)
                 .foregroundColor(.gray)
                 .frame(maxWidth: .infinity, alignment: .center)
         }
@@ -326,7 +326,7 @@ struct AIPlanSetupView: View {
                 Text("PHÂN TÍCH VỚI AI")
                 Image(systemName: "sparkles")
             }
-            .font(.system(size: 16, weight: .black))
+            .font(.App.bodyLarge)
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 18)

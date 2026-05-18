@@ -26,14 +26,14 @@ struct ActivityCard: View {
                     .frame(width: 54, height: 54)
                 
                 Image(systemName: log.activityType.icon)
-                    .font(.system(size: 24))
+                    .font(.App.header)
                     .foregroundColor(Color.App.primary)
             }
             
             // Info Section
             VStack(alignment: .leading, spacing: 6) {
                 Text(log.activityType.name)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.App.bodyBold)
                     .foregroundColor(.black)
                 
                 // Hiển thị 3 thông số: Giờ bắt đầu, Phút, Kcal
@@ -47,7 +47,7 @@ struct ActivityCard: View {
                     // Calo
                     Label("\(Int(log.caloriesBurned)) kcal", systemImage: "flame")
                 }
-                .font(.system(size: 12, weight: .medium)) // Giảm size một chút để hàng thông tin không bị quá dài
+                .font(.App.captionMedium) // Giảm size một chút để hàng thông tin không bị quá dài
                 .foregroundColor(Color.App.lightGray)
             }
             
@@ -55,7 +55,7 @@ struct ActivityCard: View {
             
             // Mũi tên điều hướng
             Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .bold))
+                .font(.App.sectionHeader)
                 .foregroundColor(Color.App.secondaryBackground)
         }
         .padding(14)

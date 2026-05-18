@@ -36,7 +36,7 @@ struct DayPicker: View {
                 // 1. Nút Lùi lại 1 ngày
                 Button(action: { changeDay(by: -1) }) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.App.small)
                         .foregroundColor(.gray)
                         .frame(width: 32, height: 32)
                         .background(Color.App.secondaryBackground)
@@ -45,7 +45,7 @@ struct DayPicker: View {
                 
                 // 2. Ô hiển thị Ngày (Chạm vào chữ là tự động kích hoạt bộ lịch)
                 Text(formatDate(selectedDate))
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.App.sectionHeader)
                     .foregroundColor(.black)
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
@@ -61,7 +61,7 @@ struct DayPicker: View {
                 // 3. Nút Tiến lên 1 ngày (Bị khóa nếu chạm ngưỡng "Hôm nay")
                 Button(action: { changeDay(by: 1) }) {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.App.small)
                         .foregroundColor(isNextDisabled ? .gray.opacity(0.3) : .gray)
                         .frame(width: 32, height: 32)
                         .background(Color.App.secondaryBackground)
@@ -77,7 +77,7 @@ struct DayPicker: View {
                         }
                     }) {
                         Image(systemName: "arrow.clockwise.circle.fill")
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.App.title2)
                             .foregroundColor(Color.App.primary)
                             .frame(width: 32, height: 32)
                             .transition(.scale.combined(with: .opacity))

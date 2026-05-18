@@ -29,7 +29,7 @@ struct ConfidenceBar: View {
 
             Text("\(Int(value * 100))%")
                 .foregroundColor(.gray)
-                .font(.system(size: 14, weight: .medium))
+                .font(.App.body)
         }
     }
 }

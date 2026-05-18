@@ -49,7 +49,7 @@ struct LoadingOverlay: View {
                 
                 // Dòng chữ hiển thị - Đã bỏ hoàn toàn khung nền Card thô cứng
                 Text(text)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.App.headline)
                     .foregroundColor(.white)
                     // Thêm bóng mờ nhẹ cho text để hiển thị cực rõ nét trên mọi loại ảnh nền bên dưới
                     .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)

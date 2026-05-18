@@ -14,7 +14,7 @@ struct TopBar: View {
     var body: some View {
         HStack(alignment: .center, spacing: 5) {
             Text(selectedTab.title)
-                .font(.system(size: 28)) // Hạ size xuống 28 một chút để cân bằng không gian khi xuất hiện nút Hôm nay phụ trợ
+                .font(.App.display) // Hạ size xuống 28 một chút để cân bằng không gian khi xuất hiện nút Hôm nay phụ trợ
                 .fontWeight(.bold)
                 .foregroundColor(.black.opacity(0.8))
                 .lineLimit(1)

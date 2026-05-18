@@ -52,14 +52,14 @@ struct ActivityDetailView: View {
                                         .frame(width: 90, height: 90)
                                     
                                     Image(systemName: log.activityType.icon)
-                                        .font(.system(size: 40))
+                                        .font(.App.large)
                                         .foregroundColor(Color.App.primary)
                                 }
                                 .padding(.top, 10)
                                 
                                 VStack(spacing: 6) {
                                     Text(log.activityType.name)
-                                        .font(.system(size: 24, weight: .black))
+                                        .font(.App.header)
                                         .foregroundColor(.black)
                                     
                                     // Hiển thị: Ngày giờ ghi nhận hoạt động từ thuộc tính log.createdAt
@@ -67,7 +67,7 @@ struct ActivityDetailView: View {
                                         Image(systemName: "calendar.badge.clock")
                                         Text("Ghi nhận lúc: \(formatLogDate(log.createdAt))")
                                     }
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.App.subheadlineRegular)
                                     .foregroundColor(.gray)
                                 }
                             }
@@ -76,7 +76,7 @@ struct ActivityDetailView: View {
                             // 2. Input & Thông số Card chính
                             VStack(alignment: .leading, spacing: 16) {
                                 Text("THỜI GIAN TẬP LUYỆN")
-                                    .font(.system(size: 11, weight: .bold))
+                                    .font(.App.small)
                                     .foregroundColor(Color.App.primary)
                                     .tracking(1)
                                 
@@ -85,12 +85,12 @@ struct ActivityDetailView: View {
                                         .foregroundColor(Color.App.primary)
                                     
                                     TextField("0", text: $duration)
-                                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                                        .font(.App.header)
                                         .foregroundColor(.black)
                                         .keyboardType(.numberPad)
                                     
                                     Text("phút")
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .font(.App.headline)
                                         .foregroundColor(.gray)
                                 }
                                 .padding()
@@ -113,15 +113,15 @@ struct ActivityDetailView: View {
                                                 .frame(width: 44, height: 44)
                                             Image(systemName: "flame.fill")
                                                 .foregroundColor(.orange)
-                                                .font(.system(size: 16))
+                                                .font(.App.bodyLarge)
                                         }
                                         
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text("Năng lượng tiêu thụ")
-                                                .font(.system(size: 12))
+                                                .font(.App.captionMedium)
                                                 .foregroundColor(.gray)
                                             Text("~\(Int(calculatedCalories)) Kcal")
-                                                .font(.system(size: 20, weight: .black))
+                                                .font(.App.title2)
                                                 .foregroundColor(.black)
                                         }
                                         Spacer()
@@ -134,34 +134,34 @@ struct ActivityDetailView: View {
                                 // Khối kén màu sắc thể hiện các mốc chỉ số áp dụng từ Service
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Chỉ số áp dụng tính toán:")
-                                        .font(.system(size: 12, weight: .bold))
+                                        .font(.App.caption)
                                         .foregroundColor(.black.opacity(0.7))
                                     
                                     HStack(spacing: 8) {
                                         // Thẻ hệ số MET bài tập
                                         HStack(spacing: 4) {
-                                            Image(systemName: "bolt.heart.fill").font(.system(size: 10))
+                                            Image(systemName: "bolt.heart.fill").font(.App.tinyMedium)
                                             Text("MET: \(String(format: "%.1f", log.activityType.metValue))")
                                         }
-                                        .font(.system(size: 11, weight: .bold))
+                                        .font(.App.small)
                                         .padding(.horizontal, 10).padding(.vertical, 6)
                                         .background(Color.orange.opacity(0.08)).foregroundColor(.orange).cornerRadius(8)
                                         
                                         // Thẻ Cân nặng lấy từ ViewModel
                                         HStack(spacing: 4) {
-                                            Image(systemName: "scalemass.fill").font(.system(size: 10))
+                                            Image(systemName: "scalemass.fill").font(.App.tinyMedium)
                                             Text("Nặng: \(viewModel.userWeight > 0 ? "\(Int(viewModel.userWeight)) kg" : "-- kg")")
                                         }
-                                        .font(.system(size: 11, weight: .bold))
+                                        .font(.App.small)
                                         .padding(.horizontal, 10).padding(.vertical, 6)
                                         .background(Color.blue.opacity(0.08)).foregroundColor(.blue).cornerRadius(8)
                                         
                                         // Thẻ Chiều cao lấy từ ViewModel
                                         HStack(spacing: 4) {
-                                            Image(systemName: "figure.stand").font(.system(size: 10))
+                                            Image(systemName: "figure.stand").font(.App.tinyMedium)
                                             Text("Cao: \(viewModel.userHeight > 0 ? "\(Int(viewModel.userHeight)) cm" : "-- cm")")
                                         }
-                                        .font(.system(size: 11, weight: .bold))
+                                        .font(.App.small)
                                         .padding(.horizontal, 10).padding(.vertical, 6)
                                         .background(Color.purple.opacity(0.08)).foregroundColor(.purple).cornerRadius(8)
                                     }
@@ -190,7 +190,7 @@ struct ActivityDetailView: View {
                     VStack(spacing: 12) {
                         Button(action: handleUpdate) {
                             Text("Lưu thay đổi")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.App.bodyBold)
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 56)
@@ -204,7 +204,7 @@ struct ActivityDetailView: View {
                                 Image(systemName: "trash")
                                 Text("Xóa hoạt động khỏi nhật ký")
                             }
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.App.sectionHeader)
                             .foregroundColor(.red)
                             .padding(.vertical, 4)
                         }
@@ -221,7 +221,7 @@ struct ActivityDetailView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Đóng") { dismiss() }
                         .foregroundColor(.black)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.App.headline)
                 }
             }
             .onTapGesture { hideKeyboard() }
@@ -246,10 +246,10 @@ extension ActivityDetailView {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "info.circle.fill")
-                    .font(.system(size: 13))
+                    .font(.App.subheadlineRegular)
                     .foregroundColor(Color.App.primary)
                 Text("Cơ sở tính toán khoa học")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.App.subheadline)
                     .foregroundColor(.black)
                 
                 Spacer()
@@ -263,19 +263,19 @@ extension ActivityDetailView {
                         Text(isExpanded ? "Thu gọn" : "Xem thêm")
                         Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                     }
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.App.caption)
                     .foregroundColor(Color.App.primary)
                 }
             }
             
             Text("Lượng tiêu hao được ước tính tự động dựa trên chỉ số trao đổi chất cốt lõi (BMR) kết hợp với cường độ gắng sức (MET) của bài tập:")
-                .font(.system(size: 12))
+                .font(.App.captionMedium)
                 .foregroundColor(.gray)
                 .lineSpacing(4)
             
             VStack(spacing: 4) {
                 Text("Calories = (BMR / 1440) × MET × Thời gian")
-                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                    .font(.App.caption)
                     .foregroundColor(Color.App.primary)
             }
             .frame(maxWidth: .infinity)
@@ -286,7 +286,7 @@ extension ActivityDetailView {
             if isExpanded {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Cách tính chỉ số BMR cụ thể (Harris-Benedict):")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.App.caption)
                         .foregroundColor(.black.opacity(0.8))
                         .padding(.top, 4)
                     
@@ -294,11 +294,11 @@ extension ActivityDetailView {
                         HStack(spacing: 6) {
                             Circle().fill(Color.blue).frame(width: 6, height: 6)
                             Text("Đối với Nam giới:")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.App.small)
                                 .foregroundColor(.blue)
                         }
                         Text("66.47 + (13.75 × W) + (5.003 × H) - (6.755 × A)")
-                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .font(.App.smallSemibold)
                             .foregroundColor(.black.opacity(0.8))
                             .padding(.leading, 12)
                     }
@@ -311,11 +311,11 @@ extension ActivityDetailView {
                         HStack(spacing: 6) {
                             Circle().fill(Color.red).frame(width: 6, height: 6)
                             Text("Đối với Nữ giới:")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.App.small)
                                 .foregroundColor(.red)
                         }
                         Text("655.1 + (9.563 × W) + (1.85 × H) - (4.676 × A)")
-                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .font(.App.smallSemibold)
                             .foregroundColor(.black.opacity(0.8))
                             .padding(.leading, 12)
                     }
@@ -329,7 +329,7 @@ extension ActivityDetailView {
                         Text("• H: Chiều cao (cm)").foregroundColor(.gray)
                         Text("• A: Tuổi của bạn").foregroundColor(.gray)
                     }
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.App.tinyMedium)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.top, 4)
                 }

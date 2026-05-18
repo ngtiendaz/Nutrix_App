@@ -37,7 +37,7 @@ struct ChartView: View {
                     Spacer()
                 } else if let errorMessage = viewModel.errorMessage {
                     Spacer()
-                    Text(errorMessage).foregroundColor(.red).font(.system(size: 14))
+                    Text(errorMessage).foregroundColor(.red).font(.App.body)
                     Spacer()
                 } else {
                     ScrollView(showsIndicators: false) {
@@ -81,7 +81,7 @@ extension ChartView {
     private var exportReportSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Xuất dữ liệu báo cáo")
-                .font(.system(size: 14, weight: .bold))
+                .font(.App.sectionHeader)
                 .foregroundColor(.black)
             
             HStack(spacing: 12) {
@@ -93,7 +93,7 @@ extension ChartView {
                         Image(systemName: "tablecells.fill")
                         Text("Xuất Excel")
                     }
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.App.sectionHeader)
                     .foregroundColor(Color.App.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
@@ -109,7 +109,7 @@ extension ChartView {
                         Image(systemName: "doc.plaintext.fill")
                         Text("Xuất file PDF")
                     }
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.App.sectionHeader)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
@@ -140,7 +140,7 @@ extension ChartView {
     private func tabButton(title: String, tab: StatisticsTab) -> some View {
         Button { viewModel.selectedTab = tab } label: {
             Text(title)
-                .font(.system(size: 13, weight: .bold))
+                .font(.App.subheadline)
                 .foregroundColor(viewModel.selectedTab == tab ? .white : Color.App.primary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 9)
@@ -155,15 +155,15 @@ extension ChartView {
                 HStack(spacing: 12) {
                     HStack(spacing: 16) {
                         Button(action: { viewModel.changeWeek(by: -1) }) {
-                            Image(systemName: "chevron.left").font(.system(size: 12, weight: .bold)).foregroundColor(.black)
+                            Image(systemName: "chevron.left").font(.App.caption).foregroundColor(.black)
                         }
                         
                         Text(viewModel.weekRangeString)
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.App.subheadline)
                             .foregroundColor(.black)
                         
                         Button(action: { viewModel.changeWeek(by: 1) }) {
-                            Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold))
+                            Image(systemName: "chevron.right").font(.App.caption)
                                 .foregroundColor(viewModel.isCurrentOrFutureWeek ? .gray.opacity(0.3) : .black)
                         }
                         .disabled(viewModel.isCurrentOrFutureWeek)
@@ -177,18 +177,18 @@ extension ChartView {
                 HStack {
                     HStack(spacing: 10) {
                         Button(action: { if viewModel.monthSliceIndex > 0 { viewModel.monthSliceIndex -= 1 } }) {
-                            Image(systemName: "arrow.left").font(.system(size: 11, weight: .bold)).foregroundColor(viewModel.monthSliceIndex == 0 ? .gray : .black)
+                            Image(systemName: "arrow.left").font(.App.small).foregroundColor(viewModel.monthSliceIndex == 0 ? .gray : .black)
                         }.disabled(viewModel.monthSliceIndex == 0)
                         
                         Text(viewModel.monthSliceRangeString)
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.App.caption)
                             .foregroundColor(.black)
                             .lineLimit(1)
                             .multilineTextAlignment(.center)
                             .frame(width: 100)
                         
                         Button(action: { if viewModel.monthSliceIndex < viewModel.maxMonthSliceIndex { viewModel.monthSliceIndex += 1 } }) {
-                            Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundColor(viewModel.monthSliceIndex == viewModel.maxMonthSliceIndex ? .gray : .black)
+                            Image(systemName: "arrow.right").font(.App.small).foregroundColor(viewModel.monthSliceIndex == viewModel.maxMonthSliceIndex ? .gray : .black)
                         }.disabled(viewModel.monthSliceIndex == viewModel.maxMonthSliceIndex)
                     }
                     .padding(.horizontal, 10).padding(.vertical, 6)
@@ -225,14 +225,14 @@ extension ChartView {
     private var overviewKPISection: some View {
         HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Trung bình nạp").font(.system(size: 11, weight: .semibold)).foregroundColor(.gray)
-                Text("\(viewModel.avgIntakePerDay) Kcal/ngày").font(.system(size: 18, weight: .black)).foregroundColor(Color.App.primary)
+                Text("Trung bình nạp/ngày").font(.App.smallSemibold).foregroundColor(.gray)
+                Text("\(viewModel.avgIntakePerDay) Kcal").font(.App.title).foregroundColor(Color.App.primary)
             }
             .padding(14).frame(maxWidth: .infinity, alignment: .leading).background(Color.white).cornerRadius(16)
             
             VStack(alignment: .leading, spacing: 6) {
-                Text("Trung bình tiêu hao").font(.system(size: 11, weight: .semibold)).foregroundColor(.gray)
-                Text("\(viewModel.avgBurnedPerDay) Kcal/ngày").font(.system(size: 18, weight: .black)).foregroundColor(.orange)
+                Text("Trung bình tiêu hao/ngày").font(.App.smallSemibold).foregroundColor(.gray)
+                Text("\(viewModel.avgBurnedPerDay) Kcal").font(.App.title).foregroundColor(.orange)
             }
             .padding(14).frame(maxWidth: .infinity, alignment: .leading).background(Color.white).cornerRadius(16)
         }
@@ -241,7 +241,7 @@ extension ChartView {
     private func chartSection(points: [MetricPoint]) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("Biểu đồ tiến độ").font(.system(size: 14, weight: .bold)).foregroundColor(.black)
+                Text("Biểu đồ tiến độ").font(.App.sectionHeader).foregroundColor(.black)
                 Spacer()
                 
                 if !viewModel.isDataEmpty {
@@ -249,7 +249,7 @@ extension ChartView {
                         Image(systemName: viewModel.isTrendUp ? "arrow.up.right.circle.fill" : "arrow.down.right.circle.fill")
                         Text(viewModel.isTrendUp ? "Tăng trưởng" : "Thâm hụt")
                     }
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.App.small)
                     .foregroundColor(viewModel.isTrendUp ? Color.App.primary : .orange)
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(viewModel.isTrendUp ? Color.App.primaryLight : Color.orange.opacity(0.1))
@@ -272,20 +272,20 @@ extension ChartView {
                 .chartXAxis {
                     AxisMarks { value in
                         AxisGridLine().foregroundStyle(Color.black.opacity(0.04))
-                        AxisValueLabel().font(.system(size: 11, weight: .bold)).foregroundStyle(.black)
+                        AxisValueLabel().font(.App.small).foregroundStyle(.black)
                     }
                 }
                 .chartYAxis {
                     AxisMarks { value in
                         AxisGridLine().foregroundStyle(Color.black.opacity(0.04))
-                        AxisValueLabel().font(.system(size: 10, weight: .medium)).foregroundStyle(.black)
+                        AxisValueLabel().font(.App.tinyMedium).foregroundStyle(.black)
                     }
                 }
                 
                 if viewModel.isDataEmpty {
                     Color.white.opacity(0.85)
                     Text("Không có dữ liệu chu kỳ này")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.App.subheadline)
                         .foregroundColor(.gray)
                 }
             }
@@ -297,7 +297,7 @@ extension ChartView {
     private var macroPieChartSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Tỉ lệ chất dinh dưỡng")
-                .font(.system(size: 14, weight: .bold)).foregroundColor(.black)
+                .font(.App.sectionHeader).foregroundColor(.black)
             
             ZStack {
                 HStack(spacing: 20) {
@@ -316,9 +316,9 @@ extension ChartView {
                             ForEach(viewModel.macroData) { element in
                                 HStack(spacing: 8) {
                                     Circle().fill(element.color).frame(width: 8, height: 8)
-                                    Text(element.name).font(.system(size: 12, weight: .bold)).foregroundColor(.black)
+                                    Text(element.name).font(.App.caption).foregroundColor(.black)
                                     Spacer()
-                                    Text(String(format: "%.1f%%", element.value)).font(.system(size: 12, weight: .heavy)).foregroundColor(.gray)
+                                    Text(String(format: "%.1f%%", element.value)).font(.App.caption).foregroundColor(.gray)
                                 }
                             }
                         }
@@ -330,7 +330,7 @@ extension ChartView {
                         
                         Spacer()
                         Text("Không có dữ liệu lộ trình")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.App.subheadline)
                             .foregroundColor(.gray)
                         Spacer()
                     }
@@ -348,12 +348,12 @@ extension ChartView {
         }
         
         return VStack(alignment: .leading, spacing: 12) {
-            Text("Chi tiết lịch sử").font(.system(size: 14, weight: .bold)).foregroundColor(.black)
+            Text("Chi tiết lịch sử").font(.App.sectionHeader).foregroundColor(.black)
             
             if activePoints.isEmpty {
                 HStack {
                     Spacer()
-                    Text("Danh sách lịch sử trống").font(.system(size: 13)).foregroundColor(.gray).padding()
+                    Text("Danh sách lịch sử trống").font(.App.subheadlineRegular).foregroundColor(.gray).padding()
                     Spacer()
                 }
                 .background(Color.white).cornerRadius(14)
@@ -361,29 +361,29 @@ extension ChartView {
                 ForEach(activePoints.reversed()) { point in
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(listLabel(for: point)).font(.system(size: 15, weight: .bold)).foregroundColor(.black)
+                            Text(listLabel(for: point)).font(.App.headline).foregroundColor(.black)
                             
                             if !point.hasPlan {
                                 Text("Nạp thực tế: \(Int(point.intakeCalories)) Kcal")
-                                    .font(.system(size: 12, weight: .medium)).foregroundColor(.gray)
+                                    .font(.App.captionMedium).foregroundColor(.gray)
                             } else {
                                 Text("Nạp: \(Int(point.intakeCalories)) / Mục tiêu: \(Int(point.targetCalories)) Kcal")
-                                    .font(.system(size: 12, weight: .medium)).foregroundColor(.gray)
+                                    .font(.App.captionMedium).foregroundColor(.gray)
                             }
                         }
                         Spacer()
                         
                         VStack(alignment: .trailing, spacing: 4) {
                             if !point.hasPlan {
-                                Text("--").font(.system(size: 15, weight: .heavy)).foregroundColor(.gray)
+                                Text("--").font(.App.headlineHeavy).foregroundColor(.gray)
                                 Text("Không có lộ trình")
-                                    .font(.system(size: 9, weight: .bold))
+                                    .font(.App.micro)
                                     .padding(.horizontal, 6).padding(.vertical, 3)
                                     .background(Color.gray.opacity(0.1)).cornerRadius(6).foregroundColor(.gray)
                             } else {
                                 Text("\(Int(point.completionRate))%")
-                                    .font(.system(size: 15, weight: .heavy)).foregroundColor(statusColor(point.status))
-                                Text(point.status.rawValue).font(.system(size: 10, weight: .bold))
+                                    .font(.App.headlineHeavy).foregroundColor(statusColor(point.status))
+                                Text(point.status.rawValue).font(.App.tiny)
                                     .padding(.horizontal, 6).padding(.vertical, 3).background(statusColor(point.status).opacity(0.1)).cornerRadius(6)
                             }
                         }

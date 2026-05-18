@@ -53,7 +53,7 @@ struct LoginView: View {
                         // Hiển thị thông báo lỗi từ ViewModel
                         if let errorMessage = viewModel.errorMessage {
                             Text(errorMessage)
-                                .font(.caption)
+                                .font(.App.captionMedium)
                                 .foregroundColor(.red)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 5)
@@ -83,15 +83,15 @@ struct LoginView: View {
     private var headerSection: some View {
         VStack(spacing: 12) {
             Image(systemName: "leaf.fill")
-                .font(.system(size: 50))
+                .font(.App.extraLarge)
                 .foregroundColor(Color.App.primary)
             
             Text("Nutrix")
-                .font(.system(size: 42, weight: .bold, design: .rounded))
+                .font(.App.large)
                 .foregroundColor(Color.App.primary)
             
             Text(isSignUp ? "Bắt đầu hành trình dinh dưỡng" : "Quản lý dinh dưỡng cá nhân")
-                .font(.subheadline)
+                .font(.App.subheadlineRegular)
                 .foregroundColor(Color.App.lightGray)
         }
         .padding(.top, 40)
@@ -118,7 +118,7 @@ struct LoginView: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 } else {
                     Text(isSignUp ? "Đăng ký tài khoản" : "Đăng nhập")
-                        .font(.headline)
+                        .font(.App.headline)
                 }
             }
             .foregroundColor(.white)
@@ -136,7 +136,7 @@ struct LoginView: View {
         VStack(spacing: 15) {
             HStack {
                 Rectangle().frame(height: 1).foregroundColor(Color.App.lightGray.opacity(0.3))
-                Text("Hoặc").font(.footnote).foregroundColor(Color.App.lightGray)
+                Text("Hoặc").font(.App.tinyMedium).foregroundColor(Color.App.lightGray)
                 Rectangle().frame(height: 1).foregroundColor(Color.App.lightGray.opacity(0.3))
             }
             .padding(.horizontal, 25)
@@ -147,9 +147,9 @@ struct LoginView: View {
             }) {
                 HStack(spacing: 12) {
                     Image(systemName: "g.circle.fill")
-                        .font(.title3)
+                        .font(.App.title3)
                     Text("Tiếp tục với Google")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.App.bodyBold)
                 }
                 .foregroundColor(.black)
                 .frame(maxWidth: .infinity)
@@ -178,7 +178,7 @@ struct LoginView: View {
                     .foregroundColor(Color.App.primary)
             }
         }
-        .font(.footnote)
+        .font(.App.tinyMedium)
         .padding(.bottom, 20)
     }
     

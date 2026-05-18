@@ -52,7 +52,7 @@ struct AddActivitySheet: View {
                             // 2. Section: Chọn loại hoạt động
                             VStack(alignment: .leading, spacing: 16) {
                                 Text(searchText.isEmpty ? "Hoạt động phổ biến" : "Kết quả tìm kiếm")
-                                    .font(.system(size: 19, weight: .bold))
+                                    .font(.App.title3)
                                     .foregroundColor(.black)
                                     .padding(.horizontal, 4)
                                 
@@ -88,7 +88,7 @@ struct AddActivitySheet: View {
                             // 3. Section: Tùy chỉnh thời gian
                             VStack(alignment: .leading, spacing: 16) {
                                 Text("Tùy chỉnh thời gian")
-                                    .font(.system(size: 19, weight: .bold))
+                                    .font(.App.title3)
                                     .foregroundColor(.black)
                                     .padding(.horizontal, 4)
                                 
@@ -145,11 +145,11 @@ extension AddActivitySheet {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(.gray)
-                .font(.system(size: 18, weight: .bold))
+                .font(.App.title)
             
             TextField("", text: $searchText, prompt: Text("Tìm kiếm hoạt động...").foregroundColor(.gray))
                 .foregroundColor(.black)
-                .font(.system(size: 16))
+                .font(.App.bodyLarge)
             
             if !searchText.isEmpty {
                 Button(action: { searchText = "" }) {
@@ -170,15 +170,15 @@ extension AddActivitySheet {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Tổng thời gian")
-                    .font(.system(size: 14))
+                    .font(.App.body)
                     .foregroundColor(.gray)
                 
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text("\(duration)")
-                        .font(.system(size: 32, weight: .black))
+                        .font(.App.display)
                         .foregroundColor(Color.App.primary)
                     Text("phút")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.App.bodyBold)
                         .foregroundColor(.gray)
                 }
             }
@@ -188,7 +188,7 @@ extension AddActivitySheet {
             HStack(spacing: 0) {
                 Button(action: { if duration > 5 { duration -= 5 } }) {
                     Image(systemName: "minus")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.App.title)
                         .frame(width: 44, height: 44)
                         .background(Color.App.secondaryBackground)
                         .foregroundColor(.black)
@@ -198,7 +198,7 @@ extension AddActivitySheet {
                 
                 Button(action: { duration += 5 }) {
                     Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.App.title)
                         .frame(width: 44, height: 44)
                         .background(Color.App.secondaryBackground)
                         .foregroundColor(.black)
@@ -223,24 +223,24 @@ extension AddActivitySheet {
                         .frame(width: 46, height: 46)
                     Image(systemName: "flame.fill")
                         .foregroundColor(.orange)
-                        .font(.system(size: 18))
+                        .font(.App.title)
                 }
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Năng lượng tiêu thụ")
-                        .font(.system(size: 12))
+                        .font(.App.captionMedium)
                         .foregroundColor(.gray)
                     
                     let calories = (selectedActivity?.metValue ?? 5.0) * Double(duration)
                     Text("~\(Int(calories)) Kcal")
-                        .font(.system(size: 22, weight: .black))
+                        .font(.App.title2)
                         .foregroundColor(.black)
                 }
                 
                 Spacer()
                 
                 Text("Dự tính")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.App.small)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(Color.App.secondaryBackground)
@@ -252,34 +252,34 @@ extension AddActivitySheet {
             // Bộ ba khối kén màu sắc thể hiện các mốc chỉ số áp dụng
             VStack(alignment: .leading, spacing: 8) {
                 Text("Chỉ số áp dụng tính toán:")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.App.caption)
                     .foregroundColor(.black.opacity(0.7))
                 
                 HStack(spacing: 8) {
                     // Thẻ MET của bài tập
                     HStack(spacing: 4) {
-                        Image(systemName: "bolt.heart.fill").font(.system(size: 10))
+                        Image(systemName: "bolt.heart.fill").font(.App.tinyMedium)
                         Text("MET: \(String(format: "%.1f", selectedActivity?.metValue ?? 5.0))")
                     }
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.App.small)
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(Color.orange.opacity(0.08)).foregroundColor(.orange).cornerRadius(8)
                     
                     // Thẻ Cân nặng từ ViewModel
                     HStack(spacing: 4) {
-                        Image(systemName: "scalemass.fill").font(.system(size: 10))
+                        Image(systemName: "scalemass.fill").font(.App.tinyMedium)
                         Text("Nặng: \(viewModel.userWeight > 0 ? "\(Int(viewModel.userWeight)) kg" : "-- kg")")
                     }
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.App.small)
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(Color.blue.opacity(0.08)).foregroundColor(.blue).cornerRadius(8)
                     
                     // Thẻ Chiều cao từ ViewModel
                     HStack(spacing: 4) {
-                        Image(systemName: "figure.stand").font(.system(size: 10))
+                        Image(systemName: "figure.stand").font(.App.tinyMedium)
                         Text("Cao: \(viewModel.userHeight > 0 ? "\(Int(viewModel.userHeight)) cm" : "-- cm")")
                     }
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.App.small)
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(Color.purple.opacity(0.08)).foregroundColor(.purple).cornerRadius(8)
                 }
@@ -296,10 +296,10 @@ extension AddActivitySheet {
                 // Header cố định luôn hiển thị
                 HStack(spacing: 6) {
                     Image(systemName: "info.circle.fill")
-                        .font(.system(size: 13))
+                        .font(.App.subheadlineRegular)
                         .foregroundColor(Color.App.primary)
                     Text("Cơ sở tính toán khoa học")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.App.subheadline)
                         .foregroundColor(.black)
                     
                     Spacer()
@@ -314,20 +314,20 @@ extension AddActivitySheet {
                             Text(isExpanded ? "Thu gọn" : "Xem thêm")
                             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         }
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.App.caption)
                         .foregroundColor(Color.App.primary)
                     }
                 }
                 
                 Text("Lượng tiêu hao được ước tính tự động dựa trên chỉ số trao đổi chất cốt lõi (BMR) kết hợp với cường độ gắng sức (MET) của bài tập:")
-                    .font(.system(size: 12))
+                    .font(.App.captionMedium)
                     .foregroundColor(.gray)
                     .lineSpacing(4)
                 
                 // Công thức tổng quát (Luôn hiển thị để người dùng nắm được tinh thần cốt lõi)
                 VStack(spacing: 4) {
                     Text("Calories = (BMR / 1440) × MET × Thời gian")
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .font(.App.caption)
                         .foregroundColor(Color.App.primary)
                 }
                 .frame(maxWidth: .infinity)
@@ -339,7 +339,7 @@ extension AddActivitySheet {
                 if isExpanded {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Cách tính chỉ số BMR cụ thể (Harris-Benedict):")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.App.caption)
                             .foregroundColor(.black.opacity(0.8))
                             .padding(.top, 4)
                         
@@ -348,11 +348,11 @@ extension AddActivitySheet {
                             HStack(spacing: 6) {
                                 Circle().fill(Color.blue).frame(width: 6, height: 6)
                                 Text("Đối với Nam giới:")
-                                    .font(.system(size: 11, weight: .bold))
+                                    .font(.App.small)
                                     .foregroundColor(.blue)
                             }
                             Text("66.47 + (13.75 × W) + (5.003 × H) - (6.755 × A)")
-                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                .font(.App.smallSemibold)
                                 .foregroundColor(.black.opacity(0.8))
                                 .padding(.leading, 12)
                         }
@@ -366,11 +366,11 @@ extension AddActivitySheet {
                             HStack(spacing: 6) {
                                 Circle().fill(Color.red).frame(width: 6, height: 6)
                                 Text("Đối với Nữ giới:")
-                                    .font(.system(size: 11, weight: .bold))
+                                    .font(.App.small)
                                     .foregroundColor(.red)
                             }
                             Text("655.1 + (9.563 × W) + (1.85 × H) - (4.676 × A)")
-                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                .font(.App.smallSemibold)
                                 .foregroundColor(.black.opacity(0.8))
                                 .padding(.leading, 12)
                         }
@@ -385,7 +385,7 @@ extension AddActivitySheet {
                             Text("• H: Chiều cao (cm)").foregroundColor(.gray)
                             Text("• A: Tuổi của bạn").foregroundColor(.gray)
                         }
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.App.tinyMedium)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.top, 4)
                     }
@@ -401,11 +401,11 @@ extension AddActivitySheet {
     private var emptySearchView: some View {
         VStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 40))
+                .font(.App.large)
                 .foregroundColor(.gray.opacity(0.4))
             Text("Không tìm thấy kết quả phù hợp")
                 .foregroundColor(.gray)
-                .font(.system(size: 15))
+                .font(.App.headline)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 30)
@@ -424,7 +424,7 @@ extension AddActivitySheet {
                 }
                 Text("Xác nhận lưu")
             }
-            .font(.system(size: 18, weight: .bold))
+            .font(.App.title)
             .frame(maxWidth: .infinity)
             .frame(height: 60)
             .background(selectedActivity == nil ? Color.gray.opacity(0.3) : Color.App.primary)
@@ -453,12 +453,12 @@ struct ActivityTypeItem: View {
                     .shadow(color: isSelected ? Color.App.primary.opacity(0.3) : Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
                 
                 Image(systemName: icon)
-                    .font(.system(size: 24))
+                    .font(.App.header)
                     .foregroundColor(isSelected ? .white : Color.App.primary)
             }
             
             Text(title)
-                .font(.system(size: 13, weight: isSelected ? .bold : .semibold))
+                .font(.App.subheadline)
                 .foregroundColor(isSelected ? Color.App.primary : .black)
                 .lineLimit(1)
         }

@@ -56,13 +56,13 @@ struct BottomMenuBar: View {
                             
                             // Icon: Trắng khi được chọn, Xám khi không chọn
                             Image(systemName: selectedTab == tab ? tab.activeIcon : tab.rawValue)
-                                .font(.system(size: 20, weight: selectedTab == tab ? .semibold : .medium))
+                                .font(.App.title3)
                                 .foregroundColor(selectedTab == tab ? .white : .gray)
                         }
                         .frame(height: 32)
                         
                         Text(tab.title)
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.App.tiny)
                             .foregroundColor(selectedTab == tab ? Color.App.primary : .gray)
                     }
                     .frame(maxWidth: .infinity)

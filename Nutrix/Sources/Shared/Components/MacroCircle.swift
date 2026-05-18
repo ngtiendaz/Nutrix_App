@@ -28,18 +28,18 @@ struct MacroCircle: View {
                     Color.clear
                             .frame(width: 0, height: 0)
                             .rollingNumber(value: animatedProgress) // Nhảy số từ 0 -> current hoặc ngược lại
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.App.sectionHeader)
                             .foregroundColor(.black)
                     Text("/ \(Int(goal))g")
-                        .font(.system(size: 10))
+                        .font(.App.tinyMedium)
                         .foregroundColor(.gray)
                 }
             }
             .frame(width: 70, height: 70)
             
             Text(label)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.gray)
+                .font(.App.subheadline)
+                .foregroundColor(.black)
         }.onAppear {
             withAnimation(.easeInOut(duration: 0.6)) {
                 animatedProgress = current

@@ -117,7 +117,7 @@ struct DiaryView: View {
     private var foodList: some View {
         VStack(alignment: .leading) {
             Text(dateTitle)
-                .font(Font.headline.bold())
+                .font(.App.headline)
                 .foregroundColor(.black.opacity(0.8))
             
             if diaryViewModel.isLoading {
@@ -125,10 +125,10 @@ struct DiaryView: View {
             } else if diaryViewModel.allFoods.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "takeoutbag.and.cup.and.straw")
-                        .font(.system(size: 40))
+                        .font(.App.large)
                         .foregroundColor(Color.App.lightGray)
                     Text("Chưa có món ăn nào")
-                        .font(.subheadline)
+                        .font(.App.subheadlineRegular)
                         .foregroundColor(Color.App.lightGray)
                     
                     if isPastDate {
@@ -138,7 +138,7 @@ struct DiaryView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 40)
             } else {
-                LazyVStack(spacing: 12) {
+                VStack(spacing: 12) {
                     ForEach(diaryViewModel.allFoods) { food in
                         FoodItem(food: food)
                             .contentShape(Rectangle())
@@ -159,7 +159,7 @@ struct DiaryView: View {
             isShowingAddFood = true
         } label: {
             Image(systemName: "fork.knife")
-                .font(.system(size: 24, weight: .bold))
+                .font(.App.header)
                 .foregroundColor(.white)
                 .frame(width: 60, height: 60)
                 .background(Color.App.primary)
@@ -176,7 +176,7 @@ struct DiaryView: View {
                 Image(systemName: "plus.circle.fill")
                 Text("Bổ sung món ăn cho ngày này")
             }
-            .font(.subheadline.bold())
+            .font(.App.subheadline)
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
             .padding()
@@ -189,14 +189,14 @@ struct DiaryView: View {
         VStack(spacing: 15) {
             VStack(spacing: 8) {
                 Image(systemName: "sparkles.rectangle.stack.fill")
-                    .font(.system(size: 40))
+                    .font(.App.large)
                     .foregroundColor(.orange)
                 
                 Text("Chưa có lộ trình dinh dưỡng")
-                    .font(.headline)
+                    .font(.App.headline)
                 
                 Text("Hãy để AI thiết kế lộ trình cá nhân hóa dựa trên mục tiêu cân nặng của bạn.")
-                    .font(.subheadline)
+                    .font(.App.subheadlineRegular)
                     .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
@@ -206,7 +206,7 @@ struct DiaryView: View {
                 isShowingAISetup = true
             }) {
                 Text("Tạo lộ trình ngay")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.App.bodyBold)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding()

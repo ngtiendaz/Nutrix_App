@@ -51,7 +51,7 @@ struct ActivityView: View {
                         LazyVStack(alignment: .leading, spacing: 18) {
                             HStack {
                                 Text("Lịch sử hoạt động")
-                                    .font(.system(size: 18, weight: .bold))
+                                    .font(.App.title)
                                     .foregroundColor(.black)
                                 
                                 Spacer()
@@ -61,7 +61,7 @@ struct ActivityView: View {
                                         Image(systemName: "plus.circle.fill")
                                         Text("Thêm mới")
                                     }
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(.App.sectionHeader)
                                     .foregroundColor(Color.App.primary)
                                 }
                             }
@@ -119,17 +119,17 @@ struct ActivityView: View {
                 
                 VStack(spacing: 4) {
                     Text("\(totalCalories)")
-                        .font(.system(size: 48, weight: .black, design: .rounded))
+                        .font(.App.extraLarge)
                         .foregroundColor(isGoalAchieved ? .App.primary : .black)
                     
                     Text("kcal đã đốt")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.App.body)
                         .foregroundColor(Color.App.primary)
                     
                     if isGoalAchieved {
                         Image(systemName: "checkmark.seal.fill")
                             .foregroundColor(.App.lightGray)
-                            .font(.system(size: 22))
+                            .font(.App.title2)
                             .padding(.top, 4)
                             .transition(.scale.combined(with: .opacity))
                     }
@@ -143,15 +143,15 @@ struct ActivityView: View {
                 // Widget Mục tiêu
                 VStack(alignment: .leading, spacing: 6) {
                     Text("MỤC TIÊU ĐỐT")
-                        .font(.system(size: 11, weight: .black))
+                        .font(.App.small)
                         .foregroundColor(Color.App.lightGray)
                     
                     HStack(spacing: 4) {
                         Image(systemName: "target")
-                            .font(.system(size: 14))
+                            .font(.App.body)
                         Text("\(activityViewModel.goalCalories) kcal")
                     }
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.App.title)
                     .foregroundColor(.orange)
                 }
                 
@@ -160,18 +160,18 @@ struct ActivityView: View {
                 // Widget Thời gian
                 VStack(alignment: .trailing, spacing: 6) {
                     Text("TỔNG THỜI GIAN")
-                        .font(.system(size: 11, weight: .black))
+                        .font(.App.small)
                         .foregroundColor(Color.App.lightGray)
                     
                     HStack(alignment: .bottom, spacing: 2) {
                         Image(systemName: "stopwatch")
-                            .font(.system(size: 14))
+                            .font(.App.body)
                             .padding(.bottom, 3)
                         Text("\(totalDuration)")
-                            .font(.system(size: 20, weight: .bold))
+                            .font(.App.title2)
                             .foregroundColor(.black)
                         Text("phút")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.App.captionMedium)
                             .foregroundColor(Color.App.lightGray)
                             .padding(.bottom, 2)
                     }
@@ -188,10 +188,10 @@ struct ActivityView: View {
     private var emptyStateView: some View {
         VStack(spacing: 12) {
             Image(systemName: "figure.run.circle")
-                .font(.system(size: 60))
+                .font(.App.huge)
                 .foregroundColor(Color.App.secondaryBackground)
             Text("Chưa có dữ liệu tập luyện")
-                .font(.system(size: 15))
+                .font(.App.headline)
                 .foregroundColor(Color.App.lightGray)
         }
         .frame(maxWidth: .infinity)

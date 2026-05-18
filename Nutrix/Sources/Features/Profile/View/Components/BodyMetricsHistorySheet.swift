@@ -48,7 +48,7 @@ struct BodyMetricsHistorySheet: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Xong") { dismiss() }
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.App.headline)
                         .foregroundColor(Color.App.primary)
                 }
             }
@@ -58,7 +58,7 @@ struct BodyMetricsHistorySheet: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: 40))
+                .font(.App.large)
                 .foregroundColor(.gray.opacity(0.4))
             Text("Chưa có dữ liệu lịch sử")
                 .foregroundColor(.gray)
@@ -77,17 +77,17 @@ struct MetricHistoryRow: View {
                     .frame(width: 44, height: 44)
                 
                 Image(systemName: statusIcon(item.status))
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.App.title2)
                     .foregroundColor(statusColor(item.status))
             }
             
             VStack(alignment: .leading, spacing: 4) {
                 Text("\(item.weight, specifier: "%.1f") kg")
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.App.bodyBold)
                     .foregroundColor(.black)
                 
                 Text("\(Int(item.height)) cm")
-                    .font(.system(size: 14))
+                    .font(.App.body)
                     .foregroundColor(.gray)
             }
             
@@ -97,7 +97,7 @@ struct MetricHistoryRow: View {
                 // Hiển thị phần trăm thay đổi
                 if item.percentChange != 0 {
                     Text("\(item.percentChange > 0 ? "+" : "")\(item.percentChange, specifier: "%.1f")%")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.App.caption)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(statusColor(item.status).opacity(0.1))
@@ -106,7 +106,7 @@ struct MetricHistoryRow: View {
                 }
                 
                 Text(item.timestamp, style: .date)
-                    .font(.system(size: 12))
+                    .font(.App.captionMedium)
                     .foregroundColor(.gray.opacity(0.8))
             }
         }

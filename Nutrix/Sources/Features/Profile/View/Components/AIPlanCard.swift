@@ -20,16 +20,16 @@ struct AIPlanCard: View {
                         .fill(Color.App.primary.opacity(0.12))
                         .frame(width: 46, height: 46)
                     Image(systemName: "calendar.badge.plus")
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(.App.title2)
                         .foregroundColor(Color.App.primary)
                 }
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Lộ trình NutriX AI")
-                        .font(.system(size: 17, weight: .bold))
+                        .font(.App.bodyBold)
                         .foregroundColor(.black)
                     Text("Cá nhân hóa theo chỉ số cơ thể")
-                        .font(.system(size: 12))
+                        .font(.App.captionMedium)
                         .foregroundColor(.gray)
                 }
                 Spacer()
@@ -37,7 +37,7 @@ struct AIPlanCard: View {
                 HStack(spacing: 4) {
                     Circle().fill(Color.green).frame(width: 6, height: 6)
                     Text("Sẵn sàng")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.App.small)
                         .foregroundColor(.green)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 6)
@@ -47,11 +47,11 @@ struct AIPlanCard: View {
             // Suggestion Bar
             HStack(spacing: 10) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 12))
+                    .font(.App.captionMedium)
                     .foregroundColor(.orange)
                 
                 Text("AI sẽ tính toán Calo & thực đơn dựa trên mục tiêu cân nặng của bạn.")
-                    .font(.system(size: 12))
+                    .font(.App.captionMedium)
                     .foregroundColor(.black.opacity(0.6))
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
@@ -67,9 +67,9 @@ struct AIPlanCard: View {
             }) {
                 HStack(spacing: 8) {
                     Image(systemName: "bolt.fill")
-                        .font(.system(size: 14))
+                        .font(.App.body)
                     Text("Thiết lập lộ trình với AI")
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.App.headline)
                 }
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)

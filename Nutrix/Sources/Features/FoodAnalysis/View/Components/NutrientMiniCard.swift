@@ -13,12 +13,12 @@ struct NutrientMiniCard: View {
     let color: Color
     var body: some View {
         VStack(spacing: 8) {
-            Text("\(Int(value))g").font(.system(size: 16, weight: .bold)).foregroundColor(.black)
+            Text("\(Int(value))g").font(.App.bodyBold).foregroundColor(.black)
             ZStack(alignment: .leading) {
                 Capsule().frame(height: 4).foregroundColor(color.opacity(0.1))
                 Capsule().frame(width: 30, height: 4).foregroundColor(color)
             }
-            Text(title).font(.system(size: 12)).foregroundColor(Color.App.lightGray)
+            Text(title).font(.App.captionMedium).foregroundColor(Color.App.lightGray)
         }
         .frame(maxWidth: .infinity)
     }

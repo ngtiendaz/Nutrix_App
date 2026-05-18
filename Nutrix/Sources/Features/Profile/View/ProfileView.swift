@@ -38,7 +38,7 @@ struct ProfileView: View {
                     // 3. AI Section
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Mục tiêu & lộ trình")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.App.bodyBold)
                             .foregroundColor(.black.opacity(0.7))
                             .padding(.leading, 4)
                     }
@@ -86,9 +86,9 @@ struct ProfileView: View {
                     avatarSection
                     VStack(alignment: .leading, spacing: 4) {
                         Text(loginViewModel.authService.currentUser?.name ?? "Người dùng")
-                            .font(.system(size: 20, weight: .bold)).foregroundColor(.black)
+                            .font(.App.title2).foregroundColor(.black)
                         Text(loginViewModel.authService.currentUser?.email ?? "")
-                            .font(.system(size: 14)).foregroundColor(.gray)
+                            .font(.App.body).foregroundColor(.gray)
                     }
                     Spacer()
                     editBasicInfoButton // Nút này chỉ quản lý InfoRow bên dưới
@@ -120,7 +120,7 @@ struct ProfileView: View {
                 }
             }) {
                 Text(profileViewModel.isEditingBasic ? "Lưu" : "Sửa")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.App.subheadline)
                     .padding(.horizontal, 14).padding(.vertical, 7)
                     .background(profileViewModel.isEditingBasic ? Color.green.opacity(0.1) : Color.App.primary.opacity(0.1))
                     .foregroundColor(profileViewModel.isEditingBasic ? .green : Color.App.primary)
@@ -134,7 +134,7 @@ struct ProfileView: View {
                     CachedImage(urlString: photoURL, width: 68, height: 68, cornerRadius: 34)
                 } else {
                     Circle().fill(Color.App.primaryLight).frame(width: 68, height: 68)
-                    Image(systemName: "person.fill").font(.system(size: 28)).foregroundColor(Color.App.primary)
+                    Image(systemName: "person.fill").font(.App.display).foregroundColor(Color.App.primary)
                 }
             }
             .overlay(Circle().stroke(Color.white, lineWidth: 2))
@@ -143,14 +143,14 @@ struct ProfileView: View {
     
     private var genderPickerRow: some View {
             HStack(spacing: 0) {
-                Text("Giới tính").font(.system(size: 15, weight: .medium)).frame(width: 100, alignment: .leading).foregroundColor(.black)
+                Text("Giới tính").font(.App.headline).frame(width: 100, alignment: .leading).foregroundColor(.black)
                 Text(":").padding(.trailing, 10).foregroundColor(.black)
                 if profileViewModel.isEditingBasic {
                     Picker("", selection: $profileViewModel.gender) { ForEach(profileViewModel.genders, id: \.self) { Text($0) } }
                         .pickerStyle(.menu).labelsHidden().frame(height: 40).frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color.black.opacity(0.04)).cornerRadius(10)
                 } else {
-                    Text(profileViewModel.gender).font(.system(size: 15, weight: .semibold)).foregroundColor(.black).padding(.horizontal, 12).frame(height: 40)
+                    Text(profileViewModel.gender).font(.App.headline).foregroundColor(.black).padding(.horizontal, 12).frame(height: 40)
                     Spacer()
                 }
             }
@@ -158,14 +158,14 @@ struct ProfileView: View {
     
     private var activityPickerRow: some View {
             HStack(spacing: 0) {
-                Text("Vận động").font(.system(size: 15, weight: .medium)).frame(width: 100, alignment: .leading).foregroundColor(.black)
+                Text("Vận động").font(.App.headline).frame(width: 100, alignment: .leading).foregroundColor(.black)
                 Text(":").padding(.trailing, 10).foregroundColor(.black)
                 if profileViewModel.isEditingBasic {
                     Picker("", selection: $profileViewModel.activityLevel) { ForEach(profileViewModel.activityLevels, id: \.self) { Text($0) } }
                         .pickerStyle(.menu).labelsHidden().frame(height: 40).frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color.black.opacity(0.04)).cornerRadius(10)
                 } else {
-                    Text(profileViewModel.activityLevel).font(.system(size: 15, weight: .semibold)).foregroundColor(.black).padding(.horizontal, 12).frame(height: 40)
+                    Text(profileViewModel.activityLevel).font(.App.headline).foregroundColor(.black).padding(.horizontal, 12).frame(height: 40)
                     Spacer()
                 }
             }
@@ -173,10 +173,10 @@ struct ProfileView: View {
     
     private func settingItem(icon: String, title: String, color: Color, isLast: Bool = false) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14, weight: .bold)).foregroundColor(color).frame(width: 32, height: 32).background(color.opacity(0.1)).cornerRadius(10)
-            Text(title).font(.system(size: 15, weight: .medium)).foregroundColor(.black.opacity(0.8))
+            Image(systemName: icon).font(.App.sectionHeader).foregroundColor(color).frame(width: 32, height: 32).background(color.opacity(0.1)).cornerRadius(10)
+            Text(title).font(.App.headline).foregroundColor(.black.opacity(0.8))
             Spacer()
-            if !isLast { Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold)).foregroundColor(.gray.opacity(0.3)) }
+            if !isLast { Image(systemName: "chevron.right").font(.App.caption).foregroundColor(.gray.opacity(0.3)) }
         }
         .padding(12).background(Color.white).cornerRadius(16).shadow(color: Color.black.opacity(0.02), radius: 5, x: 0, y: 2)
     }

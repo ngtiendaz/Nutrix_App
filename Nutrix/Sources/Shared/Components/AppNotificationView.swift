@@ -22,7 +22,7 @@ struct AppNotificationView: View {
                 HStack(spacing: 12) {
                     // Vùng chứa Icon (Thu nhỏ từ 22x22 padded 10 xuống 15x15 padded 7)
                     Image(systemName: data.type == .success ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.App.headline)
                         .foregroundColor(data.type == .success ? Color.App.primary : Color(hex: "BC4749"))
                         .padding(7)
                         .background(Color.white)
@@ -32,13 +32,13 @@ struct AppNotificationView: View {
                     // Nội dung Text - Tinh chỉnh size chữ nhỏ gọn, sang trọng hơn
                     VStack(alignment: .leading, spacing: 1) {
                         Text(data.type == .success ? "Thành công" : "Thông báo")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.App.tiny)
                             .foregroundColor(.white.opacity(0.7))
                             .textCase(.uppercase)
                             .tracking(0.5)
                         
                         Text(data.message)
-                            .font(.system(size: 13, weight: .semibold)) // Giảm từ 15 xuống 13
+                            .font(.App.subheadline) // Giảm từ 15 xuống 13
                             .foregroundColor(.white)
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
@@ -49,7 +49,7 @@ struct AppNotificationView: View {
                     
                     // Icon chevrons siêu mảnh thanh lịch
                     Image(systemName: "chevron.compact.up")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.App.captionMedium)
                         .foregroundColor(.white.opacity(0.35))
                         .padding(.trailing, 2)
                 }

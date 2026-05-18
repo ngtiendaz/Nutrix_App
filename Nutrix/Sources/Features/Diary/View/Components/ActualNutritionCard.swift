@@ -8,16 +8,16 @@ struct ActualNutritionCard: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Tổng dinh dưỡng đã nạp")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.App.body)
                         .foregroundColor(Color.App.lightGray) // Màu xám nhẹ cho label phụ
                     
                     Text("\(Int(data.totalCalories)) kcal")
-                        .font(.system(size: 28, weight: .black, design: .rounded))
+                        .font(.App.display)
                         .foregroundColor(.black) // Chuyển về màu đen cho nổi bật
                 }
                 Spacer()
                 Image(systemName: "chart.pie.fill")
-                    .font(.system(size: 30))
+                    .font(.App.display)
                     .foregroundColor(Color.App.primary)
             }
             
@@ -42,12 +42,12 @@ struct ActualNutritionCard: View {
         VStack(alignment: .leading, spacing: 4) {
             // Label (Protein, Carbs, Fat) sử dụng màu sắc định danh
             Text(label + ":")
-                .font(.system(size: 12, weight: .bold))
+                .font(.App.caption)
                 .foregroundColor(color)
             
             // Con số hiển thị màu đen đậm
             Text("\(Int(value))g")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(.App.title)
                 .foregroundColor(.black)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

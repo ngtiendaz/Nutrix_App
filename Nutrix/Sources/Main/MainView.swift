@@ -108,10 +108,10 @@ struct MainView: View {
         default:
             VStack {
                 Image(systemName: "hammer.fill")
-                    .font(.system(size: 50))
+                    .font(.App.extraLarge)
                     .foregroundColor(.gray.opacity(0.5))
                 Text("Màn hình đang phát triển")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.App.bodyLarge)
                     .foregroundColor(.gray)
             }
         }

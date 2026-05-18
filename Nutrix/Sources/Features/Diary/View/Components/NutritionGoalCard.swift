@@ -53,9 +53,9 @@ struct NutritionGoalCard: View {
             HStack(spacing: 0) {
                 macroGroup(label: "Tinh bột", current: data.totalCarbs, goal: goal.carbs, color: .blue)
                 Spacer()
-                macroGroup(label: "Đạm", current: data.totalProtein, goal: goal.protein, color: .red)
+                macroGroup(label: "Chất đạm", current: data.totalProtein, goal: goal.protein, color: .red)
                 Spacer()
-                macroGroup(label: "Béo", current: data.totalFat, goal: goal.fat, color: .orange)
+                macroGroup(label: "Chất béo", current: data.totalFat, goal: goal.fat, color: .orange)
             }
             .padding(.horizontal, 10)
             
@@ -86,15 +86,15 @@ struct NutritionGoalCard: View {
         HStack(spacing: 12) {
             Image(systemName: "exclamationmark.octagon.fill")
                 .foregroundColor(.red)
-                .font(.system(size: 20))
+                .font(.App.title2)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text("Vượt mục tiêu \(Int(data.totalCalories - goal.dailyCalories)) kcal")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.App.sectionHeader)
                     .foregroundColor(.red)
                 
                 Text("Bạn đã nạp quá calo quy định. Hãy cân nhắc tập thêm một bài vận động nhẹ.")
-                    .font(.system(size: 12))
+                    .font(.App.captionMedium)
                     .foregroundColor(.black.opacity(0.7))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -113,16 +113,16 @@ struct NutritionGoalCard: View {
     private func nutritionRow(label: String, value: Double, unit: String, icon: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Label(label, systemImage: icon)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.App.subheadline)
                 .foregroundColor(color)
             
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text("\(Int(value))")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.App.header)
                     .foregroundColor(.black)
                 
                 Text(unit)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.App.body)
                     .foregroundColor(.gray)
             }
         }

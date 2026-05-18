@@ -60,11 +60,11 @@ struct CircularProgress: View {
                 Color.clear
                     .frame(width: 0, height: 0)
                     .rollingNumber(value: abs(diff))
-                    .font(.system(size: 26, weight: .black))
+                    .font(.App.header)
                     .foregroundColor(isOverGoal ? .red : .black)
                 
                 Text(isOverGoal ? "kcal vượt" : "kcal còn lại")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.App.small)
                     .foregroundColor(.gray)
                     .textCase(.uppercase)
             }

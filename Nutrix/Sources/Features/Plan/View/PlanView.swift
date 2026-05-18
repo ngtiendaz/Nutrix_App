@@ -29,7 +29,7 @@ struct PlanView: View {
                             .progressViewStyle(CircularProgressViewStyle(tint: Color.App.primary))
                             .scaleEffect(1.2)
                         Text("Đang tải lộ trình...")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.App.body)
                             .foregroundColor(.gray)
                             .padding(.top, 12)
                         Spacer()
@@ -62,7 +62,7 @@ struct PlanView: View {
                             if !planViewModel.historyPlans.isEmpty {
                                 VStack(alignment: .leading, spacing: 16) {
                                     Text("Lịch sử lộ trình gần đây")
-                                        .font(.system(size: 20, weight: .black))
+                                        .font(.App.title2)
                                         .foregroundColor(.black)
                                     
                                     VStack(spacing: 14) {
@@ -123,22 +123,22 @@ struct PlanView: View {
                     HStack(spacing: 6) {
                         Circle().fill(Color.App.primary).frame(width: 8, height: 8)
                         Text(goalType.uppercased())
-                            .font(.system(size: 12, weight: .black))
+                            .font(.App.captionMedium)
                             .foregroundColor(Color.App.primary)
                     }
                     
                     Text("Mục tiêu: \(String(format: "%.1f", plan.targetWeight ?? 0)) kg")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.App.title2)
                         .foregroundColor(.black)
                     
                     Text("Thời gian: \(formatFullDate(plan.startDate)) - \(formatFullDate(plan.endDate))")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.App.captionMedium)
                         .foregroundColor(.gray)
                 }
                 Spacer()
                 
                 Text("\(progress.daysPassed)/\(progress.totalDays) ngày")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.App.subheadline)
                     .foregroundColor(.black)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
@@ -161,7 +161,7 @@ struct PlanView: View {
                 HStack {
                     Spacer()
                     Text("\(Int(progress.percentage))%")
-                        .font(.system(size: 13, weight: .black))
+                        .font(.App.subheadlineRegular)
                         .foregroundColor(Color.App.primary)
                 }
             }
@@ -187,7 +187,7 @@ struct PlanView: View {
                         Image(systemName: "sparkles")
                         Text("ĐÁNH GIÁ TIẾN TRÌNH VỚI AI")
                     }
-                    .font(.system(size: 14, weight: .black))
+                    .font(.App.body)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -209,7 +209,7 @@ struct PlanView: View {
                             Image(systemName: planViewModel.isEditingPlan ? "checkmark.circle.fill" : "pencil")
                             Text(planViewModel.isEditingPlan ? "Lưu lại" : "Sửa chỉ số")
                         }
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.App.subheadline)
                         .foregroundColor(planViewModel.isEditingPlan ? .white : .black)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
@@ -224,7 +224,7 @@ struct PlanView: View {
                             Image(systemName: "trash.fill")
                             Text("Hủy bỏ")
                         }
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.App.subheadline)
                         .foregroundColor(.red)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
@@ -243,7 +243,7 @@ struct PlanView: View {
     private func weightTrendChartSection(plan: NutritionPlan) -> some View {
             VStack(alignment: .leading, spacing: 14) {
                 Text("Xu hướng thay đổi cân nặng")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.App.sectionHeader)
                     .foregroundColor(.black)
                     .padding(.horizontal, 4)
                 
@@ -253,10 +253,10 @@ struct PlanView: View {
                             Spacer()
                             VStack(spacing: 8) {
                                 Image(systemName: "chart.line.uptrend.xyaxis")
-                                    .font(.system(size: 24))
+                                    .font(.App.header)
                                     .foregroundColor(.gray.opacity(0.5))
                                 Text("Cần tối thiểu 2 mốc lộ trình ghi nhận để vẽ biểu đồ.")
-                                    .font(.system(size: 12))
+                                    .font(.App.captionMedium)
                                     .foregroundColor(.gray)
                                     .multilineTextAlignment(.center)
                             }
@@ -294,7 +294,7 @@ struct PlanView: View {
                                 .foregroundStyle(Color.App.primary)
                                 .annotation(position: .top) {
                                     Text("\(String(format: "%.1f", point.weight))kg")
-                                        .font(.system(size: 10, weight: .bold))
+                                        .font(.App.tiny)
                                         .foregroundColor(.black)
                                 }
                             }
@@ -303,7 +303,7 @@ struct PlanView: View {
                         .chartXAxis {
                             AxisMarks(values: .automatic) { _ in
                                 AxisValueLabel()
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(.App.smallSemibold)
                                     .foregroundStyle(.gray)
                             }
                         }
@@ -313,7 +313,7 @@ struct PlanView: View {
                                 AxisValueLabel {
                                     if let intValue = value.as(Double.self) {
                                         Text("\(Int(intValue)) kg")
-                                            .font(.system(size: 10))
+                                            .font(.App.tinyMedium)
                                             .foregroundColor(.gray)
                                     }
                                 }
@@ -325,17 +325,17 @@ struct PlanView: View {
                         HStack(spacing: 6) {
                             Circle().fill(Color.App.primary).frame(width: 8, height: 8)
                             Text("Mốc cân nặng đầu lộ trình")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.App.smallSemibold)
                                 .foregroundColor(.gray)
                         }
                         
                         if let target = plan.targetWeight {
                             HStack(spacing: 6) {
                                 Image(systemName: "flag.fill")
-                                    .font(.system(size: 10))
+                                    .font(.App.tinyMedium)
                                     .foregroundColor(.orange)
                                 Text("Mục tiêu đạt: \(String(format: "%.1f", target)) kg")
-                                    .font(.system(size: 11, weight: .bold))
+                                    .font(.App.small)
                                     .foregroundColor(.black)
                             }
                         }
@@ -352,7 +352,7 @@ struct PlanView: View {
     private var miniStreakSection: some View {
         VStack(alignment: .leading, spacing: 12) { // Đã sửa từ withAlignment thành alignment
             Text("Nhật ký thực hiện tuần này")
-                .font(.system(size: 14, weight: .bold))
+                .font(.App.sectionHeader)
                 .foregroundColor(.black)
                 .padding(.horizontal, 4)
             
@@ -360,7 +360,7 @@ struct PlanView: View {
                 ForEach(planViewModel.weeklyStreak, id: \.dayName) { day in
                     VStack(spacing: 8) {
                         Text(day.dayName)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.App.captionMedium)
                             .foregroundColor(.black.opacity(0.6))
                         
                         ZStack {
@@ -369,7 +369,7 @@ struct PlanView: View {
                                 .frame(width: 34, height: 34)
                             
                             Image(systemName: day.isCompleted ? "checkmark.circle.fill" : "xmark.circle")
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.App.title)
                                 .foregroundColor(day.isCompleted ? Color.App.primary : .red.opacity(0.35))
                         }
                     }
@@ -388,28 +388,28 @@ struct PlanView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 10))
+                    .font(.App.tinyMedium)
                     .foregroundColor(color)
                 Text(label)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.App.captionMedium)
                     .foregroundColor(.gray)
             }
             
             HStack(alignment: .bottom, spacing: 4) {
                 if planViewModel.isEditingPlan {
                     TextField("0", text: value)
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.App.bodyBold)
                         .keyboardType(.numberPad)
                         .foregroundColor(.black)
                         .frame(maxWidth: 65)
                 } else {
                     Text(value.wrappedValue)
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.App.bodyBold)
                         .foregroundColor(.black)
                 }
                 
                 Text(unit)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.App.smallSemibold)
                     .foregroundColor(.gray)
                     .padding(.bottom, 1.5)
                 Spacer()
@@ -428,7 +428,7 @@ struct PlanView: View {
         return HStack(spacing: 16) {
             VStack {
                 Image(systemName: isCancelled ? "xmark.circle.fill" : "checkmark.circle.fill")
-                    .font(.system(size: 20))
+                    .font(.App.title2)
                     .foregroundColor(isCancelled ? .red.opacity(0.7) : Color.App.primary)
             }
             .frame(width: 42, height: 42)
@@ -437,7 +437,7 @@ struct PlanView: View {
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(goalType)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.App.headline)
                     .foregroundColor(.black)
                 
                 HStack(spacing: 6) {
@@ -445,7 +445,7 @@ struct PlanView: View {
                     Text("•")
                     Text("\(Int(plan.dailyCalories)) kcal")
                 }
-                .font(.system(size: 12, weight: .medium))
+                .font(.App.captionMedium)
                 .foregroundColor(.gray)
             }
             
@@ -453,10 +453,10 @@ struct PlanView: View {
             
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(String(format: "%.1f", plan.targetWeight ?? 0))")
-                    .font(.system(size: 17, weight: .black))
+                    .font(.App.bodyLarge)
                     .foregroundColor(.black)
                 Text("kg")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.App.smallSemibold)
                     .foregroundColor(.gray)
             }
         }

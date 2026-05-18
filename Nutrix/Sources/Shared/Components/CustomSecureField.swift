@@ -38,7 +38,7 @@ struct CustomSecureField: View {
                     Button(action: { isVisible.toggle() }) {
                         Image(systemName: isVisible ? "eye.slash.fill" : "eye.fill")
                             .foregroundColor(.gray)
-                            .font(.system(size: 14))
+                            .font(.App.body)
                     }
                 }
             }
