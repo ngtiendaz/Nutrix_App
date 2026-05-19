@@ -87,12 +87,12 @@ struct OptionDetail: View {
     private var headerView: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Thêm món").font(.App.display).foregroundColor(.black)
+                Text("Thêm món").font(.App.title2).foregroundColor(.black)
                 Text("Chụp ảnh món ăn của bạn").font(.App.bodyLarge).foregroundColor(.gray)
             }
             Spacer()
             Button { dismiss() } label: {
-                Image(systemName: "xmark.circle").font(.App.display).foregroundColor(.gray.opacity(0.3))
+                Image(systemName: "xmark").font(.App.title2).foregroundColor(.gray.opacity(0.3))
             }
         }.padding(.top, 30)
     }
@@ -123,9 +123,9 @@ struct OptionDetail: View {
     private var quickSelectBarcodeButton: some View {
         Button { } label: {
             HStack(spacing: 15) {
-                Text("🥫").font(.App.display)
+                Text("🍝").font(.App.display)
                 VStack(alignment: .leading) {
-                    Text("Danh sách đồ hộp").font(.App.title).foregroundColor(.black)
+                    Text("Danh sách có sẵn").font(.App.headline).foregroundColor(.black)
                 }
                 Spacer()
                 Image(systemName: "chevron.right").foregroundColor(.gray)

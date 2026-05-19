@@ -384,7 +384,7 @@ extension ChartView {
                                 Text("\(Int(point.completionRate))%")
                                     .font(.App.headlineHeavy).foregroundColor(statusColor(point.status))
                                 Text(point.status.rawValue).font(.App.tiny)
-                                    .padding(.horizontal, 6).padding(.vertical, 3).background(statusColor(point.status).opacity(0.1)).cornerRadius(6)
+                                    .padding(.horizontal, 6).padding(.vertical, 3).background(statusColor(point.status).opacity(0.5)).cornerRadius(6)
                             }
                         }
                     }

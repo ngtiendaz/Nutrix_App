@@ -15,7 +15,7 @@ struct FoodItem: View {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(alignment: .top){
                             Text(food.name)
-                                .font(.App.title)
+                                .font(.App.headline)
                                 .foregroundColor(Color(hex: "333333"))
                             
                             Spacer()

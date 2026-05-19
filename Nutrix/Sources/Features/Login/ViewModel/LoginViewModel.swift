@@ -16,9 +16,7 @@ class LoginViewModel: ObservableObject {
     
     private var router: AppRouter?
     
-    
-    
-    var authService = FirebaseAuthService()
+    var authService = FirebaseAuthService.shared
     private var cancellables = Set<AnyCancellable>()
 
     init() {}

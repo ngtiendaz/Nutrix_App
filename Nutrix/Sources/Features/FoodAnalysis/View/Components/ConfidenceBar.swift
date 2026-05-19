@@ -21,7 +21,7 @@ struct ConfidenceBar: View {
                         .fill(Color.gray.opacity(0.2))
                     
                     Capsule()
-                        .fill(Color.green)
+                        .fill(Color.App.primary)
                         .frame(width: geo.size.width * value)
                 }
             }

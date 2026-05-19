@@ -358,4 +358,45 @@ final class FirebaseService{
                 }
             }
         }
+    
+    func fetchAIContextData(userId: String, date: Date, completion: @escaping (Result<(NutritionPlan?, DailySummary?), Error>) -> Void) {
+        let group = DispatchGroup()
+        
+        var currentPlan: NutritionPlan? = nil
+        var dailySummary: DailySummary? = nil
+        var fetchError: Error? = nil
+        
+        // 1. Fetch Plan hiện tại
+        group.enter()
+        self.fetchCurrentPlan(userId: userId) { result in
+            switch result {
+            case .success(let plan):
+                currentPlan = plan
+            case .failure(let error):
+                fetchError = error
+            }
+            group.leave()
+        }
+        
+        // 2. Fetch Summary ngày hôm nay
+        group.enter()
+        self.fetchDailySummary(userId: userId, date: date) { result in
+            switch result {
+            case .success(let summary):
+                dailySummary = summary
+            case .failure(let error):
+                // Không chặn app nếu ngày mới chưa có summary record
+                print("💡 Note: Chưa có summary cho ngày này.")
+            }
+            group.leave()
+        }
+        
+        group.notify(queue: .main) {
+            if let error = fetchError {
+                completion(.failure(error))
+            } else {
+                completion(.success((currentPlan, dailySummary)))
+            }
+        }
+    }
 }

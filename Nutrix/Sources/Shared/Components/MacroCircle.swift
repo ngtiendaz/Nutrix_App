@@ -38,7 +38,7 @@ struct MacroCircle: View {
             .frame(width: 70, height: 70)
             
             Text(label)
-                .font(.App.subheadline)
+                .font(.App.caption)
                 .foregroundColor(.black)
         }.onAppear {
             withAnimation(.easeInOut(duration: 0.6)) {

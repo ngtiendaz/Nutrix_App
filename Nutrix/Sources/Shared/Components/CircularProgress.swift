@@ -9,7 +9,7 @@ import SwiftUI
 struct CircularProgress: View {
     let current: Double
     let goal: Double
-    var color: Color = .green // Sử dụng màu chủ đạo của app (VD: Color.App.primary)
+    var color: Color = .App.primary // Sử dụng màu chủ đạo của app (VD: Color.App.primary)
     
     @State private var animatedProgress: Double = 0
     

@@ -12,7 +12,6 @@ import GoogleSignIn
 class AppDelegate: NSObject, UIApplicationDelegate {
   func application(_ application: UIApplication,
                    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-    FirebaseApp.configure() // Lệnh kích hoạt Firebase
     return true
   }
 }
@@ -22,7 +21,11 @@ struct NutrixApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
     @StateObject  var router = AppRouter()
-    @StateObject var authService = FirebaseAuthService()
+    @StateObject var authService = FirebaseAuthService.shared
+
+    init() {
+        FirebaseApp.configure()
+    }
 
     var body: some Scene {
         WindowGroup {

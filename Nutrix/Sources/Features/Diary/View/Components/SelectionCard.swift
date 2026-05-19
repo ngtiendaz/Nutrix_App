@@ -16,10 +16,10 @@ struct SelectionCard: View {
     var body: some View {
         VStack(spacing: 15) {
             Image(systemName: icon)
-                .font(.App.large)
+                .font(Font.system(size: 32))
                 .foregroundColor(iconColor)
             Text(title)
-                .font(.App.title)
+                .font(.App.sectionHeader)
                 .foregroundColor(iconColor)
         }
         .frame(maxWidth: .infinity)

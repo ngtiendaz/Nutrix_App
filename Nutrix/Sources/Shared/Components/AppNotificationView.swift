@@ -54,8 +54,8 @@ struct AppNotificationView: View {
                         .padding(.trailing, 2)
                 }
                 .padding(.vertical, 10) // Thu hẹp độ dày từ 14 xuống 10
-                .padding(.horizontal, 14)
-                .frame(maxWidth: UIScreen.main.bounds.width - 40) // Bo gọn chiều rộng hơn một chút
+                .padding(.horizontal, 12)
+                .frame(maxWidth: 500) // Hoặc dùng giới hạn cứng phù hợp thay vì UIScreen
                 .background(
                     ZStack {
                         LinearGradient(

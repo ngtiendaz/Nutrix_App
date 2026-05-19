@@ -17,10 +17,6 @@ struct PlanView: View {
             Color.App.background.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Top Bar
-                TopBar(selectedTab: .constant(.plan), selectedDate: $selectedDate)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 10)
                 
                 if planViewModel.isLoading {
                     VStack {
@@ -37,6 +33,8 @@ struct PlanView: View {
                 } else {
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 26) {
+                            
+                            TopBar(selectedTab: .constant(.plan), selectedDate: $selectedDate)
                             
                             // 1. KHỐI LỘ TRÌNH ĐANG THỰC HIỆN
                             if let plan = planViewModel.currentPlan {
@@ -75,8 +73,7 @@ struct PlanView: View {
                             
                             Spacer().frame(height: 100)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 20)
+                        .padding(.horizontal, 12)
                     }
                 }
             }
@@ -187,7 +184,7 @@ struct PlanView: View {
                         Image(systemName: "sparkles")
                         Text("ĐÁNH GIÁ TIẾN TRÌNH VỚI AI")
                     }
-                    .font(.App.body)
+                    .font(.App.sectionHeader)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)

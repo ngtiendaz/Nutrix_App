@@ -13,6 +13,7 @@ final class FoodDetailViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var shouldDismiss = false
     
+    
     // State chỉnh sửa
     @Published var currentWeight: Double = 0
     @Published var currentQuantity: Double = 0
@@ -22,7 +23,7 @@ final class FoodDetailViewModel: ObservableObject {
     
     private let firebaseService = FirebaseService.shared
     let originalFood: Food
-    private let mealDate: Date
+    let mealDate: Date
 
     init(food: Food, mealDate: Date) {
         self.originalFood = food

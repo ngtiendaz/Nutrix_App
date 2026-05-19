@@ -33,7 +33,7 @@ struct NutritionGoalCard: View {
                                  value: data.totalCalories,
                                  unit: "kcal",
                                  icon: "leaf.fill",
-                                 color: isOverGoal ? .red : .green)
+                                 color: isOverGoal ? .red : .App.primary)
                     
                     nutritionRow(label: "Tiêu thụ",
                                  value: data.totalBurned ?? 0,

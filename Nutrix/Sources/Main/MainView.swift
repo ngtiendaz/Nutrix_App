@@ -40,7 +40,7 @@ struct MainView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .overlay(
             // Lớp 4: Thông báo Notification kiểu mới (Banner Apple Style)
-            AppNotificationView(data: router.toast)
+            AppNotificationView(data: router.toast).padding(.horizontal, 12)
                 .animation(.spring(response: 0.35, dampingFraction: 0.8), value: router.toast != nil)
                 .zIndex(999) // Luôn nằm trên cùng
         )

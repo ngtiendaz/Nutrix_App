@@ -34,15 +34,6 @@ struct ProfileView: View {
                             isShowingHistory = true
                         }
                     )
-                    
-                    // 3. AI Section
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Mục tiêu & lộ trình")
-                            .font(.App.bodyBold)
-                            .foregroundColor(.black.opacity(0.7))
-                            .padding(.leading, 4)
-                    }
-                    
                     // 4. Settings List
                     VStack(spacing: 12) {
                         settingItem(icon: "bell.fill", title: "Thông báo", color: .orange)

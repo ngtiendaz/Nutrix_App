@@ -47,6 +47,8 @@ struct ContentView: View {
     }
 }
 #Preview {
-    ContentView().environmentObject(AppRouter())
+    ContentView()
+        .environmentObject(AppRouter())
+        .environmentObject(FirebaseAuthService.shared)
         .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }

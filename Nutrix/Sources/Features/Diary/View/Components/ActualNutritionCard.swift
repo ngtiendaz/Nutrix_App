@@ -12,7 +12,7 @@ struct ActualNutritionCard: View {
                         .foregroundColor(Color.App.lightGray) // Màu xám nhẹ cho label phụ
                     
                     Text("\(Int(data.totalCalories)) kcal")
-                        .font(.App.display)
+                        .font(.App.headlineHeavy)
                         .foregroundColor(.black) // Chuyển về màu đen cho nổi bật
                 }
                 Spacer()
@@ -25,9 +25,9 @@ struct ActualNutritionCard: View {
             
             // Hàng hiển thị các chỉ số chi tiết với màu sắc riêng
             HStack(spacing: 0) {
-                nutrientMiniValue(label: "Protein", value: data.totalProtein, color: .blue)
-                nutrientMiniValue(label: "Carbs", value: data.totalCarbs, color: .red)
-                nutrientMiniValue(label: "Fat", value: data.totalFat, color: .orange)
+                nutrientMiniValue(label: "Tinh bột", value: data.totalCarbs, color: .red)
+                nutrientMiniValue(label: "Chất đạm", value: data.totalProtein, color: .blue)
+                nutrientMiniValue(label: "Chất béo", value: data.totalFat, color: .orange)
             }
             .frame(maxWidth: .infinity)
         }
@@ -47,7 +47,7 @@ struct ActualNutritionCard: View {
             
             // Con số hiển thị màu đen đậm
             Text("\(Int(value))g")
-                .font(.App.title)
+                .font(.App.headlineHeavy)
                 .foregroundColor(.black)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

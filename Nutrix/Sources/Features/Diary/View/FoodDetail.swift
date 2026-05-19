@@ -26,10 +26,24 @@ struct FoodDetailView: View {
                             imageSection
                             
                             VStack(alignment: .leading, spacing: 20) {
-                                Text(foodDetailViewModel.originalFood.name.uppercased())
-                                    .font(.App.header)
-                                    .foregroundColor(.black)
-                                    .padding(.horizontal)
+                                VStack(alignment: .leading, spacing: 6) {
+                                        Text(foodDetailViewModel.originalFood.name.uppercased())
+                                            .font(.App.header)
+                                            .foregroundColor(.black)
+                                            .lineLimit(2) // Tránh việc tên quá dài làm vỡ layout
+                                        
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "calendar.badge.clock")
+                                                .font(.App.captionMedium)
+                                                .foregroundColor(.gray)
+                                            
+                                            // Sử dụng cú pháp định dạng Date mới của iOS 15+ tự động theo vùng/quốc gia
+                                            Text(foodDetailViewModel.mealDate.formatted(date: .abbreviated, time: .shortened))
+                                                .font(.App.body)
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                    .padding(.horizontal, 16) // Đưa padding ra ngoài để cả cụm chữ thẳng hàng nhau
                                 
                                 nutritionCards
                                 
@@ -39,7 +53,7 @@ struct FoodDetailView: View {
                                 deleteButton
                                 
                                 
-                                Spacer().frame(height: focusedField != nil ? 150 : 10)
+                                Spacer().frame(height: focusedField != nil ? 30 : 10)
                             }
                         }
                         .padding(.bottom, 70) // Giảm padding thừa khi đã có xử lý phím
@@ -147,10 +161,10 @@ extension FoodDetailView {
         CachedImage(
                 urlString: foodDetailViewModel.originalFood.imageUrl,
                 width: UIScreen.main.bounds.width - 32, // Tự động lấy toàn bộ chiều rộng màn hình (trừ đi padding 2 bên)
-                height: 220 // Tăng chiều cao lên 220 để ảnh to và rõ nét hơn
+                height: 250 // Tăng chiều cao lên 220 để ảnh to và rõ nét hơn
             )
             .aspectRatio(contentMode: .fill) // Ép ảnh lấp đầy khung hình mà không bị mất tỉ lệ
-            .frame(width: UIScreen.main.bounds.width - 32, height: 220) // Đảm bảo khung hình cố định đúng kích thước
+            .frame(width: UIScreen.main.bounds.width - 32, height: 250) // Đảm bảo khung hình cố định đúng kích thước
             .cornerRadius(16) // Bo góc nhẹ cho hài hòa với giao diện hiện tại
             .clipped() // Cắt bỏ các phần ảnh thừa bị tràn ra ngoài khung bo
             .padding(.horizontal, 16)

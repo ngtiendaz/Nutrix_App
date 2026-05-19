@@ -13,13 +13,17 @@ import FirebaseCore
 import FirebaseFirestore
 
 class FirebaseAuthService: ObservableObject {
+    static let shared = FirebaseAuthService()
+    
     @Published var isLoggedIn = false
     @Published var currentUser: User?
     @Published var userPhotoURL: URL?
     
     private let tokenService = "com.daz.nutrix.token"
     private let account = "user-session"
-    private let db = Firestore.firestore()
+    private lazy var db = Firestore.firestore()
+
+    init() {}
 
     func signUp(email: String, password: String, completion: @escaping (Result<AuthDataResult, Error>) -> Void) {
             Auth.auth().createUser(withEmail: email, password: password) { result, error in
