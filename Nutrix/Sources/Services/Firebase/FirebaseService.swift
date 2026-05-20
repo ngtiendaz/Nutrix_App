@@ -58,83 +58,111 @@ final class FirebaseService{
             }
     }
     private func updateMeal(
-        doc: QueryDocumentSnapshot,
-        newFood: Food,
-        completion: @escaping (Result<Void, Error>) -> Void
-    ) {
-        do {
-            var meal = try doc.data(as: Meal.self)
-            
-            meal.food.append(newFood)
-            
-            meal.totalCalories += newFood.calories
-            meal.totalProtein += newFood.protein
-            meal.totalCarbs += newFood.carbs
-            meal.totalFats += newFood.fats
-            
-            let data = try Firestore.Encoder().encode(meal)
-            
-            doc.reference.setData(data, merge: true) { error in
-                if let error = error {
-                    completion(.failure(error))
-                } else {
-                    let changes = ["cal": newFood.calories, "pro": newFood.protein, "carb": newFood.carbs, "fat": newFood.fats]
-                    self.updateDailySummary(userId: meal.userId, date: meal.createdAt, intakeChange: changes)
-                    
-                    completion(.success(()))
+            doc: QueryDocumentSnapshot,
+            newFood: Food,
+            completion: @escaping (Result<Void, Error>) -> Void
+        ) {
+            do {
+                // Cố gắng đọc bản ghi Meal cũ từ Firebase
+                var meal = try doc.data(as: Meal.self)
+                
+                meal.food.append(newFood)
+                
+                meal.totalCalories += newFood.calories
+                meal.totalProtein += newFood.protein
+                meal.totalCarbs += newFood.carbs
+                meal.totalFats += newFood.fats
+                
+                let data = try Firestore.Encoder().encode(meal)
+                
+                doc.reference.setData(data, merge: true) { error in
+                    if let error = error {
+                        completion(.failure(error))
+                    } else {
+                        let changes = ["cal": newFood.calories, "pro": newFood.protein, "carb": newFood.carbs, "fat": newFood.fats]
+                        
+                        // Hàm summary đã được thiết kế để tự động tạo mới nếu không tồn tại
+                        self.updateDailySummary(userId: meal.userId, date: meal.createdAt, intakeChange: changes)
+                        
+                        completion(.success(()))
+                    }
                 }
+                
+            } catch let DecodingError.keyNotFound(key, context) {
+                // 👉 BẮT TẬN TAY TRƯỜNG DỮ LIỆU BỊ THIẾU
+                let errorMsg = "Bản ghi Meal cũ trên server đang bị thiếu trường: '\(key.stringValue)'. Hãy lên Firebase Console xóa Collection 'meals' của bữa ăn này đi."
+                print("❌ [DEBUG DECODE ERROR]: \(errorMsg)")
+                print("Chi tiết lỗi: \(context.debugDescription)")
+                
+                completion(.failure(NSError(domain: "Nutrix", code: 400, userInfo: [NSLocalizedDescriptionKey: errorMsg])))
+                
+            } catch let DecodingError.typeMismatch(type, context) {
+                let errorMsg = "Sai kiểu dữ liệu ở trường nào đó (Cần kiểu \(type)). Hãy xóa Meal cũ trên Firebase."
+                print("❌ [DEBUG DECODE ERROR]: \(errorMsg) - \(context.debugDescription)")
+                completion(.failure(NSError(domain: "Nutrix", code: 400, userInfo: [NSLocalizedDescriptionKey: errorMsg])))
+                
+            } catch {
+                print("❌ [DEBUG DECODE ERROR]: Lỗi giải mã không xác định: \(error)")
+                completion(.failure(error))
             }
-            
-        } catch {
-            completion(.failure(error))
         }
-    }
     private func createNewMeal(
-        userId: String,
-        mealType: MealType,
-        mealDate: Date, // 👈 thêm
-        food: Food,
-        completion: @escaping (Result<Void, Error>) -> Void
-    ) {
-        let meal = Meal(
-            id: UUID().uuidString,
-            userId: userId,
-            mealType: mealType,
-            food: [food],
-            totalCalories: food.calories,
-            totalProtein: food.protein,
-            totalCarbs: food.carbs,
-            totalFats: food.fats,
-            dateKey: getDateKey(from: mealDate),
-            imageUrl: nil,
-            createdAt: mealDate
-        )
-        print("🆕 CREATE NEW MEAL")
-        print("MealType:", meal.mealType.rawValue)
-        print("DateKey:", meal.dateKey)
-        print("CreatedAt:", meal.createdAt)
-        print("TotalCalories:", meal.totalCalories)
-        print("Food count:", meal.food.count)
-        do {
-            let data = try Firestore.Encoder().encode(meal)
+            userId: String,
+            mealType: MealType,
+            mealDate: Date, // 👈 thêm
+            food: Food,
+            completion: @escaping (Result<Void, Error>) -> Void
+        ) {
+            // 1. Tạo DateFormatter để định dạng giờ, ngày thành chuỗi
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+            let timeString = formatter.string(from: mealDate)
             
-            self.db.collection("users").document(userId).collection("meals").document(meal.id).setData(data) { error in
-                if let error = error {
-                    completion(.failure(error))
-                } else {
-                    // ✅ CẬP NHẬT SUMMARY
-                    let changes = ["cal": food.calories, "pro": food.protein, "carb": food.carbs, "fat": food.fats]
-                    self.updateDailySummary(userId: userId, date: mealDate, intakeChange: changes)
-                    
-                    completion(.success(()))
+            // 2. Tạo Document ID theo định dạng: loaiBuaAn_nam-thang-ngay_gio-phut-giay
+            let customDocumentId = "\(mealType.rawValue)_\(timeString)"
+            
+            let meal = Meal(
+                id: customDocumentId, // 👈 Đổi từ UUID() sang ID ngày giờ
+                userId: userId,
+                mealType: mealType,
+                food: [food],
+                totalCalories: food.calories,
+                totalProtein: food.protein,
+                totalCarbs: food.carbs,
+                totalFats: food.fats,
+                dateKey: getDateKey(from: mealDate),
+                imageUrl: nil,
+                createdAt: mealDate
+            )
+            
+            print("🆕 CREATE NEW MEAL")
+            print("Document ID:", meal.id) // In ra ID mới để bạn dễ kiểm tra trong log
+            print("MealType:", meal.mealType.rawValue)
+            print("DateKey:", meal.dateKey)
+            print("CreatedAt:", meal.createdAt)
+            print("TotalCalories:", meal.totalCalories)
+            print("Food count:", meal.food.count)
+            
+            do {
+                let data = try Firestore.Encoder().encode(meal)
+                
+                // setData vào document với id mới tạo
+                self.db.collection("users").document(userId).collection("meals").document(meal.id).setData(data) { error in
+                    if let error = error {
+                        completion(.failure(error))
+                    } else {
+                        // ✅ CẬP NHẬT SUMMARY
+                        let changes = ["cal": food.calories, "pro": food.protein, "carb": food.carbs, "fat": food.fats]
+                        self.updateDailySummary(userId: userId, date: mealDate, intakeChange: changes)
+                        
+                        completion(.success(()))
+                    }
                 }
+                
+            } catch {
+                completion(.failure(error))
             }
-            
-            
-        } catch {
-            completion(.failure(error))
         }
-    }
     func getDateKey(from date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"

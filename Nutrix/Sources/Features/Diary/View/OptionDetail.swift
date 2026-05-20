@@ -13,6 +13,8 @@ struct OptionDetail: View {
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject var loginViewModel: LoginViewModel
     
+    
+    @State private var isShowingListFood = false
     @Binding var isPresented: Bool
     
     var body: some View {
@@ -54,6 +56,9 @@ struct OptionDetail: View {
         .fullScreenCover(isPresented: $diaryViewModel.isShowingCamera) {
             ImagePicker(image: $diaryViewModel.selectedImage, sourceType: .camera)
                 .ignoresSafeArea()
+        }
+        .fullScreenCover(isPresented: $isShowingListFood) {
+//            ListFood()
         }
         // Sửa lại đoạn FullScreenCover
         .fullScreenCover(isPresented: Binding(
@@ -120,19 +125,22 @@ struct OptionDetail: View {
             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
         }
     }
-    private var quickSelectBarcodeButton: some View {
-        Button { } label: {
-            HStack(spacing: 15) {
-                Text("🍝").font(.App.display)
-                VStack(alignment: .leading) {
-                    Text("Danh sách có sẵn").font(.App.headline).foregroundColor(.black)
+    // Sửa lại thuộc tính View này của bạn
+        private var quickSelectBarcodeButton: some View {
+            Button {
+                isShowingListFood = true // 🌟 Kích hoạt bật màn hình
+            } label: {
+                HStack(spacing: 15) {
+                    Text("🍝").font(.App.display)
+                    VStack(alignment: .leading) {
+                        Text("Danh sách có sẵn").font(.App.headline).foregroundColor(.black)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").foregroundColor(.gray)
                 }
-                Spacer()
-                Image(systemName: "chevron.right").foregroundColor(.gray)
+                .padding().background(Color.white).cornerRadius(20)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
             }
-            .padding().background(Color.white).cornerRadius(20)
-            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
         }
-    }
 }
 

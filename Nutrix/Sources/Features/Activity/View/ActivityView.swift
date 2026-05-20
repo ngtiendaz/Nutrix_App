@@ -51,7 +51,7 @@ struct ActivityView: View {
                         LazyVStack(alignment: .leading, spacing: 18) {
                             HStack {
                                 Text("Lịch sử hoạt động")
-                                    .font(.App.title)
+                                    .font(.App.sectionHeader)
                                     .foregroundColor(.black)
                                 
                                 Spacer()

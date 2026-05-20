@@ -60,7 +60,7 @@ struct PlanView: View {
                             if !planViewModel.historyPlans.isEmpty {
                                 VStack(alignment: .leading, spacing: 16) {
                                     Text("Lịch sử lộ trình gần đây")
-                                        .font(.App.title2)
+                                        .font(.App.sectionHeader)
                                         .foregroundColor(.black)
                                     
                                     VStack(spacing: 14) {
