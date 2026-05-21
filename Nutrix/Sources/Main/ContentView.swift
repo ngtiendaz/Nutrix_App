@@ -33,16 +33,15 @@ struct ContentView: View {
                 }
             }
             AppNotificationView(data: router.toast)
-                    .zIndex(999)
-                
-                // LỚP LOADING (Phủ toàn bộ app)
-                if router.isLoading {
-                    LoadingOverlay()
-                        .zIndex(998)
-                        .transition(.opacity)
-                }
-        }.animation(.linear(duration: 0.1), value: router.isLoading) // Tốc độ phản hồi ẩn/hiện cực nhanh
-            .animation(.spring(response: 0.5, dampingFraction: 0.7), value: router.toast != nil) // Thông báo hiện ra có độ nảy
+                .zIndex(999)
+
+            if router.isLoading {
+                LoadingOverlay()
+                    .zIndex(998)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeOut(duration: 0.22), value: router.isLoading)
 
     }
 }

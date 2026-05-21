@@ -11,7 +11,7 @@ struct FoodAnalysisView: View {
     @Environment(\.dismiss) var dismiss
     @State private var scanAnimation = false
     @FocusState private var focusedField: Field?
-    @State private var isEditing = false
+    @State private var keyboardHeight: CGFloat = 0
     
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject var loginViewModel: LoginViewModel
@@ -36,7 +36,6 @@ struct FoodAnalysisView: View {
             
             VStack(spacing: 0) {
                 headerView
-                    .ignoresSafeArea(.all, edges: .top)
                 
                 ScrollView(showsIndicators: false) {
                     ScrollViewReader { proxy in
@@ -53,31 +52,30 @@ struct FoodAnalysisView: View {
                                 VStack(spacing: 20) {
                                     foodHeader(food: food)
                                     nutritionCards
-                                    
+                                        .id("nutritionCards")
                                     portionInputSection
                                         .id("inputs")
-                                    
-                                    // Bật form chỉnh sửa Macro nếu có cờ true
-                                    if foodAnalysisViewModel.isEditableNutrition {
-                                        editableNutritionSection
-                                    }
-                                    
+
                                     mealTimeAndTypeSelector
                                     smartRecommendation(food: food)
                                 }
                             }
                         }
-                        .padding(.bottom, 160)
-                        // Hiệu ứng cuộn tránh bàn phím
-                        .onChange(of: focusedField) { newValue in
-                            if newValue != nil {
-                                withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
-                                    proxy.scrollTo("inputs", anchor: .bottom)
-                                }
-                            }
+                        .padding(.bottom, scrollBottomPadding)
+                        .onChange(of: focusedField) { field in
+                            scrollToFocusedField(field, proxy: proxy)
+                        }
+                        .onChange(of: keyboardHeight) { _ in
+                            scrollToFocusedField(focusedField, proxy: proxy)
                         }
                     }
                 }
+                .scrollDismissesKeyboard(.interactively)
+                .simultaneousGesture(
+                    TapGesture().onEnded {
+                        hideKeyboard()
+                    }
+                )
             }
             
             if !foodAnalysisViewModel.isAnalyzing && foodAnalysisViewModel.analyzedFood != nil {
@@ -90,13 +88,24 @@ struct FoodAnalysisView: View {
                     .zIndex(2)
             }
         }
-        .onTapGesture { focusedField = nil }
         .navigationBarHidden(true)
-        .ignoresSafeArea(.keyboard, edges: .bottom)
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
+            guard let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+            let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double ?? 0.25
+            withAnimation(.easeOut(duration: duration)) {
+                keyboardHeight = frame.height
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { notification in
+            let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double ?? 0.25
+            withAnimation(.easeOut(duration: duration)) {
+                keyboardHeight = 0
+            }
+        }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Xong") { focusedField = nil }
+                Button("Xong") { hideKeyboard() }
             }
         }
         .task {
@@ -130,25 +139,34 @@ struct FoodAnalysisView: View {
             }
         }
         .padding(.horizontal)
-        .padding(.top, 50)
+        .padding(.vertical, 12)
         .background(Color.App.background)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            hideKeyboard()
+        }
+    }
+
+    private func hideKeyboard() {
+        focusedField = nil
     }
 
     private var imageSection: some View {
         let imageShape = RoundedRectangle(cornerRadius: 30)
+        let imageWidth = UIScreen.main.bounds.width - 40
+        let imageHeight: CGFloat = 280
 
         return ZStack {
             imageShape
                 .fill(Color.white)
-                .frame(width: UIScreen.main.bounds.width - 40, height: 280)
+                .frame(width: imageWidth, height: imageHeight)
                 .shadow(color: .black.opacity(0.05), radius: 10)
 
-            // Hiển thị ảnh chụp HOẶC ảnh tải từ web xuống
             if let uiImage = foodAnalysisViewModel.selectedImage {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: UIScreen.main.bounds.width - 40, height: 280)
+                    .frame(width: imageWidth, height: imageHeight)
                     .clipShape(imageShape)
             } else if let imageUrl = foodAnalysisViewModel.analyzedFood?.imageUrl, let url = URL(string: imageUrl) {
                 AsyncImage(url: url) { phase in
@@ -161,7 +179,7 @@ struct FoodAnalysisView: View {
                         }
                     }
                 }
-                .frame(width: UIScreen.main.bounds.width - 40, height: 280)
+                .frame(width: imageWidth, height: imageHeight)
                 .clipShape(imageShape)
             }
             
@@ -203,11 +221,38 @@ struct FoodAnalysisView: View {
         .padding(.top, 40)
     }
 
+    private var scrollBottomPadding: CGFloat {
+        keyboardHeight > 0 ? keyboardHeight + 24 : 160
+    }
+
+    private func scrollToFocusedField(_ field: Field?, proxy: ScrollViewProxy) {
+        guard let field else { return }
+        let fieldId = "field_\(fieldIdSuffix(field))"
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                proxy.scrollTo(fieldId, anchor: .center)
+            }
+        }
+    }
+
+    private func fieldIdSuffix(_ field: Field) -> String {
+        switch field {
+        case .weight: return "weight"
+        case .quantity: return "quantity"
+        case .calories: return "calories"
+        case .protein: return "protein"
+        case .carbs: return "carbs"
+        case .fats: return "fats"
+        }
+    }
+
     private func foodHeader(food: Food) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(food.name.uppercased())
                 .font(.App.title2)
                 .foregroundColor(.black)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
             
             // Chỉ hiển thị thanh Confidence nếu có gợi ý phân tích từ Vision
             if foodAnalysisViewModel.confidence > 0 {
@@ -236,17 +281,42 @@ struct FoodAnalysisView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
     }
     
-    // ĐÃ SỬA: Thay thế valueFor(food.calories) thành biến display... động
     private var nutritionCards: some View {
-        VStack(spacing: 20) {
+        let isEditable = foodAnalysisViewModel.isEditableNutrition
+
+        return VStack(spacing: 20) {
+            if isEditable {
+                HStack(spacing: 6) {
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.App.caption)
+                        .foregroundColor(Color.App.primary)
+                    Text("Chạm các ô bên dưới để chỉnh sửa dinh dưỡng")
+                        .font(.App.captionMedium)
+                        .foregroundColor(Color.App.lightGray)
+                    Spacer(minLength: 0)
+                }
+            }
+
             HStack {
                 VStack(alignment: .leading) {
-                    Text("\(Int(foodAnalysisViewModel.displayCalories))")
-                        .font(.App.large)
-                        .foregroundColor(Color.App.primary)
+                    if isEditable {
+                        TextField("", value: $foodAnalysisViewModel.editableCalories, format: .number)
+                            .keyboardType(.decimalPad)
+                            .focused($focusedField, equals: .calories)
+                            .font(.App.large)
+                            .foregroundColor(Color.App.primary)
+                            .frame(minWidth: 80)
+                            .editableFieldStyle(field: .calories, focusedField: focusedField)
+                            .id("field_calories")
+                    } else {
+                        Text("\(Int(foodAnalysisViewModel.displayCalories))")
+                            .font(.App.large)
+                            .foregroundColor(Color.App.primary)
+                    }
                     Text("Tổng Kcal")
                         .font(.App.body)
                         .foregroundColor(Color.App.lightGray)
@@ -258,9 +328,30 @@ struct FoodAnalysisView: View {
             }
             Divider()
             HStack(spacing: 15) {
-                NutrientMiniCard(title: "Tinh bột", value: foodAnalysisViewModel.displayCarbs, color: Color.blue)
-                NutrientMiniCard(title: "Chất đạm", value: foodAnalysisViewModel.displayProtein, color: Color.red)
-                NutrientMiniCard(title: "Chất béo", value: foodAnalysisViewModel.displayFats, color: Color.orange)
+                if isEditable {
+                    editableNutrientMiniCard(
+                        title: "Tinh bột",
+                        value: $foodAnalysisViewModel.editableCarbs,
+                        color: .blue,
+                        field: .carbs
+                    )
+                    editableNutrientMiniCard(
+                        title: "Chất đạm",
+                        value: $foodAnalysisViewModel.editableProtein,
+                        color: .red,
+                        field: .protein
+                    )
+                    editableNutrientMiniCard(
+                        title: "Chất béo",
+                        value: $foodAnalysisViewModel.editableFats,
+                        color: .orange,
+                        field: .fats
+                    )
+                } else {
+                    NutrientMiniCard(title: "Tinh bột", value: foodAnalysisViewModel.displayCarbs, color: .blue)
+                    NutrientMiniCard(title: "Chất đạm", value: foodAnalysisViewModel.displayProtein, color: .red)
+                    NutrientMiniCard(title: "Chất béo", value: foodAnalysisViewModel.displayFats, color: .orange)
+                }
             }
         }
         .padding(20)
@@ -269,14 +360,40 @@ struct FoodAnalysisView: View {
         .shadow(color: Color.black.opacity(0.03), radius: 10)
         .padding(.horizontal)
     }
-    
+
+    private func editableNutrientMiniCard(
+        title: String,
+        value: Binding<Double>,
+        color: Color,
+        field: Field
+    ) -> some View {
+        VStack(spacing: 8) {
+            TextField("", value: value, format: .number)
+                .keyboardType(.decimalPad)
+                .focused($focusedField, equals: field)
+                .font(.App.bodyBold)
+                .foregroundColor(.black)
+                .multilineTextAlignment(.center)
+                .editableFieldStyle(field: field, focusedField: focusedField)
+                .id("field_\(fieldIdSuffix(field))")
+            ZStack(alignment: .leading) {
+                Capsule().frame(height: 4).foregroundColor(color.opacity(0.1))
+                Capsule().frame(width: 30, height: 4).foregroundColor(color)
+            }
+            Text(title)
+                .font(.App.captionMedium)
+                .foregroundColor(Color.App.lightGray)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     private var portionInputSection: some View {
         HStack(spacing: 15) {
             VStack(alignment: .center, spacing: 8) {
                 HStack {
                     Image(systemName: "scalemass")
                         .foregroundColor(.gray)
-                    
+
                     TextField("", value: $foodAnalysisViewModel.weight, format: .number)
                         .keyboardType(.decimalPad)
                         .focused($focusedField, equals: .weight)
@@ -286,17 +403,18 @@ struct FoodAnalysisView: View {
                         .background(Color.black.opacity(0.05))
                         .cornerRadius(12)
                         .foregroundColor(.black)
+                        .id("field_weight")
                 }
                 Text("Grams")
                     .font(.App.captionMedium)
                     .foregroundColor(.gray)
             }
-            
+
             VStack(alignment: .center, spacing: 8) {
                 HStack {
                     Image(systemName: "number")
                         .foregroundColor(.gray)
-                    
+
                     TextField("", value: $foodAnalysisViewModel.quantity, format: .number)
                         .keyboardType(.decimalPad)
                         .focused($focusedField, equals: .quantity)
@@ -306,6 +424,7 @@ struct FoodAnalysisView: View {
                         .background(Color.black.opacity(0.05))
                         .cornerRadius(12)
                         .foregroundColor(.black)
+                        .id("field_quantity")
                 }
                 Text("Số lượng")
                     .font(.App.captionMedium)
@@ -317,61 +436,6 @@ struct FoodAnalysisView: View {
         .cornerRadius(20)
         .shadow(color: Color.black.opacity(0.03), radius: 10)
         .padding(.horizontal)
-    }
-
-    // 👉 THÊM MỚI: Khối chỉnh sửa dinh dưỡng
-    private var editableNutritionSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Chỉnh sửa thông số cơ bản (1 phần)")
-                .font(.App.bodyBold)
-                .foregroundColor(.black)
-                .padding(.horizontal, 16)
-                .padding(.top, 10)
-            
-            VStack(spacing: 12) {
-                inputField(title: "Calories", value: $foodAnalysisViewModel.editableCalories, icon: "flame.fill", field: .calories)
-                
-                HStack(spacing: 16) {
-                    inputField(title: "Carbs (g)", value: $foodAnalysisViewModel.editableCarbs, icon: "chart.pie.fill", field: .carbs)
-                    inputField(title: "Protein (g)", value: $foodAnalysisViewModel.editableProtein, icon: "bolt.fill", field: .protein)
-                }
-                
-                HStack(spacing: 16) {
-                    inputField(title: "Fat (g)", value: $foodAnalysisViewModel.editableFats, icon: "drop.fill", field: .fats)
-                    Spacer()
-                }
-            }
-            .padding(.horizontal, 16)
-        }
-    }
-
-    private func inputField(title: String, value: Binding<Double>, icon: String, field: Field) -> some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.App.body)
-                    .foregroundColor(.gray)
-                TextField("", value: value, format: .number)
-                    .keyboardType(.decimalPad)
-                    .focused($focusedField, equals: field)
-                    .font(.App.title)
-                    .foregroundColor(.black)
-                    .multilineTextAlignment(.leading)
-            }
-            .padding(14)
-            .background(Color.black.opacity(0.04))
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(focusedField == field ? Color.App.primary.opacity(0.5) : Color.clear, lineWidth: 2)
-            )
-            
-            Text(title)
-                .font(.App.captionMedium)
-                .foregroundColor(.gray)
-        }
-        .frame(maxWidth: .infinity)
-        .animation(.easeInOut(duration: 0.2), value: focusedField)
     }
 
     @ViewBuilder
@@ -608,16 +672,10 @@ struct FoodAnalysisView: View {
                 
                 Button {
                     focusedField = nil
-                    router.showLoading()
-                    
                     foodAnalysisViewModel.saveFood {
                         DispatchQueue.main.async {
-                            router.hideLoading()
+                            UINotificationFeedbackGenerator().notificationOccurred(.success)
                             onSaveSuccess?()
-                            router.showToast(message: "Đã lưu vào nhật ký!", type: .success)
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                                dismiss()
-                            }
                         }
                     }
                 } label: {
@@ -632,13 +690,48 @@ struct FoodAnalysisView: View {
                 .disabled(foodAnalysisViewModel.isSaving)
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 20)
+            .padding(.bottom, keyboardHeight > 0 ? 12 : 20)
             .background(
                 LinearGradient(colors: [Color.App.background.opacity(0), Color.App.background],
                                startPoint: .top, endPoint: .bottom)
                     .padding(.top, -20)
             )
         }
-        .ignoresSafeArea(.keyboard)
+        .padding(.bottom, keyboardHeight)
+        .animation(.easeOut(duration: 0.25), value: keyboardHeight)
+        .allowsHitTesting(keyboardHeight == 0)
+        .opacity(keyboardHeight > 0 ? 0 : 1)
+    }
+}
+
+// MARK: - Editable field style (danh sách có sẵn)
+
+private struct EditableFieldModifier: ViewModifier {
+    let field: FoodAnalysisView.Field
+    let focusedField: FoodAnalysisView.Field?
+
+    func body(content: Content) -> some View {
+        let isFocused = focusedField == field
+        content
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color.App.primaryLight.opacity(0.45))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(
+                        isFocused ? Color.App.primary : Color.App.primary.opacity(0.4),
+                        lineWidth: isFocused ? 2 : 1
+                    )
+            )
+    }
+}
+
+private extension View {
+    func editableFieldStyle(
+        field: FoodAnalysisView.Field,
+        focusedField: FoodAnalysisView.Field?
+    ) -> some View {
+        modifier(EditableFieldModifier(field: field, focusedField: focusedField))
     }
 }

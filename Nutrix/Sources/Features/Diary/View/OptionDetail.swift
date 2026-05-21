@@ -58,14 +58,9 @@ struct OptionDetail: View {
                 .ignoresSafeArea()
         }
         .fullScreenCover(isPresented: $isShowingListFood) {
-            ListFoodView(onSaveSuccess: {
-                // 👉 Khi ListFood đã dismiss, đóng luôn OptionDetail
-                isPresented = false
-                // 👉 Load lại dữ liệu tại đây
-                diaryViewModel.refreshData()
-            })
-            .environmentObject(router)
-            .environmentObject(diaryViewModel)
+            ListFoodView(onSaveSuccess: handleFoodSaved)
+                .environmentObject(router)
+                .environmentObject(diaryViewModel)
         }
         // Sửa lại đoạn FullScreenCover
         .fullScreenCover(isPresented: Binding(
@@ -76,10 +71,7 @@ struct OptionDetail: View {
                 FoodAnalysisView(
                     image: uiImage,
                     authService: loginViewModel.authService,
-                    onSaveSuccess: {
-                        isPresented = false
-                        diaryViewModel.refreshData()
-                    }
+                    onSaveSuccess: handleFoodSaved
                 )
                 .environmentObject(router)         // Tiêm router vào đây
                 .environmentObject(diaryViewModel) // Tiêm VM vào đây
@@ -95,6 +87,26 @@ struct OptionDetail: View {
         }
     }
     
+    // MARK: - Sau khi lưu: đóng modal ngay → loading trên DiaryView → refresh → toast
+    private func handleFoodSaved() {
+        withTransaction(Transaction(animation: nil)) {
+            isShowingListFood = false
+            isPresented = false
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 80_000_000)
+            router.showLoading()
+            diaryViewModel.refreshData(onComplete: {
+                router.hideLoading()
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 120_000_000)
+                    router.showToast(message: "Đã lưu vào nhật ký!", type: .success)
+                }
+            }, force: true)
+        }
+    }
+
     // MARK: - Subviews cho gọn code
     private var headerView: some View {
         HStack {

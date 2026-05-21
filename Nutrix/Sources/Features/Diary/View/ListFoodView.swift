@@ -6,67 +6,42 @@
 import SwiftUI
 
 struct ListFoodView: View {
-    @StateObject private var listFoodViewModel = ListFoodViewModel() // Hãy đảm bảo tên ViewModel đúng với project của bạn
+    @StateObject private var listFoodViewModel = ListFoodViewModel()
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject var diaryViewModel: DiaryViewModel
-    
-    // 👉 THÊM: State quản lý món ăn được chọn để mở Fullscreen
+
     @State private var selectedFood: Food?
-    
+
     var onSaveSuccess: (() -> Void)? = nil
+
+    init(onSaveSuccess: (() -> Void)? = nil) {
+        self.onSaveSuccess = onSaveSuccess
+
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(Color.App.background)
+        appearance.shadowColor = .clear
+        appearance.titleTextAttributes = [
+            .foregroundColor: UIColor.black,
+            .font: UIFont.systemFont(ofSize: 17, weight: .bold)
+        ]
+
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+    }
+
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                searchBarView
-                
-                if listFoodViewModel.isLoading {
-                    ProgressView("Đang tải danh sách món ăn...")
-                        .padding(.top, 40)
-                        .tint(Color.App.primary)
-                    Spacer()
-                } else if let error = listFoodViewModel.errorMessage {
-                    VStack(spacing: 12) {
-                        Text("❌").font(.largeTitle)
-                        Text(error)
-                            .font(.subheadline)
-                            .foregroundColor(Color.App.lightGray)
-                            .multilineTextAlignment(.center)
-                        
-                        Button("Thử lại") { listFoodViewModel.loadFoods() }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 8)
-                            .background(Color.App.primary)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                    }
-                    .padding()
-                    Spacer()
-                } else if listFoodViewModel.filteredFoods.isEmpty {
-                    VStack(spacing: 8) {
-                        Text("🔍").font(.largeTitle)
-                        Text("Không tìm thấy món ăn nào.")
-                            .foregroundColor(Color.App.lightGray)
-                    }
-                    .padding(.top, 40)
-                    Spacer()
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(listFoodViewModel.filteredFoods) { food in
-                                
-                                // 👉 THAY ĐỔI: Đổi NavigationLink thành Button
-                                Button {
-                                    selectedFood = food
-                                } label: {
-                                    foodRowCard(for: food)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                            }
-                        }
-                        .padding()
-                    }
+            ZStack {
+                Color.App.background.ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    searchBarView
+                        .padding(.top, 8)
+                        .padding(.bottom, 16)
+
+                    contentView
                 }
             }
             .navigationTitle("Danh sách có sẵn")
@@ -74,17 +49,19 @@ struct ListFoodView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button { dismiss() } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(Color.App.lightGray)
-                            .font(.title3)
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(Color(hex: "333333"))
+                            .frame(width: 32, height: 32)
+                            .background(Color.white)
+                            .clipShape(Circle())
+                            .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
                     }
                 }
             }
-            .background(Color.App.background.ignoresSafeArea())
             .onAppear {
                 listFoodViewModel.loadFoods()
             }
-            // 👉 THÊM: Kích hoạt Fullscreen Cover khi selectedFood có giá trị
             .fullScreenCover(item: $selectedFood) { food in
                 FoodAnalysisView(
                     food: food,
@@ -92,8 +69,10 @@ struct ListFoodView: View {
                     authService: FirebaseAuthService(),
                     isEditableNutrition: true,
                     onSaveSuccess: {
-                        onSaveSuccess?()
-                        dismiss()
+                        selectedFood = nil
+                        DispatchQueue.main.async {
+                            onSaveSuccess?()
+                        }
                     }
                 )
                 .environmentObject(router)
@@ -101,70 +80,204 @@ struct ListFoodView: View {
             }
         }
     }
-    
+
+    // MARK: - Content
+
+    @ViewBuilder
+    private var contentView: some View {
+        if listFoodViewModel.isLoading {
+            loadingView
+        } else if let error = listFoodViewModel.errorMessage {
+            errorView(message: error)
+        } else if listFoodViewModel.filteredFoods.isEmpty {
+            emptyView
+        } else {
+            foodListView
+        }
+    }
+
+    private var foodListView: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text(listFoodViewModel.searchText.isEmpty ? "Món ăn phổ biến" : "Kết quả tìm kiếm")
+                        .font(.App.title3)
+                        .foregroundColor(.black)
+
+                    Spacer()
+
+                    Text("\(listFoodViewModel.filteredFoods.count) món")
+                        .font(.App.captionMedium)
+                        .foregroundColor(Color.App.primary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.App.primaryLight)
+                        .clipShape(Capsule())
+                }
+                .padding(.horizontal, 4)
+
+                LazyVStack(spacing: 12) {
+                    ForEach(listFoodViewModel.filteredFoods) { food in
+                        Button {
+                            selectedFood = food
+                        } label: {
+                            foodRowCard(for: food)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
+        }
+    }
+
+    private var loadingView: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .scaleEffect(1.2)
+                .tint(Color.App.primary)
+            Text("Đang tải danh sách món ăn...")
+                .font(.App.subheadlineRegular)
+                .foregroundColor(Color.App.lightGray)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func errorView(message: String) -> some View {
+        VStack(spacing: 16) {
+            Image(systemName: "wifi.exclamationmark")
+                .font(.system(size: 40))
+                .foregroundColor(Color.App.lightGray)
+
+            Text(message)
+                .font(.App.subheadlineRegular)
+                .foregroundColor(Color(hex: "555555"))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+
+            Button("Thử lại") {
+                listFoodViewModel.loadFoods()
+            }
+            .font(.App.subheadline)
+            .foregroundColor(.white)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 10)
+            .background(Color.App.primary)
+            .clipShape(Capsule())
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var emptyView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 36))
+                .foregroundColor(Color.App.lightGray)
+
+            Text("Không tìm thấy món ăn nào")
+                .font(.App.bodyBold)
+                .foregroundColor(.black)
+
+            Text("Thử từ khóa khác hoặc kiểm tra kết nối mạng")
+                .font(.App.captionMedium)
+                .foregroundColor(Color.App.lightGray)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     // MARK: - Subviews
+
     private var searchBarView: some View {
-        HStack {
+        HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(Color.App.lightGray)
-            
-            TextField("Tìm kiếm món ăn...", text: $listFoodViewModel.searchText)
-                .disableAutocorrection(true)
-                .foregroundColor(.black)
-            
+                .font(.App.body)
+
+            TextField(
+                "",
+                text: $listFoodViewModel.searchText,
+                prompt: Text("Tìm kiếm món ăn...").foregroundColor(Color.App.lightGray)
+            )
+            .disableAutocorrection(true)
+            .foregroundColor(.black)
+            .font(.App.bodyLarge)
+
             if !listFoodViewModel.searchText.isEmpty {
-                Button { listFoodViewModel.searchText = "" } label: {
+                Button {
+                    listFoodViewModel.searchText = ""
+                } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(Color.App.lightGray)
                 }
             }
         }
-        .padding(12)
+        .padding(.horizontal, 16)
+        .frame(height: 50)
         .background(Color.white)
-        .cornerRadius(12)
-        .padding(.horizontal)
-        .padding(.vertical, 10)
-        .shadow(color: Color.black.opacity(0.02), radius: 3, x: 0, y: 1)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+        .padding(.horizontal, 16)
     }
-    
+
     private func foodRowCard(for food: Food) -> some View {
-        HStack(spacing: 16) {
-            if let urlString = food.imageUrl, let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().aspectRatio(contentMode: .fill)
-                    default:
-                        ZStack {
-                            Color.App.secondaryBackground
-                            Text("🍲")
-                        }
-                    }
+        HStack(spacing: 14) {
+            foodThumbnail(for: food)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(food.name)
+                    .font(.App.headline)
+                    .foregroundColor(Color(hex: "333333"))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+
+                Text("\(Int(food.servingSize)) \(food.servingUnit)")
+                    .font(.App.captionMedium)
+                    .foregroundColor(Color.App.lightGray)
+
+                HStack(spacing: 4) {
+                    Image(systemName: "flame.fill")
+                        .font(.App.tiny)
+                        .foregroundColor(Color.App.primary)
+
+                    Text(String(format: "%.0f", food.calories))
+                        .font(.App.caption)
+                        .foregroundColor(Color.App.primary)
+
+                    Text("Kcal")
+                        .font(.App.tinyMedium)
+                        .foregroundColor(Color.App.lightGray)
                 }
-                .frame(width: 55, height: 55)
-                .cornerRadius(10)
-                .clipped()
+            }
+
+            Spacer(minLength: 0)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(Color.App.lightGray.opacity(0.7))
+        }
+        .padding(14)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+    }
+
+    @ViewBuilder
+    private func foodThumbnail(for food: Food) -> some View {
+        Group {
+            if food.imageUrl != nil {
+                CachedImage(urlString: food.imageUrl, width: 64, height: 64, cornerRadius: 12)
             } else {
                 ZStack {
-                    Color.App.secondaryBackground
-                    Text("🍜").font(.title3)
+                    Color.App.primaryLight
+                    Text("🍽️")
+                        .font(.title2)
                 }
-                .frame(width: 55, height: 55)
-                .cornerRadius(10)
+                .frame(width: 64, height: 64)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            
-            Text(food.name)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.black)
-            
-            Spacer()
-            
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(Color.App.lightGray)
         }
-        .padding(12)
-        .background(Color.white)
-        .cornerRadius(14)
     }
 }

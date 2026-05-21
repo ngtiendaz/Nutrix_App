@@ -28,8 +28,8 @@ class DiaryViewModel: ObservableObject, Hashable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(ObjectIdentifier(self))
     }
-    func refreshData() {
-        fetchDailyData(for: lastSelectedDate)
+    func refreshData(onComplete: (() -> Void)? = nil, force: Bool = false) {
+        fetchDailyData(for: lastSelectedDate, onComplete: onComplete, force: force)
     }
     
     
@@ -47,8 +47,11 @@ class DiaryViewModel: ObservableObject, Hashable {
     // Trong DiaryViewModel.swift
 
     @MainActor // Thêm cái này để đảm bảo mọi thay đổi UI đều an toàn
-    func fetchDailyData(for date: Date) {
-        if isLoading { return }
+    func fetchDailyData(for date: Date, onComplete: (() -> Void)? = nil, force: Bool = false) {
+        if isLoading && !force {
+            onComplete?()
+            return
+        }
         
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
@@ -81,6 +84,7 @@ class DiaryViewModel: ObservableObject, Hashable {
         // --- KẾT THÚC ---
         group.notify(queue: .main) { [weak self] in
             self?.isLoading = false
+            onComplete?()
             print("--- 🏁 RELOAD THÀNH CÔNG ---")
         }
     }

@@ -35,28 +35,25 @@ class AppRouter: ObservableObject {
     // MARK: - Notification Methods
     func showToast(message: String, type: ToastType) {
             toastWorkItem?.cancel()
-            
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+
+            withAnimation(.spring(response: 0.52, dampingFraction: 0.8)) {
                 self.toast = ToastData(message: message, type: type)
             }
 
             let workItem = DispatchWorkItem { [weak self] in
-                // Tốc độ ẩn thông báo (0.5s cho mượt mà)
-                withAnimation(.easeInOut(duration: 0.5)) {
+                withAnimation(.spring(response: 0.42, dampingFraction: 0.9)) {
                     self?.toast = nil
                 }
             }
-            
+
             toastWorkItem = workItem
-            // CHỈNH TẠI ĐÂY: Tăng từ 2.5 lên 3.5 hoặc 4.0 giây để người dùng kịp đọc
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.5, execute: workItem)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.2, execute: workItem)
         }
     
     // MARK: - Loading Methods
     func showLoading() {
             DispatchQueue.main.async {
-                // Hiện loading mượt (0.2s)
-                withAnimation(.easeInOut(duration: 0.2)) {
+                withAnimation(.easeOut(duration: 0.22)) {
                     self.isLoading = true
                 }
             }
@@ -64,9 +61,7 @@ class AppRouter: ObservableObject {
 
     func hideLoading() {
             DispatchQueue.main.async {
-                // CHỈNH TẠI ĐÂY: duration: 0.1 hoặc thậm chí xóa hẳn withAnimation
-                // để nó biến mất ngay lập tức khi xong việc
-                withAnimation(.easeInOut(duration: 0.1)) {
+                withAnimation(.easeOut(duration: 0.18)) {
                     self.isLoading = false
                 }
             }
