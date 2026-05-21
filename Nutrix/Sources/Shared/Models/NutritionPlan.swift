@@ -13,7 +13,10 @@ struct AIPlanInput {
     var exerciseMinutesPerDay: Int
 }
 
-struct NutritionPlan: Codable, Hashable {
+struct NutritionPlan: Codable, Hashable, Identifiable {
+    var id: String {
+        return "\(startDate?.timeIntervalSince1970 ?? 0)_\(targetWeight ?? 0)"
+    }
     var dailyCalories: Double
     var activityCalories: Double
     var protein: Double

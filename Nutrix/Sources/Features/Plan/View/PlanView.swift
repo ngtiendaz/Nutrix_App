@@ -91,9 +91,40 @@ struct PlanView: View {
                     secondaryButton: .cancel(Text("Quay lại"))
                 )
             }
+            
+            // 1. Hiển thị Loading Overlay
+            if planViewModel.isEvaluating {
+                LoadingOverlay(text: "Nutrix AI đang đánh giá tiến trình...")
+                    .zIndex(1)
+                    .transition(.opacity)
+            }
+            
+            // 2. Hiển thị Toast thông báo lỗi
+            if router.toast != nil {
+                AppNotificationView(data: router.toast)
+                    .zIndex(2)
+            }
+        }
+        .onChange(of: planViewModel.errorMessage) { newValue in
+            if let error = newValue {
+                router.showToast(message: error, type: .error)
+                planViewModel.errorMessage = nil // Reset sau khi hiển thị
+            }
         }
         .onAppear {
             planViewModel.loadAllData()
+        }
+        .sheet(item: $planViewModel.evaluationResult) { plan in
+            let _ = print("🎬 [DEBUG SHEET] Đang hiển thị sheet cho plan ID: \(plan.id)")
+            NutritionPlanView(plan: plan) {
+                planViewModel.evaluationResult = nil
+            } onApplied: {
+                planViewModel.evaluationResult = nil
+                planViewModel.loadAllData()
+            }
+            .environmentObject(router)
+            .environmentObject(diaryViewModel)
+            .environmentObject(planViewModel)
         }
         .fullScreenCover(isPresented: $showAISetup, onDismiss: {
             planViewModel.loadAllData()
@@ -178,7 +209,10 @@ struct PlanView: View {
             // HỆ THỐNG BA NÚT ĐIỀU HƯỚNG / HÀNH ĐỘNG
             VStack(spacing: 12) {
                 Button(action: {
-                    router.showToast(message: "Tính năng phân tích hiệu chỉnh dinh dưỡng thiếu hụt bằng AI đang được phát triển!", type: .success)
+                    print("🔘 [DEBUG UI] Bấm nút Đánh giá tiến trình AI")
+                    Task {
+                        await planViewModel.evaluateProgressWithAI()
+                    }
                 }) {
                     HStack(spacing: 8) {
                         Image(systemName: "sparkles")
@@ -192,6 +226,7 @@ struct PlanView: View {
                     .cornerRadius(14)
                     .shadow(color: Color.App.primary.opacity(0.25), radius: 6, y: 3)
                 }
+                .disabled(planViewModel.isEvaluating)
                 
                 HStack(spacing: 12) {
                     Button(action: {

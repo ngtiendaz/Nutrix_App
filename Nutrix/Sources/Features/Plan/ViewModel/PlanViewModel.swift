@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import FirebaseAuth
 import FirebaseFirestore
+import GoogleGenerativeAI
 
 // Cấu trúc dữ liệu cho điểm biểu đồ xu hướng cân nặng
 struct WeightChartPoint: Identifiable {
@@ -22,6 +23,14 @@ class PlanViewModel: ObservableObject {
     @Published var user: User? = nil
     @Published var metricsHistory: [BodyMetrics] = []
     
+    // Thuộc tính phục vụ cho Đánh giá tiến trình AI
+    @Published var evaluationResult: NutritionPlan? = nil
+    @Published var evaluationAdvice: String? = nil
+    @Published var isEvaluating: Bool = false
+    
+    private var lastEvaluationTime: Date? = nil
+    private let evaluationCooldown: TimeInterval = 60 // 1 phút giữa các lần đánh giá
+
     // Input tạm phục vụ cho chế độ Edit toàn bộ Plan
     @Published var isEditingPlan: Bool = false
     @Published var editDailyCalories: String = ""
@@ -66,6 +75,8 @@ class PlanViewModel: ObservableObject {
     func loadAllData() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         self.isLoading = true
+        self.evaluationResult = nil
+        self.evaluationAdvice = nil
         let group = DispatchGroup()
         
         authService.fetchUserData(userId: userId)
@@ -120,6 +131,148 @@ class PlanViewModel: ObservableObject {
         group.notify(queue: .main) {
             self.isLoading = false
         }
+    }
+
+    func evaluateProgressWithAI() async {
+        // 1. Guard chống re-entry (bấm nhiều lần)
+        if isEvaluating { return }
+        
+        // 2. Cooldown local (tránh gửi dồn dập trong 1 phút)
+        if let lastTime = lastEvaluationTime, Date().timeIntervalSince(lastTime) < evaluationCooldown {
+            let remain = Int(evaluationCooldown - Date().timeIntervalSince(lastTime))
+            self.errorMessage = "Vui lòng đợi \(remain) giây để tiếp tục đánh giá."
+            return
+        }
+
+        print("🚀 [AI EVAL] Bắt đầu đánh giá tiến trình...")
+        guard let userId = Auth.auth().currentUser?.uid else {
+            print("❌ [AI EVAL] Lỗi: Không tìm thấy UserId")
+            return
+        }
+        guard let plan = currentPlan else {
+            print("❌ [AI EVAL] Lỗi: Không tìm thấy Current Plan")
+            return
+        }
+        
+        self.isEvaluating = true
+        self.errorMessage = nil
+        
+        // 1. Lấy dữ liệu 7 ngày gần nhất (Batching data)
+        let db = Firestore.firestore()
+        print("📅 [AI EVAL] Đang tải 7 ngày daily_summaries (Gom nhóm dữ liệu)...")
+        
+        var recentSummaries: [[String: Any]] = []
+        
+        do {
+            let snapshot = try await db.collection("users").document(userId).collection("daily_summaries")
+                .order(by: "dateKey", descending: true)
+                .limit(to: 7)
+                .getDocuments()
+            
+            recentSummaries = snapshot.documents.map { $0.data() }
+            print("📊 [AI EVAL] Đã gom nhóm xong \(recentSummaries.count) ngày thành 1 yêu cầu duy nhất.")
+            
+            // 2. Gọi AI để đánh giá
+            let userWeight = user?.weight ?? 0.0
+            let healthNote = user?.healthNote ?? "Không có"
+            
+            var summaryPrompt = ""
+            for summary in recentSummaries {
+                let date = summary["dateKey"] as? String ?? ""
+                let intake = summary["intakeCalories"] as? Double ?? 0.0
+                let target = summary["targetCalories"] as? Double ?? 0.0
+                summaryPrompt += "- \(date): \(intake)/\(target) kcal\n"
+            }
+            
+            let prompt = """
+            Context: Chuyên gia dinh dưỡng Nutrix.
+            Task: Đánh giá 7 ngày qua và điều chỉnh lộ trình (tối đa +/- 15%).
+            
+            User: \(user?.name ?? "User"), \(userWeight)kg, Goal: \(plan.targetWeight ?? 0.0)kg. Health: \(healthNote).
+            Current Plan: \(plan.dailyCalories) kcal (P:\(plan.protein), C:\(plan.carbs), F:\(plan.fat)).
+            
+            History:
+            \(summaryPrompt)
+            
+            Output: DUY NHẤT JSON. 'advice' dùng gạch đầu dòng, ngắn gọn ý chính.
+            
+            {
+              "dailyCalories": 1850, "protein": 135, "carbs": 210, "fat": 60,
+              "advice": "• ...\\n• ...", "hasChanges": true
+            }
+            """
+            
+            print("🤖 [AI EVAL] Đang gửi 1 yêu cầu duy nhất (Batch Request) tới Gemini...")
+            let model = GoogleGenerativeAI.GenerativeModel(
+                name: "models/gemini-2.5-flash",
+                apiKey: AppConfig.geminiAPIKey,
+                requestOptions: RequestOptions(apiVersion: "v1")
+            )
+            let response = try await model.generateContent(prompt)
+            
+            if let rawText = response.text {
+                print("📝 [AI EVAL] Phân tích phản hồi...")
+                if let cleanJSON = extractJSON(from: rawText) {
+                    if let data = cleanJSON.data(using: .utf8) {
+                        let evaluation = try JSONDecoder().decode(AIEvaluationResponse.self, from: data)
+                        print("✅ [AI EVAL] Thành công.")
+                        
+                        var newPlan = plan
+                        newPlan.dailyCalories = evaluation.dailyCalories
+                        newPlan.protein = evaluation.protein
+                        newPlan.carbs = evaluation.carbs
+                        newPlan.fat = evaluation.fat
+                        newPlan.advice = evaluation.advice
+                        
+                        DispatchQueue.main.async {
+                            self.evaluationResult = newPlan
+                            self.lastEvaluationTime = Date() // Cập nhật thời gian đánh giá thành công
+                        }
+                    }
+                }
+            }
+            
+        } catch {
+            print("❌ [AI EVAL] Lỗi hệ thống: \(error)")
+            let errorString = String(describing: error)
+            
+            if errorString.contains("429") || errorString.contains("Quota exceeded") {
+                if let range = errorString.range(of: "retry in ") {
+                    let waitTime = errorString[range.upperBound...].components(separatedBy: "s").first ?? "một lát"
+                    self.errorMessage = "Giới hạn AI: Thử lại sau \(waitTime) giây."
+                } else {
+                    self.errorMessage = "Hệ thống AI đang bận. Vui lòng thử lại sau 1 phút."
+                }
+            } else if errorString.contains("503") {
+                self.errorMessage = "Máy chủ AI đang bảo trì. Vui lòng thử lại sau."
+            } else {
+                self.errorMessage = "Lỗi kết nối AI. Vui lòng thử lại sau."
+            }
+        }
+        
+        DispatchQueue.main.async {
+            self.isEvaluating = false
+        }
+    }
+    
+    // Helper để trích xuất JSON từ chuỗi văn bản hỗn hợp
+    private func extractJSON(from text: String) -> String? {
+        guard let firstBrace = text.firstIndex(of: "{"),
+              let lastBrace = text.lastIndex(of: "}") else {
+            return nil
+        }
+        
+        let jsonString = String(text[firstBrace...lastBrace])
+        return jsonString
+    }
+    
+    struct AIEvaluationResponse: Codable {
+        let dailyCalories: Double
+        let protein: Double
+        let carbs: Double
+        let fat: Double
+        let advice: String
+        let hasChanges: Bool
     }
     
     private func fetchRealWeeklyStreak(userId: String, completion: @escaping () -> Void) {
