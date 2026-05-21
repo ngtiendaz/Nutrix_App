@@ -12,6 +12,7 @@ struct InfoRow: View {
     var unit: String? = nil
     let isEditing: Bool
     let placeholder: String
+    var onEditing: (() -> Void)? = nil
     
     var body: some View {
         HStack(spacing: 0) {
@@ -28,7 +29,11 @@ struct InfoRow: View {
             Group {
                 if isEditing {
                     HStack(spacing: 5) {
-                        TextField(placeholder, text: $value)
+                        TextField(placeholder, text: $value, onEditingChanged: { beginning in
+                            if beginning {
+                                onEditing?()
+                            }
+                        })
                             .font(.App.headline)
                             .foregroundColor(.black)
                             .keyboardType(unit != nil ? .decimalPad : .default)

@@ -10,14 +10,15 @@ struct BodyMetricsCard: View {
     @ObservedObject var vm: ProfileViewModel
     var onUpdate: () -> Void
     var onShowHistory: () -> Void
+    var onEditing: (() -> Void)? = nil
     
     var body: some View {
         VStack(spacing: 20) {
             // Hàng chỉ số 2 cột
             HStack(spacing: 15) {
                 // Đảm bảo sử dụng nhất quán isEditingMetrics
-                MetricBox(label: "Chiều cao", value: $vm.height, unit: "cm", icon: "figure.stand", isEditing: vm.isEditingMetrics)
-                MetricBox(label: "Cân nặng", value: $vm.weight, unit: "kg", icon: "scalemass.fill", isEditing: vm.isEditingMetrics)
+                MetricBox(label: "Chiều cao", value: $vm.height, unit: "cm", icon: "figure.stand", isEditing: vm.isEditingMetrics, onEditing: onEditing)
+                MetricBox(label: "Cân nặng", value: $vm.weight, unit: "kg", icon: "scalemass.fill", isEditing: vm.isEditingMetrics, onEditing: onEditing)
             }
             
             HStack(spacing: 12) {
@@ -61,6 +62,7 @@ struct MetricBox: View {
     let unit: String
     let icon: String
     let isEditing: Bool
+    var onEditing: (() -> Void)? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -75,7 +77,11 @@ struct MetricBox: View {
             
             HStack(alignment: .bottom, spacing: 4) {
                 if isEditing {
-                    TextField("0", text: $value)
+                    TextField("0", text: $value, onEditingChanged: { beginning in
+                        if beginning {
+                            onEditing?()
+                        }
+                    })
                         .font(.App.title2)
                         .keyboardType(.decimalPad)
                         .foregroundColor(.black)

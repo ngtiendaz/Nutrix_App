@@ -13,40 +13,84 @@ struct ProfileView: View {
     @Binding var selectedDate: Date
     @State private var isShowingHistory = false
     @State private var isShowingAISetup = false
+    @State private var showingLogoutAlert = false
     
+    enum FieldSection {
+        case basicInfo
+        case metrics
+    }
+    @State private var scrollTarget: FieldSection?
     
     var body: some View {
         ZStack {
             Color.App.background.ignoresSafeArea()
             
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 24) {
-                    TopBar(selectedTab: .constant(.profile), selectedDate: $selectedDate)
-                    
-                    // 1. Profile Card (Tên, Tuổi, Giới tính, Vận động)
-                    mainUserCard
-                    
-                    BodyMetricsCard(
-                        vm: profileViewModel,
-                        onUpdate: { handleBodyMetricsUpdate() },
-                        onShowHistory: {
-                            profileViewModel.fetchHistory(authService: loginViewModel.authService)
-                            isShowingHistory = true
+            ScrollViewReader { proxy in
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 24) {
+                        TopBar(selectedTab: .constant(.profile), selectedDate: $selectedDate)
+                        
+                        // 1. Profile Card (Tên, Tuổi, Giới tính, Vận động)
+                        mainUserCard
+                            .id(FieldSection.basicInfo)
+                        
+                        BodyMetricsCard(
+                            vm: profileViewModel,
+                            onUpdate: { handleBodyMetricsUpdate() },
+                            onShowHistory: {
+                                profileViewModel.fetchHistory(authService: loginViewModel.authService)
+                                isShowingHistory = true
+                            },
+                            onEditing: { scrollTarget = .metrics }
+                        )                        .id(FieldSection.metrics)
+                        
+                        // 4. Settings List
+                        VStack(spacing: 12) {
+                            settingItem(icon: "bell.fill", title: "Thông báo", color: .orange)
+                            settingItem(icon: "lock.shield.fill", title: "Bảo mật", color: .blue)
+                            Button(action: { showingLogoutAlert = true }) {
+                                settingItem(icon: "door.right.hand.open", title: "Đăng xuất", color: .red, isLast: true)
+                            }
                         }
-                    )
-                    // 4. Settings List
-                    VStack(spacing: 12) {
-                        settingItem(icon: "bell.fill", title: "Thông báo", color: .orange)
-                        settingItem(icon: "lock.shield.fill", title: "Bảo mật", color: .blue)
-                        Button(action: { /* loginViewModel.signOut() */ }) {
-                            settingItem(icon: "door.right.hand.open", title: "Đăng xuất", color: .red, isLast: true)
+                        
+                        Spacer(minLength: 100)
+                    }
+                    .padding(.horizontal, 12)
+                }
+                .onChange(of: scrollTarget) { newValue in
+                    if let section = newValue {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            proxy.scrollTo(section, anchor: .center)
                         }
                     }
-                    
-                    Spacer(minLength: 100)
                 }
-                .padding(.horizontal, 12)
+                .onChange(of: profileViewModel.isEditingBasic) { newValue in
+                    if newValue {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                proxy.scrollTo(FieldSection.basicInfo, anchor: .center)
+                            }
+                        }
+                    }
+                }
+                .onChange(of: profileViewModel.isEditingMetrics) { newValue in
+                    if newValue {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                proxy.scrollTo(FieldSection.metrics, anchor: .center)
+                            }
+                        }
+                    }
+                }
             }
+        }
+        .alert("Đăng xuất", isPresented: $showingLogoutAlert) {
+            Button("Hủy", role: .cancel) { }
+            Button("Đăng xuất", role: .destructive) {
+                loginViewModel.logout()
+            }
+        } message: {
+            Text("Bạn có chắc chắn muốn đăng xuất không?")
         }
         .sheet(isPresented: $isShowingHistory) {
             BodyMetricsHistorySheet(history: profileViewModel.metricsHistory)
@@ -63,7 +107,10 @@ struct ProfileView: View {
                 router.showLoading()
                 profileViewModel.saveBodyMetrics(authService: loginViewModel.authService) { success in
                     router.hideLoading()
-                    if success { router.showToast(message: "Đã cập nhật chỉ số cơ thể", type: .success) }
+                    if success {
+                        router.showToast(message: "Đã cập nhật chỉ số cơ thể", type: .success)
+                        profileViewModel.fetchHistory(authService: loginViewModel.authService)
+                    }
                 }
                 hideKeyboard()
             } else {
@@ -88,8 +135,8 @@ struct ProfileView: View {
                 Divider().background(Color.black.opacity(0.05))
                 
                 VStack(alignment: .leading, spacing: 10) {
-                    InfoRow(label: "Họ và tên", value: $profileViewModel.name, isEditing: profileViewModel.isEditingBasic, placeholder: "Tên")
-                    InfoRow(label: "Tuổi", value: $profileViewModel.age, unit: "tuổi", isEditing: profileViewModel.isEditingBasic, placeholder: "0")
+                    InfoRow(label: "Họ và tên", value: $profileViewModel.name, isEditing: profileViewModel.isEditingBasic, placeholder: "Tên", onEditing: { scrollTarget = .basicInfo })
+                    InfoRow(label: "Tuổi", value: $profileViewModel.age, unit: "tuổi", isEditing: profileViewModel.isEditingBasic, placeholder: "0", onEditing: { scrollTarget = .basicInfo })
                     genderPickerRow
                     activityPickerRow
                 }

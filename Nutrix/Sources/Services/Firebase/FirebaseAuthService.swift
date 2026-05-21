@@ -173,7 +173,7 @@ class FirebaseAuthService: ObservableObject {
                 }
             }
         }
-    func fetchUserData(userId: String) {
+    func fetchUserData(userId: String, completion: (() -> Void)? = nil) {
         db.collection("users").document(userId).getDocument { snapshot, error in
             if let data = snapshot?.data(), error == nil {
                 DispatchQueue.main.async {
@@ -185,7 +185,10 @@ class FirebaseAuthService: ObservableObject {
                     }
                     
                     print("DEBUG: Đã tải thông tin user: \(self.currentUser?.name ?? "")")
+                    completion?()
                 }
+            } else {
+                completion?()
             }
         }
     }
@@ -195,9 +198,12 @@ class FirebaseAuthService: ObservableObject {
         
         db.collection("users").document(userId).updateData(data) { [weak self] error in
             if error == nil {
-                self?.fetchUserData(userId: userId)
+                self?.fetchUserData(userId: userId) {
+                    completion(nil)
+                }
+            } else {
+                completion(error)
             }
-            completion(error)
         }
     }
 
@@ -235,9 +241,12 @@ class FirebaseAuthService: ObservableObject {
             // Thực thi Batch
             batch?.commit { error in
                 if error == nil {
-                    self?.fetchUserData(userId: userId)
+                    self?.fetchUserData(userId: userId) {
+                        completion(nil)
+                    }
+                } else {
+                    completion(error)
                 }
-                completion(error)
             }
         }
     }
