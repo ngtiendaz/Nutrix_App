@@ -378,7 +378,7 @@ struct PlanView: View {
                 ForEach(planViewModel.weeklyStreak, id: \.dayName) { day in
                     VStack(spacing: 8) {
                         Text(day.dayName)
-                            .font(day.isToday ? .App.bodyBold : .App.captionMedium)
+                            .font(day.isToday ? .App.captionMedium : .App.captionMedium)
                             .foregroundColor(day.isToday ? Color.App.primary : .black.opacity(0.6))
                         
                         ZStack {

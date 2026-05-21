@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AddActivitySheet: View {
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var router: AppRouter
     @ObservedObject var viewModel: ActivityViewModel
     let userId: String
     let date: Date
@@ -414,8 +415,15 @@ extension AddActivitySheet {
     private var saveButton: some View {
         Button(action: {
             if let activity = selectedActivity {
+                router.showLoading()
                 viewModel.addLog(userId: userId, activity: activity, duration: Double(duration), date: date)
-                dismiss()
+                
+                // Giả lập delay nhẹ để người dùng thấy loading mượt mà
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    router.hideLoading()
+                    router.showToast(message: "Đã thêm hoạt động vào nhật ký", type: .success)
+                    dismiss()
+                }
             }
         }) {
             HStack(spacing: 10) {

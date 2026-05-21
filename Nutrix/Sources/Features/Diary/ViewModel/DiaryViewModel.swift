@@ -22,11 +22,17 @@ class DiaryViewModel: ObservableObject, Hashable {
     private var pendingNutrition = PendingDailyNutrition()
 
     private struct PendingDailyNutrition {
-        var calories: Double = 0
-        var protein: Double = 0
-        var carbs: Double = 0
-        var fats: Double = 0
-        var burned: Double = 0
+        var mealCalories: Double = 0
+        var mealProtein: Double = 0
+        var mealCarbs: Double = 0
+        var mealFats: Double = 0
+        
+        var summaryCalories: Double = 0
+        var summaryProtein: Double = 0
+        var summaryCarbs: Double = 0
+        var summaryFats: Double = 0
+        var summaryBurned: Double = 0
+        
         var hasMeals: Bool = false
         var hasSummary: Bool = false
     }
@@ -130,10 +136,10 @@ class DiaryViewModel: ObservableObject, Hashable {
 
         allFoods = meals.flatMap { $0.food }.sorted(by: { $0.createdAt > $1.createdAt })
 
-        pendingNutrition.calories = meals.reduce(0) { $0 + $1.totalCalories }
-        pendingNutrition.protein = meals.reduce(0) { $0 + $1.totalProtein }
-        pendingNutrition.carbs = meals.reduce(0) { $0 + $1.totalCarbs }
-        pendingNutrition.fats = meals.reduce(0) { $0 + $1.totalFats }
+        pendingNutrition.mealCalories = meals.reduce(0) { $0 + $1.totalCalories }
+        pendingNutrition.mealProtein = meals.reduce(0) { $0 + $1.totalProtein }
+        pendingNutrition.mealCarbs = meals.reduce(0) { $0 + $1.totalCarbs }
+        pendingNutrition.mealFats = meals.reduce(0) { $0 + $1.totalFats }
         pendingNutrition.hasMeals = true
     }
 
@@ -142,11 +148,11 @@ class DiaryViewModel: ObservableObject, Hashable {
 
         guard case .success(let summary) = result, let summary else { return }
 
-        pendingNutrition.calories = summary.intakeCalories
-        pendingNutrition.protein = summary.intakeProtein
-        pendingNutrition.carbs = summary.intakeCarbs
-        pendingNutrition.fats = summary.intakeFats
-        pendingNutrition.burned = summary.burnedCalories
+        pendingNutrition.summaryCalories = summary.intakeCalories
+        pendingNutrition.summaryProtein = summary.intakeProtein
+        pendingNutrition.summaryCarbs = summary.intakeCarbs
+        pendingNutrition.summaryFats = summary.intakeFats
+        pendingNutrition.summaryBurned = summary.burnedCalories
         pendingNutrition.hasSummary = true
     }
 
@@ -156,15 +162,23 @@ class DiaryViewModel: ObservableObject, Hashable {
             return
         }
 
+        // Ưu tiên dùng dữ liệu từ Meals cho Intake vì nó được cập nhật tức thì hơn Summary trên Firestore
+        // Dùng Summary cho phần Burned (vì trong Meal không có thông tin tập luyện)
+        let totalCal = pendingNutrition.hasMeals ? pendingNutrition.mealCalories : pendingNutrition.summaryCalories
+        let totalPro = pendingNutrition.hasMeals ? pendingNutrition.mealProtein : pendingNutrition.summaryProtein
+        let totalCarb = pendingNutrition.hasMeals ? pendingNutrition.mealCarbs : pendingNutrition.summaryCarbs
+        let totalFat = pendingNutrition.hasMeals ? pendingNutrition.mealFats : pendingNutrition.summaryFats
+        let totalBurned = pendingNutrition.summaryBurned
+
         dailyNutrition = DailyNutrition(
             userId: userId,
             date: FirebaseService.shared.getDateKey(from: date),
-            totalCalories: pendingNutrition.calories,
-            totalProtein: pendingNutrition.protein,
-            totalCarbs: pendingNutrition.carbs,
-            totalFat: pendingNutrition.fats,
+            totalCalories: totalCal,
+            totalProtein: totalPro,
+            totalCarbs: totalCarb,
+            totalFat: totalFat,
             totalWater: 0.0,
-            totalBurned: pendingNutrition.burned
+            totalBurned: totalBurned
         )
     }
 }
