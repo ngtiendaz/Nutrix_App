@@ -23,13 +23,12 @@ struct ActualNutritionCard: View {
             
             Divider().background(Color.App.primary.opacity(0.1))
             
-            // Hàng hiển thị các chỉ số chi tiết với màu sắc riêng
-            HStack(spacing: 0) {
-                nutrientMiniValue(label: "Tinh bột", value: data.totalCarbs, color: .red)
-                nutrientMiniValue(label: "Chất đạm", value: data.totalProtein, color: .blue)
-                nutrientMiniValue(label: "Chất béo", value: data.totalFat, color: .orange)
+            HStack(spacing: 8) {
+                NutrientMiniCard(title: "Tiêu thụ", value: data.totalBurned ?? 0, color: .orange, unit: "kcal")
+                NutrientMiniCard(title: "Tinh bột", value: data.totalCarbs, color: .blue)
+                NutrientMiniCard(title: "Chất đạm", value: data.totalProtein, color: .red)
+                NutrientMiniCard(title: "Chất béo", value: data.totalFat, color: .orange)
             }
-            .frame(maxWidth: .infinity)
         }
         .padding(20)
         .background(Color.white)
@@ -37,19 +36,4 @@ struct ActualNutritionCard: View {
         .shadow(color: .black.opacity(0.02), radius: 10, x: 0, y: 5)
     }
     
-    // MARK: - Helper View
-    func nutrientMiniValue(label: String, value: Double, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            // Label (Protein, Carbs, Fat) sử dụng màu sắc định danh
-            Text(label + ":")
-                .font(.App.caption)
-                .foregroundColor(color)
-            
-            // Con số hiển thị màu đen đậm
-            Text("\(Int(value))g")
-                .font(.App.headlineHeavy)
-                .foregroundColor(.black)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
 }

@@ -69,15 +69,13 @@ struct CircularProgress: View {
                     .textCase(.uppercase)
             }
         }
-        .onAppear {
-            withAnimation(.spring(response: 1.0, dampingFraction: 0.7)) {
-                animatedProgress = current
-            }
-        }
-        .onChange(of: current) { newValue in
-            withAnimation(.spring(response: 1.0, dampingFraction: 0.7)) {
-                animatedProgress = newValue
-            }
+        .onAppear { animateToCurrent() }
+        .onChange(of: current) { _, _ in animateToCurrent() }
+    }
+
+    private func animateToCurrent() {
+        withAnimation(.spring(response: 0.85, dampingFraction: 0.82)) {
+            animatedProgress = max(0, current)
         }
     }
 }

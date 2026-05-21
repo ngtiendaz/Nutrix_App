@@ -52,9 +52,7 @@ struct NutritionGoalCard: View {
             // Chỉ số Macro bên dưới
             HStack(spacing: 0) {
                 macroGroup(label: "Tinh bột", current: data.totalCarbs, goal: goal.carbs, color: .blue)
-                Spacer()
                 macroGroup(label: "Chất đạm", current: data.totalProtein, goal: goal.protein, color: .red)
-                Spacer()
                 macroGroup(label: "Chất béo", current: data.totalFat, goal: goal.fat, color: .orange)
             }
             .padding(.horizontal, 10)
