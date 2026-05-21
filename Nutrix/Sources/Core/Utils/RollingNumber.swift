@@ -17,7 +17,7 @@ struct RollingNumber: ViewModifier, Animatable {
     }
     
     func body(content: Content) -> some View {
-        Text("\(Int(number))")
+        Text("\(Int(abs(number)))")
     }
 }
 

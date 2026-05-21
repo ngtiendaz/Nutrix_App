@@ -12,6 +12,7 @@ struct NutritionGoalCard: View {
     
     
     @State private var animatedCalories: Double = 0
+    @State private var animatedBurned: Double = 0
     
     // Logic xác định trạng thái vượt ngưỡng
     private var isOverGoal: Bool {
@@ -30,13 +31,13 @@ struct NutritionGoalCard: View {
                 // Các chỉ số calo bên phải
                 VStack(alignment: .leading, spacing: 18) {
                     nutritionRow(label: "Hấp thụ",
-                                 value: data.totalCalories,
+                                 value: animatedCalories,
                                  unit: "kcal",
                                  icon: "leaf.fill",
                                  color: isOverGoal ? .red : .App.primary)
                     
                     nutritionRow(label: "Tiêu thụ",
-                                 value: data.totalBurned ?? 0,
+                                 value: animatedBurned,
                                  unit: "kcal",
                                  icon: "flame.fill",
                                  color: .orange)
@@ -66,11 +67,17 @@ struct NutritionGoalCard: View {
         .onAppear {
             withAnimation(.easeOut(duration: 0.8)) {
                 animatedCalories = data.totalCalories
+                animatedBurned = data.totalBurned ?? 0
             }
         }
         .onChange(of: data.totalCalories) { newValue in
             withAnimation(.easeOut(duration: 0.8)) {
                 animatedCalories = newValue
+            }
+        }
+        .onChange(of: data.totalBurned) { newValue in
+            withAnimation(.easeOut(duration: 0.8)) {
+                animatedBurned = newValue ?? 0
             }
         }
         .padding(24)
@@ -115,7 +122,9 @@ struct NutritionGoalCard: View {
                 .foregroundColor(color)
             
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("\(Int(value))")
+                Color.clear
+                    .frame(width: 0, height: 0)
+                    .rollingNumber(value: value)
                     .font(.App.header)
                     .foregroundColor(.black)
                 
