@@ -78,82 +78,79 @@ class DiaryViewModel: ObservableObject, Hashable {
         self.planSummary = nil
         self.currentPlan = nil
 
-        let group = DispatchGroup()
-
-        group.enter()
-        FirebaseService.shared.fetchPlanForDate(userId: userId, date: date) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.handlePlanResult(result, group: group)
+        Task {
+            // Sử dụng TaskGroup để chạy song song hiệu quả hơn
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    await self.fetchPlan(userId: userId, date: date)
+                }
+                group.addTask {
+                    await self.fetchMeals(userId: userId, date: date)
+                }
+                group.addTask {
+                    await self.fetchSummary(userId: userId, date: date)
+                }
             }
-        }
-
-        group.enter()
-        FirebaseService.shared.fetchMeals(userId: userId, date: date) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.handleMealsResult(result, group: group)
-            }
-        }
-
-        group.enter()
-        FirebaseService.shared.fetchDailySummary(userId: userId, date: date) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.handleSummaryResult(result, group: group)
-            }
-        }
-
-        group.notify(queue: .main) { [weak self] in
-            guard let self else { return }
+            
             self.applyPendingNutrition(userId: userId, date: date)
             self.isLoading = false
             onComplete?()
         }
     }
 
-    private func handlePlanResult(_ result: Result<PlanSummary?, Error>, group: DispatchGroup) {
-        defer { group.leave() }
-
-        if case .success(let summary) = result, let summary {
-            self.planSummary = summary
-            self.currentPlan = NutritionPlan(
-                dailyCalories: summary.dailyCalories,
-                activityCalories: summary.activityCalories,
-                protein: summary.protein,
-                carbs: summary.carbs,
-                fat: summary.fat,
-                advice: "",
-                exercisePlan: ""
-            )
-            self.hasPlan = true
-        } else {
-            self.hasPlan = false
+    private func fetchPlan(userId: String, date: Date) async {
+        return await withCheckedContinuation { continuation in
+            FirebaseService.shared.fetchPlanForDate(userId: userId, date: date) { [weak self] result in
+                if case .success(let summary) = result, let summary = summary {
+                    self?.planSummary = summary
+                    self?.currentPlan = NutritionPlan(
+                        dailyCalories: summary.dailyCalories,
+                        activityCalories: summary.activityCalories,
+                        protein: summary.protein,
+                        carbs: summary.carbs,
+                        fat: summary.fat,
+                        advice: "",
+                        exercisePlan: ""
+                    )
+                    self?.hasPlan = true
+                } else {
+                    self?.hasPlan = false
+                }
+                continuation.resume()
+            }
         }
     }
 
-    private func handleMealsResult(_ result: Result<[Meal], Error>, group: DispatchGroup) {
-        defer { group.leave() }
-
-        guard case .success(let meals) = result else { return }
-
-        allFoods = meals.flatMap { $0.food }.sorted(by: { $0.createdAt > $1.createdAt })
-
-        pendingNutrition.mealCalories = meals.reduce(0) { $0 + $1.totalCalories }
-        pendingNutrition.mealProtein = meals.reduce(0) { $0 + $1.totalProtein }
-        pendingNutrition.mealCarbs = meals.reduce(0) { $0 + $1.totalCarbs }
-        pendingNutrition.mealFats = meals.reduce(0) { $0 + $1.totalFats }
-        pendingNutrition.hasMeals = true
+    private func fetchMeals(userId: String, date: Date) async {
+        return await withCheckedContinuation { continuation in
+            FirebaseService.shared.fetchMeals(userId: userId, date: date) { [weak self] result in
+                if case .success(let meals) = result {
+                    self?.allFoods = meals.flatMap { $0.food }.sorted(by: { $0.createdAt > $1.createdAt })
+                    self?.pendingNutrition.mealCalories = meals.reduce(0) { $0 + $1.totalCalories }
+                    self?.pendingNutrition.mealProtein = meals.reduce(0) { $0 + $1.totalProtein }
+                    self?.pendingNutrition.mealCarbs = meals.reduce(0) { $0 + $1.totalCarbs }
+                    self?.pendingNutrition.mealFats = meals.reduce(0) { $0 + $1.totalFats }
+                    self?.pendingNutrition.hasMeals = true
+                }
+                continuation.resume()
+            }
+        }
     }
 
-    private func handleSummaryResult(_ result: Result<DailySummary?, Error>, group: DispatchGroup) {
-        defer { group.leave() }
-
-        guard case .success(let summary) = result, let summary else { return }
-
-        pendingNutrition.summaryCalories = summary.intakeCalories
-        pendingNutrition.summaryProtein = summary.intakeProtein
-        pendingNutrition.summaryCarbs = summary.intakeCarbs
-        pendingNutrition.summaryFats = summary.intakeFats
-        pendingNutrition.summaryBurned = summary.burnedCalories
-        pendingNutrition.hasSummary = true
+    private func fetchSummary(userId: String, date: Date) async {
+        return await withCheckedContinuation { continuation in
+            FirebaseService.shared.fetchDailySummary(userId: userId, date: date) { [weak self] result in
+                if case .success(let summary) = result, let summary = summary {
+                    self?.pendingNutrition.summaryCalories = summary.intakeCalories
+                    self?.pendingNutrition.summaryProtein = summary.intakeProtein
+                    self?.pendingNutrition.summaryCarbs = summary.intakeCarbs
+                    self?.pendingNutrition.summaryFats = summary.intakeFats
+                    self?.pendingNutrition.summaryBurned = summary.burnedCalories
+                    self?.pendingNutrition.hasSummary = true
+                }
+                continuation.resume()
+            }
+        }
     }
 
     private func applyPendingNutrition(userId: String, date: Date) {

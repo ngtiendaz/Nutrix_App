@@ -16,7 +16,7 @@ struct PlanSummaryCard: View {
             HStack {
                 Text("Lộ trình hiện tại")
                     .font(.App.sectionHeader)
-                    .foregroundColor(.black.opacity(0.8))
+                    .foregroundColor(Color.App.textPrimary)
                 
                 Spacer()
                 
@@ -34,7 +34,7 @@ struct PlanSummaryCard: View {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text("\(summary.currentWeight, specifier: "%.1f")")
                     .font(.App.title2)
-                    .foregroundColor(Color.black)
+                    .foregroundColor(Color.App.textPrimary)
                 
                 Image(systemName: "arrow.right")
                     .font(.App.caption)
@@ -93,9 +93,9 @@ struct PlanSummaryCard: View {
             }
         }
         .padding(20)
-        .background(Color.white)
+        .background(Color.App.cardBackground)
         .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.02), radius: 10, x: 0, y: 5)
+        .shadow(color: Color.App.shadow, radius: 10, x: 0, y: 5)
     }
     
     // MARK: - Helper Functions

@@ -34,7 +34,7 @@ struct ActivityCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(log.activityType.name)
                     .font(.App.bodyBold)
-                    .foregroundColor(.black)
+                    .foregroundColor(Color.App.textPrimary)
                 
                 // Hiển thị 3 thông số: Giờ bắt đầu, Phút, Kcal
                 HStack(spacing: 12) {
@@ -59,8 +59,8 @@ struct ActivityCard: View {
                 .foregroundColor(Color.App.secondaryBackground)
         }
         .padding(14)
-        .background(Color.white)
+        .background(Color.App.cardBackground)
         .cornerRadius(22)
-        .shadow(color: Color.black.opacity(0.02), radius: 8, x: 0, y: 4)
+        .shadow(color: Color.App.shadow, radius: 8, x: 0, y: 4)
     }
 }

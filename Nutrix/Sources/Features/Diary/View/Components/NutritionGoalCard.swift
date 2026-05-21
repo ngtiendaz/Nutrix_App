@@ -81,9 +81,9 @@ struct NutritionGoalCard: View {
             }
         }
         .padding(24)
-        .background(Color.white)
+        .background(Color.App.cardBackground)
         .cornerRadius(30)
-        .shadow(color: Color.black.opacity(0.06), radius: 20, x: 0, y: 10)
+        .shadow(color: Color.App.shadow, radius: 20, x: 0, y: 10)
     }
     
     // View cảnh báo khi ăn quá mức
@@ -100,7 +100,7 @@ struct NutritionGoalCard: View {
                 
                 Text("Bạn đã nạp quá calo quy định. Hãy cân nhắc tập thêm một bài vận động nhẹ.")
                     .font(.App.captionMedium)
-                    .foregroundColor(.black.opacity(0.7))
+                    .foregroundColor(Color.App.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -126,11 +126,11 @@ struct NutritionGoalCard: View {
                     .frame(width: 0, height: 0)
                     .rollingNumber(value: value)
                     .font(.App.header)
-                    .foregroundColor(.black)
+                    .foregroundColor(Color.App.textPrimary)
                 
                 Text(unit)
                     .font(.App.body)
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color.App.lightGray)
             }
         }
     }

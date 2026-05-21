@@ -9,25 +9,29 @@ import SwiftUI
 
 extension Color {
     struct App {
-            // Màu nền chính của app (màu trắng xám nhẹ - Giữ nguyên)
+            // Màu nền chính của app (màu trắng xám nhẹ)
             static let background = Color(hex: "F7F7F7")
             
-            // --- MÀU CHỦ ĐẠO MỚI (Xanh lá dịu mắt) ---
-            // Màu xanh này gọi là "Soft Forest Green", nhìn rất chuyên nghiệp và dễ chịu
-            static let primary = Color(hex: "4A7C59")
+            // Màu nền cho các Card, Sheet
+            static let cardBackground = Color.white
             
-            // Màu xanh nhạt để làm highlight (nền cho icon đang chọn)
+            // --- MÀU CHỦ ĐẠO ---
+            static let primary = Color(hex: "4A7C59")
             static let primaryLight = Color(hex: "E8F0E9")
-            // -----------------------------------------
 
             // Màu nền của thanh Menu
             static let menuBackground = Color.white
             
-            // Màu nền phụ (cho các card hoặc ô lịch)
+            // Màu nền phụ
             static let secondaryBackground = Color(hex: "F2F2F2")
             
-            // Màu text xám nhạt
+            // Màu text
+            static let textPrimary = Color.black.opacity(0.85)
+            static let textSecondary = Color.black.opacity(0.6)
             static let lightGray = Color(hex: "A6A6A6")
+            
+            // Màu bóng đổ
+            static let shadow = Color.black.opacity(0.05)
         }
 }
 

@@ -14,61 +14,52 @@ struct CachedImage: View {
     var cornerRadius: CGFloat = 12
     
     @State private var cachedImage: UIImage? = nil
+    @State private var isLoading = false
 
     var body: some View {
         Group {
             if let uiImage = cachedImage {
-                // Nếu đã có trong Cache -> Hiển thị ngay
                 Image(uiImage: uiImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-            } else if let urlString = urlString, let url = URL(string: urlString) {
-                // Nếu chưa có -> Dùng AsyncImage để tải
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .onAppear {
-                                // Sau khi tải xong, lưu vào Cache
-                                extractAndCacheImage(from: image, key: urlString)
-                            }
-                    case .failure(_):
-                        placeholderView
-                    case .empty:
-                        ProgressView().frame(width: width, height: height)
-                    @unknown default:
-                        placeholderView
-                    }
-                }
+            } else if isLoading {
+                ProgressView()
+                    .frame(width: width, height: height)
             } else {
                 placeholderView
             }
         }
         .frame(width: width, height: height)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-        .onAppear {
-            // Vừa hiện View là check kho xem có ảnh chưa
-            if let urlString = urlString {
-                self.cachedImage = ImageCache.shared.get(forkey: urlString)
-            }
+        .task(id: urlString) {
+            await loadImage()
         }
     }
 
     private var placeholderView: some View {
         ZStack {
-            Color.gray.opacity(0.3)
-            Image(systemName: "fork.knife").foregroundColor(.white.opacity(0.6))
+            Color.gray.opacity(0.1)
+            Image(systemName: "fork.knife")
+                .font(.system(size: min(width, height) * 0.3))
+                .foregroundColor(.gray.opacity(0.4))
         }
+        .frame(width: width, height: height)
     }
     
-    // Hàm phụ để chuyển đổi SwiftUI Image sang UIImage để lưu vào NSCache
-    @MainActor
-    private func extractAndCacheImage(from image: Image, key: String) {
-        let renderer = ImageRenderer(content: image)
-        if let uiImage = renderer.uiImage {
-            ImageCache.shared.set(uiImage, forKey: key)
+    private func loadImage() async {
+        guard let urlString = urlString, !urlString.isEmpty else { return }
+        
+        // 1. Kiểm tra cache nhanh trước
+        if let cached = ImageCache.shared.get(forKey: urlString) {
+            self.cachedImage = cached
+            return
         }
+        
+        // 2. Nếu không có mới bắt đầu tải
+        isLoading = true
+        if let loadedImage = await ImageCache.shared.loadImage(from: urlString) {
+            self.cachedImage = loadedImage
+        }
+        isLoading = false
     }
 }

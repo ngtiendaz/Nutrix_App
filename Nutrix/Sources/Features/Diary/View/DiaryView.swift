@@ -109,16 +109,16 @@ struct DiaryView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 180)
-        .background(Color.white)
+        .background(Color.App.cardBackground)
         .cornerRadius(24)
-        .shadow(color: .black.opacity(0.03), radius: 10)
+        .shadow(color: Color.App.shadow, radius: 10)
     }
     
     private var foodList: some View {
         VStack(alignment: .leading) {
             Text(dateTitle)
                 .font(.App.headline)
-                .foregroundColor(.black.opacity(0.8))
+                .foregroundColor(Color.App.textPrimary)
             
             if diaryViewModel.isLoading {
                 EmptyView()
@@ -197,7 +197,7 @@ struct DiaryView: View {
                 
                 Text("Hãy để AI thiết kế lộ trình cá nhân hóa dựa trên mục tiêu cân nặng của bạn.")
                     .font(.App.subheadlineRegular)
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color.App.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
             }
@@ -210,14 +210,14 @@ struct DiaryView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.black)
+                    .background(Color.App.textPrimary)
                     .cornerRadius(15)
             }
         }
         .padding(25)
-        .background(Color.white)
+        .background(Color.App.cardBackground)
         .cornerRadius(24)
-        .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 5)
+        .shadow(color: Color.App.shadow, radius: 10, x: 0, y: 5)
     }
     
     // MARK: - Logic Helpers

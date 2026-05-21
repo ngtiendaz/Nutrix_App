@@ -16,7 +16,7 @@ struct FoodItem: View {
                         HStack(alignment: .top){
                             Text(food.name)
                                 .font(.App.headline)
-                                .foregroundColor(Color(hex: "333333"))
+                                .foregroundColor(Color.App.textPrimary)
                             
                             Spacer()
                             Text("\(food.createdAt, format: .dateTime.hour().minute())")
@@ -63,9 +63,9 @@ struct FoodItem: View {
                 }
             }
             .padding(12)
-            .background(Color.white)
+            .background(Color.App.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+            .shadow(color: Color.App.shadow, radius: 8, x: 0, y: 4)
 //            .padding(.horizontal)
         }
 //        .padding(.horizontal)
