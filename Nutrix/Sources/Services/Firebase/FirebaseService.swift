@@ -427,4 +427,62 @@ final class FirebaseService{
             }
         }
     }
+    
+    func fetchFoods(completion: @escaping (Result<[Food], Error>) -> Void) {
+            // Query thẳng vào root collection "foods" như trong ảnh
+            db.collection("foods")
+                .order(by: "createdAt", descending: true) // Sắp xếp thực phẩm mới nhất lên đầu (tuỳ chọn)
+                .getDocuments { snapshot, error in
+                    if let error = error {
+                        completion(.failure(error))
+                        return
+                    }
+                    
+                    guard let documents = snapshot?.documents else {
+                        completion(.success([]))
+                        return
+                    }
+                    
+                    let foods = documents.compactMap { doc -> Food? in
+                        let data = doc.data()
+                        
+                        // Bắt buộc phải có id và name, nếu không bỏ qua record này
+                        guard let id = data["id"] as? String,
+                              let name = data["name"] as? String else {
+                            return nil
+                        }
+                        
+                        let imageUrl = data["imageUrl"] as? String
+                        
+                        // Xử lý an toàn các trường kiểu số
+                        let calories = data["calories"] as? Double ?? 0.0
+                        let protein = data["protein"] as? Double ?? 0.0
+                        let carbs = data["carbs"] as? Double ?? 0.0
+                        let fats = data["fats"] as? Double ?? 0.0
+                        
+                        let servingSize = data["servingSize"] as? Double ?? 100.0
+                        let servingUnit = data["servingUnit"] as? String ?? "Gram"
+                        let quantity = data["quantity"] as? Double ?? 1.0
+                        
+                        // Convert Timestamp từ Firestore sang Date của Swift
+                        let createdAt = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
+                        
+                        return Food(
+                            id: id,
+                            name: name,
+                            image: imageUrl,
+                            calories: calories,
+                            protein: protein,
+                            carbs: carbs,
+                            fats: fats,
+                            servingSize: servingSize,
+                            servingUnit: servingUnit,
+                            quantity: quantity,
+                            createdAt: createdAt
+                        )
+                    }
+                    
+                    completion(.success(foods))
+                }
+        }
 }

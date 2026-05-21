@@ -2,12 +2,11 @@
 //  FoodAnalysisViewModel.swift
 //  Nutrix
 //
-//  Created by Daz on 3/5/26.
-//
 
 import SwiftUI
 import Combine
 import GoogleGenerativeAI
+import FirebaseAuth
 
 @MainActor
 class FoodAnalysisViewModel: ObservableObject {
@@ -27,6 +26,13 @@ class FoodAnalysisViewModel: ObservableObject {
     @Published var weight: Double = 100.0
     @Published var quantity: Double = 1.0
     
+    // 👉 CÁC BIẾN QUẢN LÝ CHỈNH SỬA DINH DƯỠNG
+    let isEditableNutrition: Bool
+    @Published var editableCalories: Double = 0.0
+    @Published var editableProtein: Double = 0.0
+    @Published var editableCarbs: Double = 0.0
+    @Published var editableFats: Double = 0.0
+    
     @Published var advice: AIAdvice?
     @Published var isAdviceLoading = false
     
@@ -38,15 +44,13 @@ class FoodAnalysisViewModel: ObservableObject {
     
     @Published private(set) var selectedMealType: MealType = .snack
     
-    let selectedImage: UIImage
+    let selectedImage: UIImage?
     private let visionService = GoogleVisionService()
     private let edamamService = EdamamService()
     private let authService: FirebaseAuthService
     
     private let blacklist = ["food", "cuisine", "dish", "ingredient", "recipe", "tableware", "produce", "fast food"]
     private var typingCancellables = Set<AnyCancellable>()
-    
-    // 👉 Quản lý luồng gọi AI để có thể hủy bỏ khi bấm Lưu
     private var aiAdviceTask: Task<Void, Never>?
     
     private let model = GenerativeModel(
@@ -55,14 +59,24 @@ class FoodAnalysisViewModel: ObservableObject {
         requestOptions: RequestOptions(apiVersion: "v1")
     )
     
-    init(image: UIImage, authService: FirebaseAuthService) {
+    // 👉 Init hỗ trợ cả 2 luồng: Nhận diện ảnh và Chọn từ danh sách
+    init(food: Food? = nil, image: UIImage? = nil, authService: FirebaseAuthService, isEditableNutrition: Bool = false) {
+        self.analyzedFood = food
         self.selectedImage = image
         self.authService = authService
+        self.isEditableNutrition = isEditableNutrition
+        
+        // Nếu có sẵn thức ăn từ danh sách, set giá trị mặc định cho form
+        if let preloadedFood = food {
+            self.weight = preloadedFood.servingSize
+            self.quantity = preloadedFood.quantity
+            self.editableCalories = preloadedFood.calories
+            self.editableProtein = preloadedFood.protein
+            self.editableCarbs = preloadedFood.carbs
+            self.editableFats = preloadedFood.fats
+        }
+        
         updateMealType()
-    }
-    
-    private var currentUser: User? {
-        return authService.currentUser
     }
     
     func updateMealType() {
@@ -78,13 +92,13 @@ class FoodAnalysisViewModel: ObservableObject {
     }
     
     func startAnalysis() async {
-        guard !isAnalyzing && analyzedFood == nil else { return }
+        guard let imageToAnalyze = selectedImage, !isAnalyzing, analyzedFood == nil else { return }
         isAnalyzing = true
         errorMessage = nil
         self.advice = nil
-        cancelAILuongAndEffects() // Đảm bảo dọn dẹp luồng cũ
+        cancelAILuongAndEffects()
         
-        visionService.analyzeImage(uiImage: selectedImage) { [weak self] result in
+        visionService.analyzeImage(uiImage: imageToAnalyze) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 switch result {
@@ -99,14 +113,9 @@ class FoodAnalysisViewModel: ObservableObject {
                     if let topLabel = filteredLabels.first {
                         let topResult = topLabel.description
                         self.confidence = Double(topLabel.score)
-                        self.suggestions = filteredLabels
-                            .dropFirst()
-                            .prefix(5)
-                            .compactMap { $0.description }
+                        self.suggestions = filteredLabels.dropFirst().prefix(5).compactMap { $0.description }
                         
-                        Task {
-                            await self.getNutritionData(for: topResult)
-                        }
+                        Task { await self.getNutritionData(for: topResult) }
                     } else {
                         self.handleError("Không thể nhận diện cụ thể món ăn này.")
                     }
@@ -132,7 +141,6 @@ class FoodAnalysisViewModel: ObservableObject {
                 return
             }
             
-            // ✅ TÁCH LUỒNG: Trả kết quả dinh dưỡng thô về UI trước để hiển thị biểu đồ/hình ảnh lập tức
             if let parsedItem = edamamData.parsed.first {
                 self.analyzedFood = Food(from: parsedItem.food, measure: nil)
             } else if let hintItem = edamamData.hints.first {
@@ -140,10 +148,16 @@ class FoodAnalysisViewModel: ObservableObject {
                 self.analyzedFood = Food(from: hintItem.food, measure: firstMeasure)
             }
             
+            // Cập nhật lại các biến editable nếu vừa nhận diện xong
+            if let food = self.analyzedFood {
+                self.editableCalories = food.calories
+                self.editableProtein = food.protein
+                self.editableCarbs = food.carbs
+                self.editableFats = food.fats
+            }
+            
             self.isAnalyzing = false
             self.updateMealType()
-            
-            // ✅ Đẩy việc phân tích lời khuyên AI sang luồng nền song song, không chặn luồng chính
             self.updateAIAdvice()
             
         } else {
@@ -159,36 +173,38 @@ class FoodAnalysisViewModel: ObservableObject {
         cancelAILuongAndEffects()
     }
     
-    func valueFor(_ baseValue: Double) -> Double {
-        return (baseValue / 100.0) * weight * quantity
+    // 👉 LOGIC TÍNH TOÁN HIỂN THỊ (Hỗ trợ cả edit và base)
+    private func calculateValue(baseMacro: Double) -> Double {
+        guard let food = analyzedFood else { return 0 }
+        let baseServing = food.servingSize != 0 ? food.servingSize : 100.0
+        let baseQuantity = food.quantity != 0 ? food.quantity : 1.0
+        
+        let weightRatio = weight / baseServing
+        let quantityRatio = quantity / baseQuantity
+        
+        return baseMacro * weightRatio * quantityRatio
     }
     
+    // Các biến dùng cho UI và lưu trữ cuối cùng
+    var displayCalories: Double { calculateValue(baseMacro: isEditableNutrition ? editableCalories : (analyzedFood?.calories ?? 0)) }
+    var displayProtein: Double { calculateValue(baseMacro: isEditableNutrition ? editableProtein : (analyzedFood?.protein ?? 0)) }
+    var displayCarbs: Double { calculateValue(baseMacro: isEditableNutrition ? editableCarbs : (analyzedFood?.carbs ?? 0)) }
+    var displayFats: Double { calculateValue(baseMacro: isEditableNutrition ? editableFats : (analyzedFood?.fats ?? 0)) }
+    
     func updateAIAdvice() {
-        guard let food = analyzedFood, let user = currentUser else {
+        guard let food = analyzedFood, let userId = Auth.auth().currentUser?.uid else {
             self.advice = nil
             return
         }
         
-        let currentMealCalories = valueFor(food.calories)
-        let currentMealProtein = valueFor(food.protein)
-        let currentMealCarbs = valueFor(food.carbs)
-        let currentMealFats = valueFor(food.fats)
-        let currentMealWeight = weight * quantity
-        
         self.isAdviceLoading = true
-        
-        // Hủy task cũ nếu có trước khi tạo task mới
         aiAdviceTask?.cancel()
         
-        // 👉 Khởi tạo luồng Task chạy song song phân tích AI
         aiAdviceTask = Task {
             let currentHour = Calendar.current.component(.hour, from: self.mealDate)
             
-            // Bọc việc gọi Firebase và Gemini trong một khối đùm bọc an toàn
-            FirebaseService.shared.fetchAIContextData(userId: user.userId, date: mealDate) { [weak self] result in
+            FirebaseService.shared.fetchAIContextData(userId: userId, date: mealDate) { [weak self] result in
                 guard let self = self else { return }
-                
-                // Kiểm tra xem Task này có bị hủy giữa chừng (do người dùng bấm Lưu) không
                 if Task.isCancelled { return }
                 
                 Task {
@@ -206,11 +222,11 @@ class FoodAnalysisViewModel: ObservableObject {
                             let currentW = plan.currentWeight ?? 0.0
                             let targetW = plan.targetWeight ?? 0.0
                             if targetW > currentW && currentW > 0 {
-                                calculatedGoal = "Tăng cân (Mục tiêu: \(targetW)kg từ \(currentW)kg)"
+                                calculatedGoal = "Tăng cân"
                             } else if targetW < currentW && targetW > 0 {
-                                calculatedGoal = "Giảm cân (Mục tiêu: \(targetW)kg từ \(currentW)kg)"
+                                calculatedGoal = "Giảm cân"
                             } else {
-                                calculatedGoal = "Duy trì cân nặng (\(currentW)kg)"
+                                calculatedGoal = "Duy trì cân nặng"
                             }
                         }
                         if let summary = summary {
@@ -223,42 +239,21 @@ class FoodAnalysisViewModel: ObservableObject {
                     }
                     
                     let prompt = """
-                    Bạn là một chuyên gia phân tích dinh dưỡng lâm sàng tích hợp trong ứng dụng Nutrix. Hãy đưa ra lời khuyên định lượng siêu ngắn gọn cho người dùng tên Daz dựa trên số liệu thực tế dưới đây. 
-                    Tuyệt đối không viết dài dòng, bỏ qua hoàn toàn các lời chào hỏi và văn phong sáo rỗng. Đi thẳng vào số liệu phân tích cốt lõi.
+                    Bạn là chuyên gia dinh dưỡng. Trả về CHỈ 1 chuỗi JSON (không markdown, không text thừa). Dùng tiếng Việt: "Đạm", "Tinh bột", "Chất béo". Dùng \\n để xuống dòng, KHÔNG dùng Enter vật lý.
 
-                    [QUY TẮC NGÔN NGỮ BẮT BUỘC]
-                    - KHÔNG ĐƯỢC DÙNG từ tiếng Anh hoặc từ viết tắt như: Protein, Carbs, Fats, Macro, Macronutrients.
-                    - BẮT BUỘC DÙNG các từ tiếng Việt chuẩn: Đạm, Tinh bột, Chất béo.
+                    - Chiến lược: \(calculatedGoal)
+                    - Thời điểm: \(currentHour)h (\(self.selectedMealType.displayName))
+                    - Mục tiêu ngày: \(Int(planTargetCal)) Kcal | Đã nạp: \(Int(currentEatenCal)) Kcal
+                    - Phần ăn này (\(Int(self.weight * self.quantity))g): \(Int(self.displayCalories)) Kcal | Đạm: \(Int(self.displayProtein))g | Tinh bột: \(Int(self.displayCarbs))g | Béo: \(Int(self.displayFats))g
 
-                    [BỐI CẢNH LỘ TRÌNH CỦA DAZ]
-                    - Chiến lược từ lộ trình: \(calculatedGoal)
-                    - Thời điểm ăn: Lúc \(currentHour) giờ (Bữa \(self.selectedMealType.displayName))
-                    
-                    [CHỈ SỐ TOÀN NGÀY CỦA DAZ]
-                    - Mục tiêu lộ trình ngày: Nạp \(Int(planTargetCal)) Kcal | Đạm: \(Int(planPro))g | Tinh bột: \(Int(planCarb))g | Chất béo: \(Int(planFat))g
-                    - Đã nạp trước bữa này: \(Int(currentEatenCal)) Kcal | Đạm: \(Int(currentEatenPro))g | Tinh bột: \(Int(currentEatenCarb))g | Chất béo: \(Int(currentEatenFat))g
-                    - Năng lượng đã đốt qua tập luyện: \(Int(currentBurned)) Kcal
-
-                    [THÔNG TIN PHẦN ĂN HIỆN TẠI]
-                    - Món ăn: \(food.name) | Khối lượng dự định: \(Int(currentMealWeight))g
-                    - Dinh dưỡng phần này mang lại: \(Int(currentMealCalories)) Kcal | Đạm: \(Int(currentMealProtein))g | Tinh bột: \(Int(currentMealCarbs))g | Chất béo: \(Int(currentMealFats))g
-
-                    Hãy thực hiện phân tích theo đúng 4 tiêu chí bắt buộc với văn phong cực kỳ cô đọng (mỗi trường tối đa 1-2 câu ngắn):
-                    1. THỜI ĐIỂM SINH HỌC: Đánh giá ăn lúc \(currentHour)h có phù hợp đồng hồ sinh học không.
-                    2. TRẠNG THÁI DINH DƯỠNG LŨY KẾ: Tính toán nhanh cơ thể Daz đang thừa hay thiếu Đạm, Tinh bột, Chất béo lũy kế đến hiện tại so với mục tiêu ngày. Món này bù đắp hay làm dư thừa thêm chất nào?
-                    3. QUY TẮC PHÂN PHỐI NĂNG LƯỢNG THEO BỮA (ĐIỀU CHỈNH KHẨU PHẦN): Một bữa chính nên chiếm 25-35% calo ngày. Dựa trên năng lượng món hiện tại, hãy gợi ý cụ thể Daz nên điều chỉnh tăng hoặc giảm khối lượng món ăn này từ \(Int(currentMealWeight))g lên hoặc xuống chính xác bao nhiêu gram (hoặc đổi số lượng thành bao nhiêu phần) để vừa vặn với một bữa chính tiêu chuẩn.
-                    4. GIẢI PHÁP ĐỊNH LƯỢNG CỤ THỂ (DỰ PHÒNG HOẶC ĐỔI MÓN): Đưa ra hướng dẫn hành động nếu Daz giữ nguyên khối lượng hiện tại và KHÔNG tăng khẩu phần món này. Hãy gợi ý rõ Daz cần ăn thêm các món ăn phụ cụ thể nào kèm theo (ghi rõ khối lượng gram) để bù đắp chất đang thiếu hụt, HOẶC có thể đổi sang món ăn tương đương nào khác phù hợp hơn cho chiến lược mục tiêu.
-
-                    Yêu cầu định dạng đầu ra:
-                    Trả về duy nhất một chuỗi JSON Object sạch, không bọc markdown (```json). Ghi bằng tiếng Việt, gọi tên Daz. Các câu văn phải ngắn gọn, đi thẳng vào bản chất:
-                    CRITICAL: Các giá trị bên trong JSON KHÔNG ĐƯỢC chứa ký tự xuống dòng vật lý (Raw Newline). Nếu muốn xuống dòng phân tách các gạch đầu dòng trong trường "actionTip", bắt buộc phải sử dụng ký tự chữ viết liền '\\\\n' (ví dụ: "Ý một.\\\\n- Ý hai.").
+                    Định dạng JSON BẮT BUỘC:
                     {
                       "status": "success" hoặc "warning" hoặc "danger" hoặc "info",
-                      "title": "CHỈ chọn 1 trong các cụm từ cố định sau: 'Bữa ăn hợp lý' hoặc 'Cần bổ sung thêm' hoặc 'Không nên ăn' hoặc 'Cần giảm khẩu phần' tùy theo trạng thái ăn.",
-                      "timingAnalysis": "Phân tích khung giờ ăn ngắn gọn dưới 2 câu.",
-                      "macroBalance": "Phân tích thiếu thừa Đạm, Tinh bột, Chất béo lũy kế ngày ngắn gọn dưới 2 câu.",
-                      "portionRecommendation": "Gợi ý tăng hoặc giảm khối lượng món ăn hiện tại lên bao nhiêu gram hoặc bao nhiêu phần để đạt chuẩn năng lượng bữa ăn (1-2 câu).",
-                      "actionTip": "Gợi ý các thực phẩm phụ kèm khối lượng gram cụ thể nếu giữ nguyên lượng món ăn hiện tại, hoặc gợi ý một món ăn tương đương khác thay thế hoàn toàn."
+                      "title": "Bữa ăn hợp lý" hoặc "Cần bổ sung thêm" hoặc "Không nên ăn" hoặc "Cần giảm khẩu phần",
+                      "timingAnalysis": "Đánh giá ăn lúc \(currentHour)h (1-2 câu).",
+                      "macroBalance": "Đánh giá thiếu/thừa lũy kế (1-2 câu).",
+                      "portionRecommendation": "Gợi ý tăng/giảm số gram món này (1-2 câu).",
+                      "actionTip": "Gợi ý món phụ ăn kèm hoặc món đổi thay thế (1-2 câu)."
                     }
                     """
                     
@@ -268,12 +263,16 @@ class FoodAnalysisViewModel: ObservableObject {
                         let response = try await self.model.generateContent(prompt)
                         guard var rawString = response.text else { throw NSError(domain: "EmptyResponse", code: 0) }
                         
+                        // Làm sạch JSON cực mạnh để tránh lỗi Decoder
+                        rawString = rawString.trimmingCharacters(in: .whitespacesAndNewlines)
                         if rawString.hasPrefix("```json") { rawString = String(rawString.dropFirst(7)) }
                         else if rawString.hasPrefix("```") { rawString = String(rawString.dropFirst(3)) }
                         if rawString.hasSuffix("```") { rawString = String(rawString.dropLast(3)) }
                         rawString = rawString.trimmingCharacters(in: .whitespacesAndNewlines)
                         
-                        guard let rawData = rawString.data(using: .utf8) else { throw NSError(domain: "ConversionError", code: 0) }
+                        print("🤖 [AI RAW RESPONSE]:\n\(rawString)") // In ra để Debug
+                        
+                        guard let rawData = rawString.data(using: .utf8) else { throw NSError(domain: "DataConversionError", code: 0) }
                         let decodedAdvice = try JSONDecoder().decode(AIAdvice.self, from: rawData)
                         
                         if Task.isCancelled { return }
@@ -290,9 +289,10 @@ class FoodAnalysisViewModel: ObservableObject {
                         }
                     } catch {
                         if Task.isCancelled { return }
-                        print("[NUTRIX AI ERROR]: Lỗi kết nối hoặc cấu trúc: \(error)")
                         
-                        let isOverCalo = (currentEatenCal + currentMealCalories) > planTargetCal
+                        print("❌ [AI PARSING ERROR]: \(error.localizedDescription)") // Bắt lỗi để biết tại sao nhảy vào Catch
+                        
+                        let isOverCalo = (currentEatenCal + self.displayCalories) > planTargetCal
                         await MainActor.run {
                             self.clearStreamingStrings()
                             let fallbackAdvice = AIAdvice(
@@ -300,8 +300,8 @@ class FoodAnalysisViewModel: ObservableObject {
                                 title: isOverCalo ? "Cần giảm khẩu phần" : "Cần bổ sung thêm",
                                 timingAnalysis: "Ăn vào lúc \(currentHour)h cần được kiểm soát tốt định lượng nhằm tránh gây quá tải hệ tiêu hóa.",
                                 macroBalance: "Năng lượng ngày gần đạt giới hạn. Hãy chú ý cân bằng Đạm và Tinh bột.",
-                                portionRecommendation: "Khuyến nghị Daz giữ năng lượng bữa lẻ ở mức 25-35% calo ngày (~ \(Int(currentMealWeight * 0.7))g).",
-                                actionTip: "Cân nhắc vận động nhẹ 30 phút cuối ngày hoặc bổ sung thêm đạm sạch từ ức gà."
+                                portionRecommendation: "Khuyến nghị giữ năng lượng bữa lẻ ở mức 25-35% calo ngày.",
+                                actionTip: "Cân nhắc vận động nhẹ 30 phút cuối ngày hoặc bổ sung thêm rau xanh."
                             )
                             self.advice = fallbackAdvice
                             self.isAdviceLoading = false
@@ -341,7 +341,6 @@ class FoodAnalysisViewModel: ObservableObject {
         }
     }
     
-    // 👉 Hàm dọn dẹp các luồng chạy chữ và luồng xử lý AI background
     private func cancelAILuongAndEffects() {
         aiAdviceTask?.cancel()
         aiAdviceTask = nil
@@ -359,101 +358,61 @@ class FoodAnalysisViewModel: ObservableObject {
     }
     
     func saveFood(completion: @escaping () -> Void) {
-        print("🎬 [DEBUG SAVE] Bắt đầu gọi hàm saveFood()...")
-        
-        guard let food = analyzedFood else {
-            self.errorMessage = "Lỗi: Không tìm thấy thông tin món ăn đã phân tích."
-            print("❌ [DEBUG SAVE] Thất bại: analyzedFood bị nil.")
+        guard let food = analyzedFood, let userId = Auth.auth().currentUser?.uid, !isSaving else {
+            self.errorMessage = "Không tìm thấy dữ liệu thức ăn hoặc bạn chưa đăng nhập."
             return
         }
         
-        guard let user = currentUser else {
-            self.errorMessage = "Lỗi: Không tìm thấy thông tin người dùng."
-            print("❌ [DEBUG SAVE] Thất bại: currentUser bị nil.")
-            return
-        }
-        
-        guard !isSaving else {
-            print("⚠️ [DEBUG SAVE] Trùng lặp: Nút lưu đang xử lý, chặn bấm liên tục.")
-            return
-        }
-        
-        // Bắt đầu trạng thái lưu
         isSaving = true
-        
-        // 🚨 Ngắt luồng phân tích AI của Gemini ngay lập tức
         cancelAILuongAndEffects()
         self.isAdviceLoading = false
-        print("🛑 [DEBUG SAVE] Đã hủy tác vụ Gemini AI và dọn dẹp hiệu ứng chữ thành công.")
         
-        let currentWeight = self.weight
-        let currentQuantity = self.quantity
-        let calculatedCalories = self.valueFor(food.calories)
-        let calculatedProtein = self.valueFor(food.protein)
-        let calculatedCarbs = self.valueFor(food.carbs)
-        let calculatedFats = self.valueFor(food.fats)
-        
-        print("📸 [DEBUG SAVE] Bắt đầu upload ảnh lên Firebase Storage...")
-        
-        FirebaseService.shared.uploadFoodImage(image: selectedImage) { [weak self] result in
-            // Tách luồng: Đưa toàn bộ xử lý kết quả về Main Thread để an toàn cho UI và ViewModel
-            DispatchQueue.main.async {
-                guard let self = self else {
-                    print("🚨 [DEBUG SAVE] Cảnh báo: ViewModel đã bị giải phóng (deinit) trước khi upload ảnh xong. Callback kết thúc.")
-                    return
-                }
-                
-                switch result {
-                case .success(let imageUrl):
-                    print("✅ [DEBUG SAVE] Upload ảnh thành công. URL: \(imageUrl)")
-                    print("📦 [DEBUG SAVE] Đang khởi tạo Object Food final với định lượng thực tế...")
-                    
-                    let finalFood = Food(
-                        id: food.id,
-                        name: food.name,
-                        image: imageUrl,
-                        calories: calculatedCalories,
-                        protein: calculatedProtein,
-                        carbs: calculatedCarbs,
-                        fats: calculatedFats,
-                        servingSize: currentWeight,
-                        servingUnit: "Gram",
-                        quantity: currentQuantity
-                    )
-                    
-                    print("🗄️ [DEBUG SAVE] Bắt đầu ghi dữ liệu món ăn vào Firestore (addFoodToMeal)...")
-                    
-                    FirebaseService.shared.addFoodToMeal(
-                        userId: user.userId,
-                        mealType: self.selectedMealType,
-                        mealDate: self.mealDate,
-                        food: finalFood
-                    ) { [weak self] mealResult in
-                        
-                        DispatchQueue.main.async {
-                            guard let self = self else {
-                                print("🚨 [DEBUG SAVE] Cảnh báo: ViewModel bị deinit tại bước lưu Firestore. Gọi completion dự phòng.")
-                                completion()
-                                return
-                            }
-                            
-                            self.isSaving = false
-                            
-                            switch mealResult {
-                            case .success:
-                                print("🎉 [DEBUG SAVE] THÀNH CÔNG: Đã lưu nhật ký ăn uống vào Firestore thành công!")
-                                completion()
-                            case .failure(let error):
-                                print("❌ [DEBUG SAVE] Thất bại tại Firestore: \(error.localizedDescription)")
-                                self.errorMessage = "Lỗi Firestore: \(error.localizedDescription)"
-                            }
-                        }
+        if let imageToUpload = selectedImage {
+            FirebaseService.shared.uploadFoodImage(image: imageToUpload) { [weak self] result in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    switch result {
+                    case .success(let imageUrl):
+                        self.processFinalSave(food: food, userId: userId, imageUrl: imageUrl, completion: completion)
+                    case .failure(let error):
+                        self.isSaving = false
+                        self.errorMessage = "Lỗi tải ảnh: \(error.localizedDescription)"
                     }
-                    
+                }
+            }
+        } else {
+            // Lấy nguyên imageUrl có sẵn
+            processFinalSave(food: food, userId: userId, imageUrl: food.imageUrl, completion: completion)
+        }
+    }
+    
+    private func processFinalSave(food: Food, userId: String, imageUrl: String?, completion: @escaping () -> Void) {
+        let finalFood = Food(
+            id: food.id,
+            name: food.name,
+            image: imageUrl,
+            calories: self.displayCalories,
+            protein: self.displayProtein,
+            carbs: self.displayCarbs,
+            fats: self.displayFats,
+            servingSize: self.weight,
+            servingUnit: food.servingUnit,
+            quantity: self.quantity
+        )
+        
+        FirebaseService.shared.addFoodToMeal(
+            userId: userId,
+            mealType: self.selectedMealType,
+            mealDate: self.mealDate,
+            food: finalFood
+        ) { [weak self] mealResult in
+            DispatchQueue.main.async {
+                self?.isSaving = false
+                switch mealResult {
+                case .success:
+                    completion()
                 case .failure(let error):
-                    print("❌ [DEBUG SAVE] Thất bại tại Storage (Upload ảnh): \(error.localizedDescription)")
-                    self.isSaving = false
-                    self.errorMessage = "Lỗi tải ảnh: \(error.localizedDescription)"
+                    self?.errorMessage = "Lỗi Firestore: \(error.localizedDescription)"
                 }
             }
         }

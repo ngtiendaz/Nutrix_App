@@ -2,8 +2,6 @@
 //  FoodAnalysisView.swift
 //  Nutrix
 //
-//  Created by Daz on 3/5/26.
-//
 
 import SwiftUI
 
@@ -13,26 +11,27 @@ struct FoodAnalysisView: View {
     @Environment(\.dismiss) var dismiss
     @State private var scanAnimation = false
     @FocusState private var focusedField: Field?
+    @State private var isEditing = false
     
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject var loginViewModel: LoginViewModel
     @EnvironmentObject var diaryViewModel: DiaryViewModel
     
-    init(image: UIImage, authService: FirebaseAuthService, onSaveSuccess: (() -> Void)? = nil) {
-        _foodAnalysisViewModel = StateObject(wrappedValue: FoodAnalysisViewModel(image: image, authService: authService))
+    // 👉 Thay đổi Init để hỗ trợ cả Food có sẵn, Ảnh, và Cờ chỉnh sửa
+    init(food: Food? = nil, image: UIImage? = nil, authService: FirebaseAuthService, isEditableNutrition: Bool = false, onSaveSuccess: (() -> Void)? = nil) {
+        _foodAnalysisViewModel = StateObject(wrappedValue: FoodAnalysisViewModel(food: food, image: image, authService: authService, isEditableNutrition: isEditableNutrition))
         self.onSaveSuccess = onSaveSuccess
     }
     
     var onSaveSuccess: (() -> Void)? = nil
     
+    // Thêm các trường phục vụ focus bàn phím
     enum Field {
-        case weight
-        case quantity
+        case weight, quantity, calories, protein, carbs, fats
     }
     
     var body: some View {
         ZStack {
-            // 1. NỀN TRÀN TOÀN BỘ
             Color.App.background.ignoresSafeArea()
             
             VStack(spacing: 0) {
@@ -40,38 +39,58 @@ struct FoodAnalysisView: View {
                     .ignoresSafeArea(.all, edges: .top)
                 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
-                        imageSection
-                        
-                        if foodAnalysisViewModel.isAnalyzing {
-                            loadingView
+                    ScrollViewReader { proxy in
+                        VStack(spacing: 20) {
+                            imageSection
+                            
+                            if foodAnalysisViewModel.isAnalyzing {
+                                loadingView
+                            }
+                            else if let error = foodAnalysisViewModel.errorMessage {
+                                errorView(message: error)
+                            }
+                            else if let food = foodAnalysisViewModel.analyzedFood {
+                                VStack(spacing: 20) {
+                                    foodHeader(food: food)
+                                    nutritionCards
+                                    
+                                    portionInputSection
+                                        .id("inputs")
+                                    
+                                    // Bật form chỉnh sửa Macro nếu có cờ true
+                                    if foodAnalysisViewModel.isEditableNutrition {
+                                        editableNutritionSection
+                                    }
+                                    
+                                    mealTimeAndTypeSelector
+                                    smartRecommendation(food: food)
+                                }
+                            }
                         }
-                        else if let error = foodAnalysisViewModel.errorMessage {
-                            errorView(message: error)
-                        }
-                        else if let food = foodAnalysisViewModel.analyzedFood {
-                            foodContent(food: food)
+                        .padding(.bottom, 160)
+                        // Hiệu ứng cuộn tránh bàn phím
+                        .onChange(of: focusedField) { newValue in
+                            if newValue != nil {
+                                withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+                                    proxy.scrollTo("inputs", anchor: .bottom)
+                                }
+                            }
                         }
                     }
-                    .padding(.bottom, 160)
                 }
             }
             
-            // Action Buttons nằm ở dưới cùng
             if !foodAnalysisViewModel.isAnalyzing && foodAnalysisViewModel.analyzedFood != nil {
                 actionButtons
             }
 
-            // LOADING OVERLAY KHI LƯU
             if foodAnalysisViewModel.isSaving {
                 LoadingOverlay()
                     .transition(.opacity)
                     .zIndex(2)
             }
         }
-        .onTapGesture {
-            focusedField = nil
-        }
+        .onTapGesture { focusedField = nil }
         .navigationBarHidden(true)
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .toolbar {
@@ -81,12 +100,14 @@ struct FoodAnalysisView: View {
             }
         }
         .task {
-            // Chỉ gọi Start Analysis 1 lần duy nhất khi màn hình mới mở
-            if foodAnalysisViewModel.analyzedFood == nil {
+            // 👉 KIỂM TRA LUỒNG
+            if foodAnalysisViewModel.selectedImage != nil && foodAnalysisViewModel.analyzedFood == nil {
+                // Có ảnh mới chưa phân tích -> Chạy phân tích AI Vision
                 await foodAnalysisViewModel.startAnalysis()
+            } else if foodAnalysisViewModel.analyzedFood != nil && foodAnalysisViewModel.advice == nil {
+                // Đã có Food sẵn từ danh sách -> Bỏ qua Vision, chỉ lấy lời khuyên dinh dưỡng
+                foodAnalysisViewModel.updateAIAdvice()
             }
-            // Không cần gọi thủ công updateAIAdvice() ở đây nữa vì trong
-            // ViewModel hàm getNutritionData đã tự gọi khi thành công.
         }
     }
     
@@ -122,17 +143,33 @@ struct FoodAnalysisView: View {
                 .frame(width: UIScreen.main.bounds.width - 40, height: 280)
                 .shadow(color: .black.opacity(0.05), radius: 10)
 
-            Image(uiImage: foodAnalysisViewModel.selectedImage)
-                .resizable()
-                .scaledToFill()
-                .frame(width: UIScreen.main.bounds.width - 40, height: 280)
-                .clipShape(imageShape)
-                .overlay {
-                    if foodAnalysisViewModel.isAnalyzing {
-                        scanEffect
-                            .clipShape(imageShape)
+            // Hiển thị ảnh chụp HOẶC ảnh tải từ web xuống
+            if let uiImage = foodAnalysisViewModel.selectedImage {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: UIScreen.main.bounds.width - 40, height: 280)
+                    .clipShape(imageShape)
+            } else if let imageUrl = foodAnalysisViewModel.analyzedFood?.imageUrl, let url = URL(string: imageUrl) {
+                AsyncImage(url: url) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFill()
+                    } else {
+                        ZStack {
+                            Color.App.secondaryBackground
+                            Text("🍲").font(.system(size: 60))
+                        }
                     }
                 }
+                .frame(width: UIScreen.main.bounds.width - 40, height: 280)
+                .clipShape(imageShape)
+            }
+            
+            // Hiệu ứng scan chỉ chạy lúc đang phân tích Vision
+            if foodAnalysisViewModel.isAnalyzing {
+                scanEffect
+                    .clipShape(imageShape)
+            }
         }
         .padding(.top, 10)
     }
@@ -142,13 +179,8 @@ struct FoodAnalysisView: View {
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [
-                            .clear,
-                            Color.App.primary.opacity(0.5),
-                            .clear
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
+                        colors: [.clear, Color.App.primary.opacity(0.5), .clear],
+                        startPoint: .top, endPoint: .bottom
                     )
                 )
                 .frame(height: 60)
@@ -176,15 +208,18 @@ struct FoodAnalysisView: View {
             Text(food.name.uppercased())
                 .font(.App.title2)
                 .foregroundColor(.black)
-            ConfidenceBar(value: foodAnalysisViewModel.confidence)
+            
+            // Chỉ hiển thị thanh Confidence nếu có gợi ý phân tích từ Vision
+            if foodAnalysisViewModel.confidence > 0 {
+                ConfidenceBar(value: foodAnalysisViewModel.confidence)
+            }
+            
             if !foodAnalysisViewModel.suggestions.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
                         ForEach(foodAnalysisViewModel.suggestions, id: \.self) { suggestion in
                             Button {
                                 Task {
-                                    // Khi đổi món ăn khác thì ViewModel sẽ gọi lại getNutritionData
-                                    // và lấy AI Advice mới.
                                     await foodAnalysisViewModel.reAnalyze(with: suggestion)
                                 }
                             } label: {
@@ -204,11 +239,12 @@ struct FoodAnalysisView: View {
         .padding(.horizontal)
     }
     
-    private func nutritionCards(food: Food) -> some View {
+    // ĐÃ SỬA: Thay thế valueFor(food.calories) thành biến display... động
+    private var nutritionCards: some View {
         VStack(spacing: 20) {
             HStack {
                 VStack(alignment: .leading) {
-                    Text("\(Int(foodAnalysisViewModel.valueFor(food.calories)))")
+                    Text("\(Int(foodAnalysisViewModel.displayCalories))")
                         .font(.App.large)
                         .foregroundColor(Color.App.primary)
                     Text("Tổng Kcal")
@@ -222,9 +258,9 @@ struct FoodAnalysisView: View {
             }
             Divider()
             HStack(spacing: 15) {
-                NutrientMiniCard(title: "Tinh bột", value: foodAnalysisViewModel.valueFor(food.carbs), color: Color.blue)
-                NutrientMiniCard(title: "Chất đạm", value: foodAnalysisViewModel.valueFor(food.protein), color: Color.red)
-                NutrientMiniCard(title: "Chất béo", value: foodAnalysisViewModel.valueFor(food.fats), color: Color.orange)
+                NutrientMiniCard(title: "Tinh bột", value: foodAnalysisViewModel.displayCarbs, color: Color.blue)
+                NutrientMiniCard(title: "Chất đạm", value: foodAnalysisViewModel.displayProtein, color: Color.red)
+                NutrientMiniCard(title: "Chất béo", value: foodAnalysisViewModel.displayFats, color: Color.orange)
             }
         }
         .padding(20)
@@ -251,7 +287,6 @@ struct FoodAnalysisView: View {
                         .cornerRadius(12)
                         .foregroundColor(.black)
                 }
-                
                 Text("Grams")
                     .font(.App.captionMedium)
                     .foregroundColor(.gray)
@@ -272,7 +307,6 @@ struct FoodAnalysisView: View {
                         .cornerRadius(12)
                         .foregroundColor(.black)
                 }
-                
                 Text("Số lượng")
                     .font(.App.captionMedium)
                     .foregroundColor(.gray)
@@ -283,9 +317,143 @@ struct FoodAnalysisView: View {
         .cornerRadius(20)
         .shadow(color: Color.black.opacity(0.03), radius: 10)
         .padding(.horizontal)
-        // ĐÃ XÓA .onChange ở đây để không load lại AI
     }
 
+    // 👉 THÊM MỚI: Khối chỉnh sửa dinh dưỡng
+    private var editableNutritionSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Chỉnh sửa thông số cơ bản (1 phần)")
+                .font(.App.bodyBold)
+                .foregroundColor(.black)
+                .padding(.horizontal, 16)
+                .padding(.top, 10)
+            
+            VStack(spacing: 12) {
+                inputField(title: "Calories", value: $foodAnalysisViewModel.editableCalories, icon: "flame.fill", field: .calories)
+                
+                HStack(spacing: 16) {
+                    inputField(title: "Carbs (g)", value: $foodAnalysisViewModel.editableCarbs, icon: "chart.pie.fill", field: .carbs)
+                    inputField(title: "Protein (g)", value: $foodAnalysisViewModel.editableProtein, icon: "bolt.fill", field: .protein)
+                }
+                
+                HStack(spacing: 16) {
+                    inputField(title: "Fat (g)", value: $foodAnalysisViewModel.editableFats, icon: "drop.fill", field: .fats)
+                    Spacer()
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+
+    private func inputField(title: String, value: Binding<Double>, icon: String, field: Field) -> some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.App.body)
+                    .foregroundColor(.gray)
+                TextField("", value: value, format: .number)
+                    .keyboardType(.decimalPad)
+                    .focused($focusedField, equals: field)
+                    .font(.App.title)
+                    .foregroundColor(.black)
+                    .multilineTextAlignment(.leading)
+            }
+            .padding(14)
+            .background(Color.black.opacity(0.04))
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(focusedField == field ? Color.App.primary.opacity(0.5) : Color.clear, lineWidth: 2)
+            )
+            
+            Text(title)
+                .font(.App.captionMedium)
+                .foregroundColor(.gray)
+        }
+        .frame(maxWidth: .infinity)
+        .animation(.easeInOut(duration: 0.2), value: focusedField)
+    }
+
+    @ViewBuilder
+    private func errorView(message: String) -> some View {
+        VStack(spacing: 25) {
+            VStack(spacing: 15) {
+                Image(systemName: "camera.viewfinder")
+                    .font(.App.huge)
+                    .foregroundColor(Color.App.lightGray)
+                    .padding(.top, 20)
+                
+                Text("Không nhận diện được")
+                    .font(.App.title2)
+                    .foregroundColor(.black)
+                
+                Text(message)
+                    .font(.App.headline)
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+                    .lineSpacing(4)
+            }
+            
+            Button {
+                dismiss() // Quay lại để thử cách khác
+            } label: {
+                HStack {
+                    Image(systemName: "arrow.left")
+                    Text("Trở lại")
+                }
+                .font(.App.bodyBold)
+                .foregroundColor(Color.App.primary)
+                .padding(.horizontal, 30)
+                .padding(.vertical, 15)
+                .background(Color.App.primaryLight)
+                .cornerRadius(15)
+            }
+        }
+        .padding(.top, 20)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    private var mealTimeAndTypeSelector: some View {
+        HStack(spacing: 12) {
+            DatePicker(
+                "",
+                selection: $foodAnalysisViewModel.mealDate,
+                displayedComponents: .hourAndMinute
+            )
+            .labelsHidden()
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.black.opacity(0.05))
+            .cornerRadius(12)
+            
+            HStack(spacing: 6) {
+                Image(systemName: getIconForMeal(foodAnalysisViewModel.selectedMealType))
+                Text(foodAnalysisViewModel.selectedMealType.displayName)
+            }
+            .font(.App.bodyLarge)
+            .foregroundColor(Color.App.primary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(Color.App.primaryLight.opacity(0.5))
+            .clipShape(Capsule())
+            
+            Spacer()
+        }
+        .padding(.horizontal)
+    }
+
+    private func getIconForMeal(_ type: MealType) -> String {
+        switch type {
+        case .breakfast: return "sun.and.horizon.fill"
+        case .lunch: return "sun.max.fill"
+        case .afternoon: return "leaf.fill"
+        case .dinner: return "moon.fill"
+        case .night: return "moon.stars.fill"
+        case .snack: return "birthday.cake.fill"
+        }
+    }
+    
     @ViewBuilder
     private func smartRecommendation(food: Food) -> some View {
         VStack(alignment: .leading, spacing: 15) {
@@ -421,97 +589,6 @@ struct FoodAnalysisView: View {
         .shadow(color: Color.black.opacity(0.03), radius: 10)
         .padding(.horizontal)
         .animation(.linear(duration: 0.15), value: foodAnalysisViewModel.isAdviceLoading)
-    }
-
-    @ViewBuilder
-    private func errorView(message: String) -> some View {
-        VStack(spacing: 25) {
-            VStack(spacing: 15) {
-                Image(systemName: "camera.viewfinder")
-                    .font(.App.huge)
-                    .foregroundColor(Color.App.lightGray)
-                    .padding(.top, 20)
-                
-                Text("Không nhận diện được")
-                    .font(.App.title2)
-                    .foregroundColor(.black)
-                
-                Text(message)
-                    .font(.App.headline)
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
-                    .lineSpacing(4)
-            }
-            
-            Button {
-                dismiss() // Quay lại để chụp ảnh mới
-            } label: {
-                HStack {
-                    Image(systemName: "arrow.left")
-                    Text("Thử lại với ảnh khác")
-                }
-                .font(.App.bodyBold)
-                .foregroundColor(Color.App.primary)
-                .padding(.horizontal, 30)
-                .padding(.vertical, 15)
-                .background(Color.App.primaryLight)
-                .cornerRadius(15)
-            }
-        }
-        .padding(.top, 20)
-        .transition(.move(edge: .bottom).combined(with: .opacity))
-    }
-
-    @ViewBuilder
-    private func foodContent(food: Food) -> some View {
-        VStack(spacing: 20) {
-            foodHeader(food: food)
-            nutritionCards(food: food)
-            portionInputSection
-            mealTimeAndTypeSelector
-            smartRecommendation(food: food)
-        }
-    }
-    
-    private var mealTimeAndTypeSelector: some View {
-        HStack(spacing: 12) {
-            DatePicker(
-                "",
-                selection: $foodAnalysisViewModel.mealDate,
-                displayedComponents: .hourAndMinute
-            )
-            .labelsHidden()
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.black.opacity(0.05))
-            .cornerRadius(12)
-            
-            HStack(spacing: 6) {
-                Image(systemName: getIconForMeal(foodAnalysisViewModel.selectedMealType))
-                Text(foodAnalysisViewModel.selectedMealType.displayName)
-            }
-            .font(.App.bodyLarge)
-            .foregroundColor(Color.App.primary)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(Color.App.primaryLight.opacity(0.5))
-            .clipShape(Capsule())
-            
-            Spacer()
-        }
-        .padding(.horizontal)
-    }
-
-    private func getIconForMeal(_ type: MealType) -> String {
-        switch type {
-        case .breakfast: return "sun.and.horizon.fill"
-        case .lunch: return "sun.max.fill"
-        case .afternoon: return "leaf.fill"
-        case .dinner: return "moon.fill"
-        case .night: return "moon.stars.fill"
-        case .snack: return "birthday.cake.fill"
-        }
     }
 
     private var actionButtons: some View {

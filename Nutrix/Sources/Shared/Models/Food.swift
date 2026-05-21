@@ -7,8 +7,6 @@
 
 import Foundation
 
-import Foundation
-
 struct Food: Codable, Identifiable , Hashable{
     let id: String
     let name: String

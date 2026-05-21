@@ -58,7 +58,14 @@ struct OptionDetail: View {
                 .ignoresSafeArea()
         }
         .fullScreenCover(isPresented: $isShowingListFood) {
-//            ListFood()
+            ListFoodView(onSaveSuccess: {
+                // 👉 Khi ListFood đã dismiss, đóng luôn OptionDetail
+                isPresented = false
+                // 👉 Load lại dữ liệu tại đây
+                diaryViewModel.refreshData()
+            })
+            .environmentObject(router)
+            .environmentObject(diaryViewModel)
         }
         // Sửa lại đoạn FullScreenCover
         .fullScreenCover(isPresented: Binding(

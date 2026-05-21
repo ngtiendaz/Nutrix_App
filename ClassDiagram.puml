@@ -1,0 +1,119 @@
+@startuml
+
+skinparam classAttributeIconSize 0
+
+class User
+class BodyMetrics
+class NutritionPlan
+class DailySummary
+
+class Meal {
+    +String id
+    +String userId
+    +MealType mealType
+    +List<Food> foods
+    +Double totalCalories
+    +Double totalProtein
+    +Double totalCarbs
+    +Double totalFats
+    +String dateKey
+    +String imageUrl
+    +Date createdAt
+}
+
+class Food {
+    +String id
+    +String name
+    +String imageUrl
+    +Data localImageData
+    +Double calories
+    +Double protein
+    +Double carbs
+    +Double fats
+    +Double servingSize
+    +Double quantity
+    +String servingUnit
+    +Date createdAt
+}
+
+enum MealType {
+    breakfast
+    lunch
+    afternoon
+    dinner
+    night
+    snack
+}
+
+class Activity {
+    +String id
+    +String name
+    +Double metValue
+    +String icon
+}
+
+class UserActivityLog {
+    +String id
+    +Activity activityType
+    +Double durationMinutes
+    +Double caloriesBurned
+    +String dateKey
+    +Date createdAt
+}
+
+class DailyGoal {
+    +String userId
+    +Date date
+    +Double targetCalories
+    +Double targetProtein
+    +Double targetFat
+    +Double targetCarbs
+    +Double targetWater
+}
+
+class DailyNutrition {
+    +String userId
+    +String date
+    +Double totalCalories
+    +Double totalProtein
+    +Double totalCarbs
+    +Double totalFat
+    +Double totalWater
+    +Double totalBurned
+}
+
+class NutritionGoal {
+    +String userId
+    +String goalType
+    +Double targetWeight
+    +Int duration
+    +Date createdAt
+}
+
+class AIAdvice {
+    +String status
+    +String title
+    +String timingAnalysis
+    +String macroBalance
+    +String portionRecommendation
+    +String actionTip
+}
+
+User "1" -- "0..*" BodyMetrics
+User "1" -- "0..1" NutritionPlan
+User "1" -- "0..*" DailySummary
+User "1" -- "0..*" Meal
+User "1" -- "0..*" UserActivityLog
+User "1" -- "0..*" DailyGoal
+User "1" -- "0..*" DailyNutrition
+
+Meal "1" *-- "1..*" Food : contains
+Meal --> MealType : categorized as
+
+UserActivityLog --> Activity : references
+
+DailySummary ..> NutritionPlan : snapshot
+DailySummary ..> Meal : aggregate intake
+DailySummary ..> UserActivityLog : aggregate burned
+
+@enduml
