@@ -126,13 +126,30 @@ class StatisticsViewModel: ObservableObject {
         
         let handler: (Result<StatisticsReport, Error>) -> Void = { [weak self] result in
             DispatchQueue.main.async {
-                self?.isLoading = false
+                guard let self = self else { return }
+                self.isLoading = false
                 switch result {
                 case .success(let data):
-                    self?.report = data
-                    self?.monthSliceIndex = 0
+                    self.report = data
+                    
+                    // MẶC ĐỊNH: Nếu là tháng hiện tại, nhảy đến khung thời gian chứa ngày hôm nay
+                    if self.selectedTab == .month {
+                        let calendar = Calendar.current
+                        let now = Date()
+                        let currentMonth = calendar.component(.month, from: now)
+                        let currentYear = calendar.component(.year, from: now)
+                        
+                        if self.selectedMonth == currentMonth && self.selectedYear == currentYear {
+                            let today = calendar.component(.day, from: now)
+                            self.monthSliceIndex = (today - 1) / self.daysPerPage
+                        } else {
+                            self.monthSliceIndex = 0
+                        }
+                    } else {
+                        self.monthSliceIndex = 0
+                    }
                 case .failure(let error):
-                    self?.errorMessage = error.localizedDescription
+                    self.errorMessage = error.localizedDescription
                 }
             }
         }

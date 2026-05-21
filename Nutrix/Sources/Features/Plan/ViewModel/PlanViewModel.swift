@@ -353,6 +353,7 @@ class PlanViewModel: ObservableObject {
             advice: current.advice,
             exercisePlan: current.exercisePlan,
             startDate: current.startDate,
+            endDate: current.endDate,
             currentWeight: Double(editCurrentWeight) ?? current.currentWeight,
             targetWeight: Double(editTargetWeight) ?? current.targetWeight
         )
@@ -362,11 +363,12 @@ class PlanViewModel: ObservableObject {
             userId: userId,
             plan: updatedPlan,
             startDate: current.startDate ?? Date(),
-            endDate: Date().addingTimeInterval(30*24*60*60),
+            endDate: current.endDate ?? Date().addingTimeInterval(30*24*60*60),
             currentWeight: updatedPlan.currentWeight ?? 0.0,
             targetWeight: updatedPlan.targetWeight ?? 0.0,
             isActive: true
-        ) { [weak self] result in
+        )
+ { [weak self] result in
             DispatchQueue.main.async {
                 self?.isLoading = false
                 switch result {
