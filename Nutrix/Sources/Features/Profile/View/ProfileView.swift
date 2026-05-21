@@ -139,10 +139,57 @@ struct ProfileView: View {
                     InfoRow(label: "Tuổi", value: $profileViewModel.age, unit: "tuổi", isEditing: profileViewModel.isEditingBasic, placeholder: "0", onEditing: { scrollTarget = .basicInfo })
                     genderPickerRow
                     activityPickerRow
+                    healthNoteRow
                 }
             }
             .padding(20).background(Color.white).cornerRadius(24).shadow(color: Color.black.opacity(0.03), radius: 12, x: 0, y: 8)
         }
+
+    private var healthNoteRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 0) {
+                Text("Ghi chú sức khỏe").font(.App.headline).foregroundColor(.black)
+                Spacer()
+            }
+            
+            if profileViewModel.isEditingBasic {
+                TextEditor(text: $profileViewModel.healthNote)
+                    .font(.App.subheadline)
+                    .foregroundColor(.black)
+                    .frame(minHeight: 80)
+                    .padding(8)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.white)
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                    )
+                    .overlay(
+                        Group {
+                            if profileViewModel.healthNote.isEmpty {
+                                Text("VD: Tiền sử tiểu đường, dị ứng hải sản...")
+                                    .font(.App.subheadline)
+                                    .foregroundColor(.gray)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 16)
+                                    .allowsHitTesting(false)
+                            }
+                        },
+                        alignment: .topLeading
+                    )
+            } else {
+                Text(profileViewModel.healthNote.isEmpty ? "Không có ghi chú" : profileViewModel.healthNote)
+                    .font(.App.subheadline)
+                    .foregroundColor(profileViewModel.healthNote.isEmpty ? .gray : .black)
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.black.opacity(0.02))
+                    .cornerRadius(10)
+            }
+        }
+        .padding(.top, 5)
+    }
 
     private var editBasicInfoButton: some View {
             Button(action: {

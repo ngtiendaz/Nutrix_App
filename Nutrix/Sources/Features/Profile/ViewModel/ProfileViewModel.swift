@@ -15,6 +15,7 @@ class ProfileViewModel: ObservableObject {
     @Published var age: String = ""
     @Published var gender: String = "Nam"
     @Published var activityLevel: String = "Vừa phải"
+    @Published var healthNote: String = ""
     
     @Published var isEditingBasic: Bool = false   // Cho Tên, Tuổi, Giới tính...
     @Published var isEditingMetrics: Bool = false // Cho Cao, Nặng
@@ -38,10 +39,12 @@ class ProfileViewModel: ObservableObject {
         age = user.age != nil ? "\(user.age!)" : ""
         gender = user.gender ?? "Nam"
         activityLevel = user.activityLevel ?? "Vừa phải"
+        healthNote = user.healthNote ?? ""
         
         initialData = [
             "name": name, "weight": weight, "height": height,
-            "age": age, "gender": gender, "activityLevel": activityLevel
+            "age": age, "gender": gender, "activityLevel": activityLevel,
+            "healthNote": healthNote
         ]
     }
     
@@ -50,7 +53,8 @@ class ProfileViewModel: ObservableObject {
                 "name": name,
                 "age": Int(age) ?? 0,
                 "gender": gender,
-                "activityLevel": activityLevel
+                "activityLevel": activityLevel,
+                "healthNote": healthNote
             ]
             
             authService.updateBasicProfile(data: data) { [weak self] error in

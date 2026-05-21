@@ -15,6 +15,7 @@ class AIPlanViewModel: ObservableObject {
     @Published var targetWeight: String = ""
     @Published var duration: Double = 1.0
     @Published var exerciseTime: String = "30"
+    @Published var healthNote: String = ""
     @Published var generatedPlan: NutritionPlan?
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
@@ -36,6 +37,7 @@ class AIPlanViewModel: ObservableObject {
         Context: Bạn là chuyên gia dinh dưỡng và huấn luyện viên cá nhân của ứng dụng Nutrix.
         User: \(user.name), \(user.age ?? 22) tuổi, nặng \(user.weight ?? 0)kg, cao \(user.height ?? 0)cm.
         Mức độ hoạt động hiện tại: \(userActivity).
+        Tình trạng sức khỏe/Lưu ý: \(healthNote.isEmpty ? "Không có lưu ý đặc biệt" : healthNote).
         Goal: Mục tiêu nặng \(targetWeight)kg trong \(Int(duration)) tháng.
         Thời gian tập luyện cam kết: \(exerciseTime) phút/ngày.
         
@@ -43,14 +45,15 @@ class AIPlanViewModel: ObservableObject {
         1. Tính TDEE dựa trên chỉ số cơ thể và mức độ hoạt động (\(userActivity)).
         2. Tính 'dailyCalories' (lượng calo nạp vào hàng ngày để đạt mục tiêu).
         3. Tính 'activityCalories' (lượng calo mục tiêu cần đốt cháy thông qua tập luyện mỗi ngày).
-        4. Đề xuất 'exercisePlan' CỤ THỂ dựa trên mức độ hoạt động (\(userActivity)):
+        4. Đề xuất 'exercisePlan' CỤ THỂ dựa trên mức độ hoạt động (\(userActivity)) và Tình trạng sức khỏe:
            - Nếu ít vận động: Gợi ý các bài tập cường độ nhẹ, tăng dần.
            - Nếu vận động nhiều: Gợi ý các bài tập cường độ cao, tối ưu cơ bắp.
+           - ĐẶC BIỆT: Nếu người dùng có bệnh lý (ví dụ: đau khớp, tiểu đường, tim mạch...) được ghi trong "Tình trạng sức khỏe", hãy điều chỉnh bài tập và lời khuyên dinh dưỡng cho PHÙ HỢP và AN TOÀN.
 
         Yêu cầu:
         1. Trả về DUY NHẤT 1 JSON object, không markdown.
-        2. 'advice': Ngắn gọn, tập trung vào chế độ ăn và tính khả thi (2-3 câu).
-        3. 'exercisePlan': Phải phù hợp với \(exerciseTime) phút tập luyện.
+        2. 'advice': Ngắn gọn, tập trung vào chế độ ăn, tính khả thi và CÁC LƯU Ý SỨC KHỎE nếu có (2-3 câu).
+        3. 'exercisePlan': Phải phù hợp với \(exerciseTime) phút tập luyện và an toàn cho sức khỏe người dùng.
         
         JSON Structure:
         {

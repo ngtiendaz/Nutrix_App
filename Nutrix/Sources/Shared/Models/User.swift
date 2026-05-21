@@ -19,6 +19,7 @@ struct User: Codable {
     var weight: Double?
     var activityLevel: String?
     var goal: String?
+    var healthNote: String?
     
     let createdAt: Date
     
@@ -32,6 +33,7 @@ struct User: Codable {
         self.weight = dictionary["weight"] as? Double
         self.activityLevel = dictionary["activityLevel"] as? String
         self.goal = dictionary["goal"] as? String
+        self.healthNote = dictionary["healthNote"] as? String
         self.createdAt = (dictionary["createdAt"] as? Timestamp)?.dateValue() ?? Date()
     }
 }

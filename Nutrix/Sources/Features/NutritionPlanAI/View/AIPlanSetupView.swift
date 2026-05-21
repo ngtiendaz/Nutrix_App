@@ -64,6 +64,8 @@ struct AIPlanSetupView: View {
                                                 exerciseTimeCard
                                                 durationCard
                                             }
+                                            
+                                            healthNoteSection
                                         }
                                     }
                                     .padding(.horizontal, 12)
@@ -91,6 +93,11 @@ struct AIPlanSetupView: View {
                                 Button("Đóng") { dismiss() }
                                     .foregroundColor(.gray)
                                     .font(.App.bodyLarge)
+                            }
+                        }
+                        .onAppear {
+                            if vm.healthNote.isEmpty {
+                                vm.healthNote = user.healthNote ?? ""
                             }
                         }
                     }
@@ -303,6 +310,48 @@ struct AIPlanSetupView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding(18)
+        .background(Color.white)
+        .cornerRadius(24)
+        .shadow(color: .black.opacity(0.03), radius: 10, x: 0, y: 5)
+    }
+    
+    private var healthNoteSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "heart.text.square.fill")
+                    .foregroundColor(.red)
+                Text("Ghi chú sức khỏe (Tùy chọn)")
+                    .font(.App.headline)
+                    .foregroundColor(.black)
+            }
+            
+            TextEditor(text: $vm.healthNote)
+                .font(.App.subheadline)
+                .foregroundColor(.black)
+                .frame(height: 100)
+                .padding(8)
+                .scrollContentBackground(.hidden)
+                .background(Color.white)
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                )
+                .overlay(
+                    Group {
+                        if vm.healthNote.isEmpty {
+                            Text("Nhập tình trạng sức khỏe, bệnh lý hoặc lưu ý đặc biệt để AI đưa ra lộ trình phù hợp hơn...")
+                                .font(.App.subheadline)
+                                .foregroundColor(.gray)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 16)
+                                .allowsHitTesting(false)
+                        }
+                    },
+                    alignment: .topLeading
+                )
+        }
+        .padding(20)
         .background(Color.white)
         .cornerRadius(24)
         .shadow(color: .black.opacity(0.03), radius: 10, x: 0, y: 5)
