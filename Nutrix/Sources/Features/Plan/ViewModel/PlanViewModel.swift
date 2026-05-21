@@ -14,12 +14,13 @@ struct WeightChartPoint: Identifiable {
 class PlanViewModel: ObservableObject {
     @Published var currentPlan: NutritionPlan? = nil
     @Published var historyPlans: [NutritionPlan] = []
-    @Published var weeklyStreak: [(dayName: String, isCompleted: Bool)] = []
+    @Published var weeklyStreak: [(dayName: String, isCompleted: Bool, isToday: Bool)] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
     
     // Lưu trữ thông tin User thực tế lấy từ FirebaseAuthService
     @Published var user: User? = nil
+    @Published var metricsHistory: [BodyMetrics] = []
     
     // Input tạm phục vụ cho chế độ Edit toàn bộ Plan
     @Published var isEditingPlan: Bool = false
@@ -34,29 +35,18 @@ class PlanViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let authService: FirebaseAuthService
     
-    // Computed property chuyển đổi danh sách lộ trình thành dữ liệu vẽ biểu đồ đường
+    // Computed property chuyển đổi danh sách chỉ số cơ thể thành dữ liệu vẽ biểu đồ
     var weightChartData: [WeightChartPoint] {
         var points: [WeightChartPoint] = []
         let formatter = DateFormatter()
         formatter.dateFormat = "dd/MM"
         
-        // 1. Lấy chỉ số từ các lộ trình cũ trong lịch sử (đảo ngược để chạy tuyến tính từ cũ đến mới nhất)
-        let sortedHistory = historyPlans.reversed()
-        for plan in sortedHistory {
-            if let start = plan.startDate {
-                let label = formatter.string(from: start)
-                if let currentW = plan.currentWeight {
-                    points.append(WeightChartPoint(dateLabel: label, weight: currentW, type: "Cân nặng"))
-                }
-            }
-        }
+        // Sắp xếp lịch sử từ cũ đến mới (metricsHistory thường là mới nhất trước)
+        let sortedMetrics = metricsHistory.sorted(by: { $0.timestamp < $1.timestamp })
         
-        // 2. Thêm chỉ số của lộ trình đang kích hoạt hiện tại ở cuối biểu đồ
-        if let currentPlan = currentPlan, let start = currentPlan.startDate {
-            let label = formatter.string(from: start)
-            if let currentW = currentPlan.currentWeight {
-                points.append(WeightChartPoint(dateLabel: label, weight: currentW, type: "Cân nặng"))
-            }
+        for metric in sortedMetrics {
+            let label = formatter.string(from: metric.timestamp)
+            points.append(WeightChartPoint(dateLabel: label, weight: metric.weight, type: "Cân nặng"))
         }
         
         return points
@@ -108,6 +98,19 @@ class PlanViewModel: ObservableObject {
                 group.leave()
             }
         }
+
+        group.enter()
+        authService.fetchBodyMetricsHistory { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let history):
+                    self?.metricsHistory = history
+                case .failure(let error):
+                    print("Lỗi load metrics: \(error)")
+                }
+                group.leave()
+            }
+        }
         
         group.enter()
         fetchRealWeeklyStreak(userId: userId) {
@@ -122,25 +125,29 @@ class PlanViewModel: ObservableObject {
     private func fetchRealWeeklyStreak(userId: String, completion: @escaping () -> Void) {
         let db = Firestore.firestore()
         let calendar = Calendar.current
-        let today = Date()
+        let today = calendar.startOfDay(for: Date())
         
-        var targetDays: [(dayName: String, dateKey: String)] = []
+        // Tìm ngày Thứ 2 của tuần hiện tại
+        var calendarForMonday = calendar
+        calendarForMonday.firstWeekday = 2 // Monday
+        
+        let components = calendarForMonday.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)
+        guard let monday = calendarForMonday.date(from: components) else {
+            completion()
+            return
+        }
+        
+        var targetDays: [(dayName: String, dateKey: String, isToday: Bool)] = []
         let keyFormatter = DateFormatter()
         keyFormatter.dateFormat = "yyyy-MM-dd"
         
-        let weekdayFormatter = DateFormatter()
-        weekdayFormatter.locale = Locale(identifier: "vi_VN")
-        weekdayFormatter.dateFormat = "E"
+        let weekdayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
         
-        for i in (0...6).reversed() {
-            if let date = calendar.date(byAdding: .day, value: -i, to: today) {
+        for i in 0...6 {
+            if let date = calendar.date(byAdding: .day, value: i, to: monday) {
                 let dateKey = keyFormatter.string(from: date)
-                var name = weekdayFormatter.string(from: date)
-                
-                name = name.replacingOccurrences(of: "Th ", with: "T")
-                if name.contains("Chủ") || name.contains("CN") { name = "CN" }
-                
-                targetDays.append((dayName: name, dateKey: dateKey))
+                let isToday = calendar.isDate(date, inSameDayAs: today)
+                targetDays.append((dayName: weekdayNames[i], dateKey: dateKey, isToday: isToday))
             }
         }
         
@@ -151,16 +158,16 @@ class PlanViewModel: ObservableObject {
                     return
                 }
                 
-                var updatedStreak: [(dayName: String, isCompleted: Bool)] = []
+                var updatedStreak: [(dayName: String, isCompleted: Bool, isToday: Bool)] = []
                 let documents = snapshot?.documents ?? []
                 
                 for day in targetDays {
                     if let doc = documents.first(where: { $0.documentID == day.dateKey }) {
                         let data = doc.data()
                         let totalCalories = data["totalCalories"] as? Double ?? data["intakeCalories"] as? Double ?? 0.0
-                        updatedStreak.append((dayName: day.dayName, isCompleted: totalCalories > 0))
+                        updatedStreak.append((dayName: day.dayName, isCompleted: totalCalories > 0, isToday: day.isToday))
                     } else {
-                        updatedStreak.append((dayName: day.dayName, isCompleted: false))
+                        updatedStreak.append((dayName: day.dayName, isCompleted: false, isToday: day.isToday))
                     }
                 }
                 

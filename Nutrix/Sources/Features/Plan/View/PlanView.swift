@@ -134,7 +134,7 @@ struct PlanView: View {
                 }
                 Spacer()
                 
-                Text("\(progress.daysPassed)/\(progress.totalDays) ngày")
+                Text("\(progress.daysPassed + 1)/\(progress.totalDays) ngày")
                     .font(.App.subheadline)
                     .foregroundColor(.black)
                     .padding(.horizontal, 12)
@@ -236,81 +236,72 @@ struct PlanView: View {
         .cornerRadius(24)
         .shadow(color: .black.opacity(0.02), radius: 15, x: 0, y: 8)
     }
-    // Đổi 'var' thành 'func' ở đây
     private func weightTrendChartSection(plan: NutritionPlan) -> some View {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Xu hướng thay đổi cân nặng")
+                Text("Biến động cân nặng")
                     .font(.App.sectionHeader)
                     .foregroundColor(.black)
                     .padding(.horizontal, 4)
                 
                 VStack(alignment: .leading, spacing: 15) {
-                    if planViewModel.weightChartData.count < 2 {
+                    if planViewModel.weightChartData.count < 1 {
                         HStack {
                             Spacer()
                             VStack(spacing: 8) {
                                 Image(systemName: "chart.line.uptrend.xyaxis")
                                     .font(.App.header)
-                                    .foregroundColor(.gray.opacity(0.5))
-                                Text("Cần tối thiểu 2 mốc lộ trình ghi nhận để vẽ biểu đồ.")
+                                    .foregroundColor(.gray.opacity(0.3))
+                                Text("Cập nhật cân nặng trong Profile để theo dõi.")
                                     .font(.App.captionMedium)
                                     .foregroundColor(.gray)
-                                    .multilineTextAlignment(.center)
                             }
                             .padding(.vertical, 30)
                             Spacer()
                         }
                     } else {
                         Chart {
+                            // Đường mục tiêu (Goal Line) - Chuyển xuống dưới để không đè lên text
+                            if let target = plan.targetWeight {
+                                RuleMark(y: .value("Mục tiêu", target))
+                                    .foregroundStyle(.orange.opacity(0.4))
+                                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
+                            }
+
                             ForEach(planViewModel.weightChartData) { point in
                                 LineMark(
-                                    x: .value("Giai đoạn", point.dateLabel),
+                                    x: .value("Ngày", point.dateLabel),
                                     y: .value("Cân nặng", point.weight)
                                 )
                                 .foregroundStyle(Color.App.primary)
-                                .interpolationMethod(.catmullRom)
-                                .lineStyle(StrokeStyle(lineWidth: 3))
-                                
-                                AreaMark(
-                                    x: .value("Giai đoạn", point.dateLabel),
-                                    y: .value("Cân nặng", point.weight)
-                                )
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [Color.App.primary.opacity(0.15), Color.App.primary.opacity(0.01)],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-                                .interpolationMethod(.catmullRom)
+                                .lineStyle(StrokeStyle(lineWidth: 2.5))
                                 
                                 PointMark(
-                                    x: .value("Giai đoạn", point.dateLabel),
+                                    x: .value("Ngày", point.dateLabel),
                                     y: .value("Cân nặng", point.weight)
                                 )
                                 .foregroundStyle(Color.App.primary)
                                 .annotation(position: .top) {
-                                    Text("\(String(format: "%.1f", point.weight))kg")
-                                        .font(.App.tiny)
-                                        .foregroundColor(.black)
+                                    Text("\(String(format: "%.1f", point.weight))")
+                                        .font(.App.tinyMedium)
+                                        .foregroundColor(.black.opacity(0.8))
                                 }
                             }
                         }
-                        .frame(height: 140)
+                        .frame(height: 150)
                         .chartXAxis {
                             AxisMarks(values: .automatic) { _ in
                                 AxisValueLabel()
-                                    .font(.App.smallSemibold)
+                                    .font(.App.tiny)
                                     .foregroundStyle(.gray)
                             }
                         }
                         .chartYAxis {
                             AxisMarks(values: .automatic) { value in
-                                AxisGridLine().foregroundStyle(Color.black.opacity(0.03))
+                                AxisGridLine().foregroundStyle(Color.black.opacity(0.02))
                                 AxisValueLabel {
                                     if let intValue = value.as(Double.self) {
-                                        Text("\(Int(intValue)) kg")
-                                            .font(.App.tinyMedium)
+                                        Text("\(Int(intValue))")
+                                            .font(.App.tiny)
                                             .foregroundColor(.gray)
                                     }
                                 }
@@ -320,24 +311,19 @@ struct PlanView: View {
                     
                     HStack(spacing: 16) {
                         HStack(spacing: 6) {
-                            Circle().fill(Color.App.primary).frame(width: 8, height: 8)
-                            Text("Mốc cân nặng đầu lộ trình")
-                                .font(.App.smallSemibold)
+                            Circle().fill(Color.App.primary).frame(width: 6, height: 6)
+                            Text("Thực tế")
+                                .font(.App.small)
                                 .foregroundColor(.gray)
                         }
                         
-                        if let target = plan.targetWeight {
-                            HStack(spacing: 6) {
-                                Image(systemName: "flag.fill")
-                                    .font(.App.tinyMedium)
-                                    .foregroundColor(.orange)
-                                Text("Mục tiêu đạt: \(String(format: "%.1f", target)) kg")
-                                    .font(.App.small)
-                                    .foregroundColor(.black)
-                            }
+                        HStack(spacing: 6) {
+                            Rectangle().fill(Color.orange.opacity(0.4)).frame(width: 10, height: 1.5)
+                            Text("Mục tiêu (\(String(format: "%.1f", plan.targetWeight ?? 0))kg)")
+                                .font(.App.small)
+                                .foregroundColor(.gray)
                         }
                     }
-                    .padding(.top, 5)
                 }
                 .padding(18)
                 .background(Color.white)
@@ -357,8 +343,8 @@ struct PlanView: View {
                 ForEach(planViewModel.weeklyStreak, id: \.dayName) { day in
                     VStack(spacing: 8) {
                         Text(day.dayName)
-                            .font(.App.captionMedium)
-                            .foregroundColor(.black.opacity(0.6))
+                            .font(day.isToday ? .App.bodyBold : .App.captionMedium)
+                            .foregroundColor(day.isToday ? Color.App.primary : .black.opacity(0.6))
                         
                         ZStack {
                             Circle()

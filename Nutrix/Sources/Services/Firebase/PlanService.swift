@@ -131,6 +131,7 @@ extension FirebaseService {
                     advice: data["advice"] as? String ?? "",
                     exercisePlan: data["exercisePlan"] as? String ?? "",
                     startDate: (data["startDate"] as? Timestamp)?.dateValue(),
+                    endDate: (data["endDate"] as? Timestamp)?.dateValue(),
                     currentWeight: data["currentWeight"] as? Double ?? 0,
                     targetWeight: data["targetWeight"] as? Double ?? 0
                 )
