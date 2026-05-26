@@ -131,7 +131,13 @@ extension FoodDetailView {
                 if foodDetailViewModel.hasChanges {
                     Button {
                         focusedField = nil // Ẩn phím trước khi lưu
-                        foodDetailViewModel.updateFood()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            if let errorMsg = foodDetailViewModel.validateInputs() {
+                                router.showToast(message: errorMsg, type: .error)
+                                return
+                            }
+                            foodDetailViewModel.updateFood()
+                        }
                     } label: {
                         Text("Lưu")
                             .font(.App.sectionHeader)
@@ -213,7 +219,7 @@ extension FoodDetailView {
                     Image(systemName: icon)
                         .font(.App.body)
                         .foregroundColor(.gray)
-                    TextField("", value: value, format: .number)
+                    TextField("", text: value.doubleToString())
                         .keyboardType(.decimalPad)
                         .focused($focusedField, equals: field)
                         .font(.App.title)
@@ -252,5 +258,27 @@ extension FoodDetailView {
         }
         .padding(.horizontal, 16)
         .padding(.top, 10)
+    }
+}
+
+private extension Binding where Value == Double {
+    func doubleToString() -> Binding<String> {
+        Binding<String>(
+            get: {
+                let formatted = String(format: "%.1f", self.wrappedValue)
+                if formatted.hasSuffix(".0") {
+                    return String(formatted.dropLast(2))
+                }
+                return formatted
+            },
+            set: { newValue in
+                let cleaned = newValue.replacingOccurrences(of: ",", with: ".")
+                if let val = Double(cleaned) {
+                    self.wrappedValue = val
+                } else if newValue.isEmpty {
+                    self.wrappedValue = 0.0
+                }
+            }
+        )
     }
 }

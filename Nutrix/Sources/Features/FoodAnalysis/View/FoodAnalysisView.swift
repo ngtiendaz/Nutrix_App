@@ -87,6 +87,11 @@ struct FoodAnalysisView: View {
                     .transition(.opacity)
                     .zIndex(2)
             }
+
+            if router.toast != nil {
+                AppNotificationView(data: router.toast)
+                    .zIndex(999)
+            }
         }
         .navigationBarHidden(true)
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
@@ -304,7 +309,7 @@ struct FoodAnalysisView: View {
             HStack {
                 VStack(alignment: .leading) {
                     if isEditable {
-                        TextField("", value: $foodAnalysisViewModel.editableCalories, format: .number)
+                        TextField("", text: $foodAnalysisViewModel.editableCalories.doubleToString())
                             .keyboardType(.decimalPad)
                             .focused($focusedField, equals: .calories)
                             .font(.App.large)
@@ -368,7 +373,7 @@ struct FoodAnalysisView: View {
         field: Field
     ) -> some View {
         VStack(spacing: 8) {
-            TextField("", value: value, format: .number)
+            TextField("", text: value.doubleToString())
                 .keyboardType(.decimalPad)
                 .focused($focusedField, equals: field)
                 .font(.App.bodyBold)
@@ -394,7 +399,7 @@ struct FoodAnalysisView: View {
                     Image(systemName: "scalemass")
                         .foregroundColor(.gray)
 
-                    TextField("", value: $foodAnalysisViewModel.weight, format: .number)
+                    TextField("", text: $foodAnalysisViewModel.weight.doubleToString())
                         .keyboardType(.decimalPad)
                         .focused($focusedField, equals: .weight)
                         .font(.App.title2)
@@ -415,7 +420,7 @@ struct FoodAnalysisView: View {
                     Image(systemName: "number")
                         .foregroundColor(.gray)
 
-                    TextField("", value: $foodAnalysisViewModel.quantity, format: .number)
+                    TextField("", text: $foodAnalysisViewModel.quantity.doubleToString())
                         .keyboardType(.decimalPad)
                         .focused($focusedField, equals: .quantity)
                         .font(.App.title2)
@@ -672,10 +677,16 @@ struct FoodAnalysisView: View {
                 
                 Button {
                     focusedField = nil
-                    foodAnalysisViewModel.saveFood {
-                        DispatchQueue.main.async {
-                            UINotificationFeedbackGenerator().notificationOccurred(.success)
-                            onSaveSuccess?()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        if let validationError = foodAnalysisViewModel.validateInputs() {
+                            router.showToast(message: validationError, type: .error)
+                            return
+                        }
+                        foodAnalysisViewModel.saveFood {
+                            DispatchQueue.main.async {
+                                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                                onSaveSuccess?()
+                            }
                         }
                     }
                 } label: {
@@ -733,5 +744,27 @@ private extension View {
         focusedField: FoodAnalysisView.Field?
     ) -> some View {
         modifier(EditableFieldModifier(field: field, focusedField: focusedField))
+    }
+}
+
+private extension Binding where Value == Double {
+    func doubleToString() -> Binding<String> {
+        Binding<String>(
+            get: {
+                let formatted = String(format: "%.1f", self.wrappedValue)
+                if formatted.hasSuffix(".0") {
+                    return String(formatted.dropLast(2))
+                }
+                return formatted
+            },
+            set: { newValue in
+                let cleaned = newValue.replacingOccurrences(of: ",", with: ".")
+                if let val = Double(cleaned) {
+                    self.wrappedValue = val
+                } else if newValue.isEmpty {
+                    self.wrappedValue = 0.0
+                }
+            }
+        )
     }
 }

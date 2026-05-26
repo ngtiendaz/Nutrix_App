@@ -32,23 +32,27 @@ class AppRouter: ObservableObject {
     // Task quản lý thời gian ẩn Toast
     private var toastWorkItem: DispatchWorkItem?
 
-    // MARK: - Notification Methods
     func showToast(message: String, type: ToastType) {
-            toastWorkItem?.cancel()
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.toastWorkItem?.cancel()
 
             withAnimation(.spring(response: 0.52, dampingFraction: 0.8)) {
                 self.toast = ToastData(message: message, type: type)
             }
 
             let workItem = DispatchWorkItem { [weak self] in
-                withAnimation(.spring(response: 0.42, dampingFraction: 0.9)) {
-                    self?.toast = nil
+                DispatchQueue.main.async {
+                    withAnimation(.spring(response: 0.42, dampingFraction: 0.9)) {
+                        self?.toast = nil
+                    }
                 }
             }
 
-            toastWorkItem = workItem
+            self.toastWorkItem = workItem
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.2, execute: workItem)
         }
+    }
     
     // MARK: - Loading Methods
     func showLoading() {

@@ -50,6 +50,22 @@ final class FoodDetailViewModel: ObservableObject {
     var displayProtein: Double { calculateValue(originalFood.protein) }
     var displayFats: Double { calculateValue(originalFood.fats) }
 
+    func validateInputs() -> String? {
+        if currentWeight <= 0 {
+            return "Khối lượng (Grams) phải lớn hơn 0"
+        }
+        if currentWeight > 5000 {
+            return "Khối lượng quá lớn (tối đa 5000g)"
+        }
+        if currentQuantity <= 0 {
+            return "Số lượng phải lớn hơn 0"
+        }
+        if currentQuantity > 100 {
+            return "Số lượng quá lớn (tối đa 100)"
+        }
+        return nil
+    }
+
     // MARK: - Firebase Actions
     func updateFood() {
         guard let userId = Auth.auth().currentUser?.uid else { return }

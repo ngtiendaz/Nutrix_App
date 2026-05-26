@@ -357,6 +357,32 @@ class FoodAnalysisViewModel: ObservableObject {
         self.streamingActionTip = ""
     }
     
+    func validateInputs() -> String? {
+        if isEditableNutrition {
+            if editableCalories < 0 {
+                return "Lượng Calo không được nhỏ hơn 0"
+            }
+            if editableCarbs < 0 {
+                return "Tinh bột không được nhỏ hơn 0"
+            }
+            if editableProtein < 0 {
+                return "Chất đạm không được nhỏ hơn 0"
+            }
+            if editableFats < 0 {
+                return "Chất béo không được nhỏ hơn 0"
+            }
+        }
+        
+        if weight <= 0 {
+            return "Khối lượng (Grams) phải lớn hơn 0"
+        }
+        if quantity <= 0 {
+            return "Số lượng phải lớn hơn 0"
+        }
+        
+        return nil
+    }
+    
     func saveFood(completion: @escaping () -> Void) {
         guard let food = analyzedFood, let userId = Auth.auth().currentUser?.uid, !isSaving else {
             self.errorMessage = "Không tìm thấy dữ liệu thức ăn hoặc bạn chưa đăng nhập."
