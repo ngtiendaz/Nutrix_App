@@ -1,0 +1,47 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Quản trị viên" as Admin
+boundary "GD_QuanLyDoAn" as Boundary
+control "Ctrl_DoAn" as Control
+entity "Database" as DB
+
+Admin -> Boundary : 1: Chọn đồ ăn & chọn "Cập nhật"
+activate Boundary
+Boundary -> Control : 2: Lấy thông tin đồ ăn từ CSDL
+activate Control
+Control -> DB : 3: Truy vấn thông tin
+activate DB
+DB --> Control : 4: Trả về dữ liệu
+deactivate DB
+Control --> Boundary : 5: Hiển thị form chỉnh sửa
+deactivate Control
+Boundary --> Admin : 6: Hiển thị thông tin đồ ăn
+
+Admin -> Boundary : 7: Chỉnh sửa & nhấn "Cập nhật"
+activate Boundary
+Boundary -> Control : 8: Gửi dữ liệu mới
+activate Control
+Control -> Control : 9: Validate (Dinh dưỡng >= 0, định dạng ảnh)
+Control -> DB : 10: Lưu thay đổi
+activate DB
+DB --> Control : 11: Xác nhận cập nhật
+deactivate DB
+
+alt Cập nhật thành công
+    Control --> Boundary : 12: Phản hồi thành công
+    Boundary --> Admin : 13: Thông báo "Cập nhật thành công"
+else Lỗi dữ liệu
+    Control --> Boundary : 12: Phản hồi lỗi
+    Boundary --> Admin : 13: Thông báo lỗi
+end
+deactivate Control
+deactivate Boundary
+@enduml

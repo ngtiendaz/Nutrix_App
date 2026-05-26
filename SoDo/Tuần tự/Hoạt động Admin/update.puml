@@ -1,0 +1,52 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Quản trị viên" as Admin
+boundary "GD_QuanLyHoatDong" as Boundary
+control "Ctrl_HoatDong" as Control
+entity "Database" as DB
+
+Admin -> Boundary : 1: Chọn hoạt động & chọn "Cập nhật"
+activate Boundary
+Boundary -> Control : 2: Yêu cầu lấy thông tin chi tiết
+activate Control
+Control -> DB : 3: Truy vấn thông tin hoạt động
+activate DB
+DB --> Control : 4: Trả về dữ liệu
+deactivate DB
+Control --> Boundary : 5: Hiển thị form chỉnh sửa
+deactivate Control
+Boundary --> Admin : 6: Hiển thị thông tin cũ để sửa
+
+Admin -> Boundary : 7: Thay đổi thông tin & nhấn "Cập nhật"
+activate Boundary
+Boundary -> Control : 8: Gửi yêu cầu cập nhật
+activate Control
+
+Control -> Control : 9: Kiểm tra tính hợp lệ (Validate)
+activate Control
+Control --> Control : 10: Hoàn tất kiểm tra
+deactivate Control
+
+alt Dữ liệu hợp lệ
+    Control -> DB : 11: Lưu thay đổi vào CSDL
+    activate DB
+    DB --> Control : 12: Xác nhận thành công
+    deactivate DB
+    Control --> Boundary : 13: Phản hồi thành công
+    Boundary --> Admin : 14: Thông báo "Cập nhật thành công"
+else Dữ liệu không hợp lệ (Trống/MetValue <= 0)
+    Control --> Boundary : 13: Phản hồi lỗi
+    Boundary --> Admin : 14: Thông báo lỗi và giữ lại form sửa
+end
+
+deactivate Control
+deactivate Boundary
+@enduml

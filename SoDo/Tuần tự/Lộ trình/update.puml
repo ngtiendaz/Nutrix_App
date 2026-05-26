@@ -1,0 +1,68 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Người dùng" as User
+boundary "GD_QuanLyLoTrinh" as Boundary
+control "Ctrl_LoTrinh" as Control
+entity "Database" as DB
+entity "AI_Service" as AI
+
+' --- GIAI ĐOẠN KHỞI TẠO ---
+User -> Boundary : 1: Chọn chức năng "Đánh giá tiến trình"
+activate Boundary
+Boundary -> Control : 2: Yêu cầu lấy dữ liệu thống kê 7 ngày gần nhất
+activate Control
+Control -> DB : 3: Truy vấn dữ liệu hoạt động & dinh dưỡng 7 ngày
+activate DB
+DB --> Control : 4: Trả về dữ liệu thống kê
+deactivate DB
+
+' --- GIAI ĐOẠN PHÂN TÍCH & ĐỀ XUẤT ---
+Control -> AI : 5: Gửi dữ liệu thống kê để AI phân tích tiến trình
+activate AI
+AI --> Control : 6: Trả về mục tiêu dinh dưỡng mới & gợi ý lộ trình
+deactivate AI
+
+Control --> Boundary : 7: Hiển thị mục tiêu mới & yêu cầu xác nhận áp dụng
+deactivate Control
+Boundary --> User : 8: Hiển thị kết quả AI và nút [Áp dụng] / [Hủy]
+deactivate Boundary
+
+' --- GIAI ĐOẠN XỬ LÝ QUYẾT ĐỊNH ---
+alt Người dùng chọn "Áp dụng"
+    User -> Boundary : 9: Nhấn "Áp dụng"
+    activate Boundary
+    Boundary -> Control : 10: Yêu cầu cập nhật lộ trình theo đề xuất AI
+    activate Control
+    
+    Control -> DB : 11: Cập nhật lộ trình mới vào Database
+    activate DB
+    DB --> Control : 12: Xác nhận lưu thành công
+    deactivate DB
+    
+    Control -> DB : 13: Truy vấn lại dữ liệu lộ trình mới để làm mới view
+    activate DB
+    DB --> Control : 14: Trả về dữ liệu đã cập nhật
+    deactivate DB
+    
+    Control --> Boundary : 15: Phản hồi thành công & hiển thị dữ liệu mới
+    Boundary --> User : 16: Thông báo thành công & load lại giao diện
+    deactivate Control
+    deactivate Boundary
+
+else Người dùng chọn "Hủy"
+    User -> Boundary : 9: Nhấn "Hủy"
+    activate Boundary
+    Boundary -> Boundary : 10: Thoát về màn hình lộ trình hiện tại
+    Boundary --> User : 11: Hiển thị lộ trình cũ
+    deactivate Boundary
+end
+
+@enduml

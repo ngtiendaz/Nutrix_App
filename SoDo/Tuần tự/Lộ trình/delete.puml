@@ -1,0 +1,54 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Người dùng" as User
+boundary "GD_QuanLyLoTrinh" as Boundary
+control "Ctrl_LoTrinh" as Control
+entity "Database" as DB
+
+' --- GIAI ĐOẠN KHỞI TẠO ---
+User -> Boundary : 1: Chọn chức năng "Xóa lộ trình"
+activate Boundary
+
+Boundary -> Control : 2: Yêu cầu xóa lộ trình hiện tại
+activate Control
+
+Control --> Boundary : 3: Hiển thị hộp thoại xác nhận xóa
+deactivate Control
+Boundary --> User : 4: Yêu cầu xác nhận (Đồng ý/Hủy)
+deactivate Boundary
+
+' --- GIAI ĐOẠN XỬ LÝ QUYẾT ĐỊNH ---
+alt Người dùng chọn "Xác nhận xóa"
+    User -> Boundary : 5: Nhấn "Đồng ý"
+    activate Boundary
+    
+    Boundary -> Control : 6: Gửi lệnh xóa lộ trình
+    activate Control
+    
+    Control -> DB : 7: Thực hiện xóa dữ liệu trong Database
+    activate DB
+    DB --> Control : 8: Xác nhận xóa thành công
+    deactivate DB
+    
+    Control --> Boundary : 9: Phản hồi thành công
+    Boundary --> User : 10: Thông báo xóa thành công và hiển thị lại màn hình quản lý lộ trình
+    deactivate Control
+    deactivate Boundary
+
+else Người dùng chọn "Hủy"
+    User -> Boundary : 5: Nhấn "Hủy"
+    activate Boundary
+    
+    Boundary --> User : 6: Thoát về màn hình quản lý lộ trình (không xóa)
+    deactivate Boundary
+end
+
+@enduml

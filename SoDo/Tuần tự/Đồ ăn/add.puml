@@ -1,0 +1,44 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Quản trị viên" as Admin
+boundary "GD_QuanLyDoAn" as Boundary
+control "Ctrl_DoAn" as Control
+entity "Database" as DB
+
+Admin -> Boundary : 1: Chọn "Thêm đồ ăn mới"
+activate Boundary
+Boundary --> Admin : 2: Hiển thị form nhập dữ liệu
+deactivate Boundary
+
+Admin -> Boundary : 3: Nhập thông tin & hình ảnh, nhấn "Lưu"
+activate Boundary
+Boundary -> Control : 4: Gửi yêu cầu thêm đồ ăn
+activate Control
+
+Control -> Control : 5: Validate (Trường bắt buộc, dinh dưỡng >= 0, định dạng ảnh)
+activate Control
+Control --> Control : 6: Kết quả kiểm tra
+deactivate Control
+
+alt Dữ liệu hợp lệ
+    Control -> DB : 7: Lưu đồ ăn mới vào CSDL
+    activate DB
+    DB --> Control : 8: Xác nhận lưu thành công
+    deactivate DB
+    Control --> Boundary : 9: Phản hồi thành công
+    Boundary --> Admin : 10: Thông báo "Thêm thành công"
+else Dữ liệu không hợp lệ
+    Control --> Boundary : 9: Phản hồi lỗi (Thiếu thông tin/Sai định dạng)
+    Boundary --> Admin : 10: Thông báo lỗi và giữ nguyên form
+end
+deactivate Control
+deactivate Boundary
+@enduml

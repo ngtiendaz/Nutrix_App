@@ -1,0 +1,43 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Quản trị viên" as Admin
+boundary "GD_QuanLyDoAn" as Boundary
+control "Ctrl_DoAn" as Control
+entity "Database" as DB
+
+Admin -> Boundary : 1: Chọn đồ ăn & chọn "Xóa đồ ăn"
+activate Boundary
+Boundary -> Control : 2: Yêu cầu xác nhận xóa
+activate Control
+Control --> Boundary : 3: Hiển thị hộp thoại xác nhận
+deactivate Control
+Boundary --> Admin : 4: Yêu cầu xác nhận (Đồng ý/Hủy)
+
+alt Người dùng chọn "Đồng ý"
+    Admin -> Boundary : 5: Nhấn "Đồng ý"
+    activate Boundary
+    Boundary -> Control : 6: Thực hiện xóa dữ liệu
+    activate Control
+    Control -> DB : 7: Xóa bản ghi trong CSDL
+    activate DB
+    DB --> Control : 8: Xác nhận xóa thành công
+    deactivate DB
+    Control --> Boundary : 9: Phản hồi thành công
+    Boundary --> Admin : 10: Thông báo "Đã xóa thành công"
+    deactivate Control
+    deactivate Boundary
+else Người dùng chọn "Hủy"
+    Admin -> Boundary : 5: Nhấn "Hủy"
+    activate Boundary
+    Boundary --> Admin : 6: Thoát, giữ nguyên dữ liệu
+    deactivate Boundary
+end
+@enduml

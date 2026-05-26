@@ -1,0 +1,67 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Người dùng" as User
+boundary "GD_QuanLyLoTrinh" as Boundary
+control "Ctrl_LoTrinh" as Control
+entity "AI_Service" as AI
+entity "Database" as DB
+
+' --- GIAI ĐOẠN KHỞI TẠO ---
+User -> Boundary : 1: Chọn chức năng Quản lý lộ trình
+activate Boundary
+Boundary -> Control : 2: Yêu cầu tạo/cập nhật lộ trình
+activate Control
+Control --> Boundary : 3: Hiển thị form nhập liệu
+deactivate Control
+Boundary --> User : 4: Yêu cầu nhập thông tin (hiện tại, mục tiêu, thời gian)
+deactivate Boundary
+
+' --- GIAI ĐOẠN PHÂN TÍCH & QUYẾT ĐỊNH ---
+User -> Boundary : 5: Nhập thông tin và nhấn "Phân tích"
+activate Boundary
+Boundary -> Control : 6: Gửi thông tin đến AI
+activate Control
+
+Control -> AI : 7: Gọi dịch vụ phân tích lộ trình
+activate AI
+AI --> Control : 8: Trả về lộ trình gợi ý
+deactivate AI
+
+Control --> Boundary : 9: Hiển thị lộ trình gợi ý cho người dùng
+deactivate Control
+Boundary --> User : 10: Hỏi người dùng "Áp dụng" hay "Hủy"
+deactivate Boundary
+
+alt Người dùng chọn "Áp dụng"
+    User -> Boundary : 11: Nhấn "Áp dụng"
+    activate Boundary
+    Boundary -> Control : 12: Yêu cầu lưu lộ trình
+    activate Control
+    
+    Control -> DB : 13: Lưu dữ liệu lộ trình mới vào Database
+    activate DB
+    DB --> Control : 14: Xác nhận lưu thành công
+    deactivate DB
+    
+    Control --> Boundary : 15: Thông báo thành công và chuyển về màn hình danh sách
+    Boundary --> User : 16: Hiển thị thông báo và cập nhật giao diện
+    deactivate Control
+    deactivate Boundary
+
+else Người dùng chọn "Hủy"
+    User -> Boundary : 11: Nhấn "Hủy"
+    activate Boundary
+    Boundary -> Boundary : 12: Thoát về màn hình quản lý lộ trình
+    Boundary --> User : 13: Hiển thị màn hình quản lý lộ trình
+    deactivate Boundary
+end
+
+@enduml

@@ -1,0 +1,44 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Quản trị viên" as Admin
+boundary "GD_QuanLyHoatDong" as Boundary
+control "Ctrl_HoatDong" as Control
+entity "Database" as DB
+
+Admin -> Boundary : 1: Chọn "Thêm hoạt động mới"
+activate Boundary
+Boundary --> Admin : 2: Hiển thị form nhập (Tên, MetValue)
+deactivate Boundary
+
+Admin -> Boundary : 3: Nhập thông tin và nhấn "Lưu"
+activate Boundary
+Boundary -> Control : 4: Gửi yêu cầu thêm hoạt động
+activate Control
+
+Control -> Control : 5: Validate dữ liệu (MetValue > 0, không trống)
+activate Control
+Control --> Control : 6: Kiểm tra hoàn tất
+deactivate Control
+
+alt Dữ liệu hợp lệ
+    Control -> DB : 7: Thêm mới vào CSDL
+    activate DB
+    DB --> Control : 8: Xác nhận thành công
+    deactivate DB
+    Control --> Boundary : 9: Phản hồi thành công
+    Boundary --> Admin : 10: Thông báo "Thêm thành công" và cập nhật danh sách
+else Dữ liệu không hợp lệ
+    Control --> Boundary : 9: Phản hồi lỗi
+    Boundary --> Admin : 10: Hiển thị lỗi (VD: "MetValue phải > 0")
+end
+deactivate Control
+deactivate Boundary
+@enduml

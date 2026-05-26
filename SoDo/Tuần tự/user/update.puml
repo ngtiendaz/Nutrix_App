@@ -1,0 +1,55 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Quản trị viên" as Admin
+boundary "GD_QuanLyNguoiDung" as Boundary
+control "Ctrl_QuanLyUser" as Control
+entity "Database" as DB
+
+' --- GIAI ĐOẠN CHỌN VÀ HIỂN THỊ ---
+Admin -> Boundary : 1: Chọn tài khoản cần sửa và chọn "Cập nhật"
+activate Boundary
+Boundary -> Control : 2: Yêu cầu thông tin chi tiết người dùng
+activate Control
+Control -> DB : 3: Truy vấn chi tiết người dùng
+activate DB
+DB --> Control : 4: Trả về dữ liệu người dùng
+deactivate DB
+Control --> Boundary : 5: Hiển thị form chỉnh sửa chi tiết
+deactivate Control
+Boundary --> Admin : 6: Hiển thị thông tin hiện tại để sửa
+deactivate Boundary
+
+' --- GIAI ĐOẠN XỬ LÝ CẬP NHẬT ---
+Admin -> Boundary : 7: Sửa thông tin và nhấn "Cập nhật"
+activate Boundary
+Boundary -> Control : 8: Gửi yêu cầu cập nhật thông tin
+activate Control
+
+Control -> Control : 9: Kiểm tra tính hợp lệ của dữ liệu mới
+activate Control
+Control --> Control : 10: Kiểm tra hoàn tất
+deactivate Control
+
+alt Dữ liệu hợp lệ
+    Control -> DB : 11: Cập nhật thông tin vào CSDL
+    activate DB
+    DB --> Control : 12: Xác nhận cập nhật thành công
+    deactivate DB
+    Control --> Boundary : 13: Phản hồi thành công
+    Boundary --> Admin : 14: Thông báo "Cập nhật thành công" và load lại danh sách
+else Dữ liệu không hợp lệ
+    Control --> Boundary : 13: Phản hồi thất bại
+    Boundary --> Admin : 14: Hiển thị thông báo "Cập nhật thất bại"
+end
+deactivate Control
+deactivate Boundary
+
+@enduml

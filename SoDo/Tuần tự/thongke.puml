@@ -1,0 +1,53 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Quản trị viên" as Admin
+boundary "GD_BaoCaoThongKe" as Boundary
+control "Ctrl_ThongKe" as Control
+entity "Database" as DB
+
+' --- GIAI ĐOẠN KHỞI TẠO ---
+Admin -> Boundary : 1: Chọn "Xem báo cáo thống kê"
+activate Boundary
+Boundary -> Control : 2: Yêu cầu lấy số liệu tổng quan
+activate Control
+Control -> DB : 3: Truy vấn dữ liệu hệ thống
+activate DB
+DB --> Control : 4: Trả về kết quả
+deactivate DB
+Control --> Boundary : 5: Hiển thị màn hình báo cáo
+deactivate Control
+Boundary --> Admin : 6: Yêu cầu chọn mốc thời gian (Tuần/Tháng/Năm)
+deactivate Boundary
+
+' --- GIAI ĐOẠN XEM CHI TIẾT ---
+Admin -> Boundary : 7: Chọn mốc thời gian
+activate Boundary
+Boundary -> Control : 8: Gửi yêu cầu truy vấn theo thời gian
+activate Control
+
+Control -> DB : 9: Truy vấn dữ liệu thói quen người dùng theo thời gian
+activate DB
+DB --> Control : 10: Trả về dữ liệu
+deactivate DB
+
+alt Có dữ liệu thống kê
+    Control --> Boundary : 11: Phản hồi dữ liệu chi tiết
+    Boundary -> Boundary : 12: Vẽ và hiển thị biểu đồ thói quen người dùng
+    Boundary --> Admin : 13: Hiển thị biểu đồ phân tích thành công
+else Không có dữ liệu
+    Control --> Boundary : 11: Phản hồi trạng thái trống
+    Boundary --> Admin : 12: Thông báo "Chưa có dữ liệu thống kê" và hiển thị biểu đồ trống
+end
+
+deactivate Control
+deactivate Boundary
+
+@enduml

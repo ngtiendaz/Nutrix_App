@@ -1,0 +1,55 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Người dùng" as User
+boundary "GD_ThongKeDinhDuong" as Boundary
+control "Ctrl_ThongKe" as Control
+entity "Database" as DB
+entity "Report_Service" as Report
+
+' --- GIAI ĐOẠN XEM THỐNG KÊ ---
+User -> Boundary : 1: Chọn chức năng Thống kê dinh dưỡng
+activate Boundary
+Boundary -> Control : 2: Yêu cầu hiển thị giao diện
+activate Control
+Control --> Boundary : 3: Hiển thị giao diện thống kê
+deactivate Control
+Boundary --> User : 4: Yêu cầu chọn thời gian thống kê
+
+User -> Boundary : 5: Chọn thời gian
+activate Boundary
+Boundary -> Control : 6: Truy vấn dữ liệu theo thời gian
+activate Control
+Control -> DB : 7: Lấy dữ liệu thống kê
+activate DB
+DB --> Control : 8: Trả về kết quả
+deactivate DB
+Control --> Boundary : 9: Hiển thị dữ liệu lên giao diện
+deactivate Control
+deactivate Boundary
+
+' --- GIAI ĐOẠN XUẤT FILE PDF ---
+User -> Boundary : 10: Chọn xuất file PDF
+activate Boundary
+Boundary -> Control : 11: Yêu cầu xuất báo cáo (kèm mốc thời gian)
+activate Control
+
+Control -> Report : 12: Gửi dữ liệu đã truy vấn để tạo file PDF
+activate Report
+Report -> Report : 13: Định dạng dữ liệu thành file PDF
+Report --> Control : 14: Trả về file PDF đã khởi tạo
+deactivate Report
+
+Control --> Boundary : 15: Trả kết quả file để người dùng tải về
+Boundary --> User : 16: Hiển thị/Tải xuống file báo cáo PDF
+deactivate Control
+deactivate Boundary
+
+@enduml

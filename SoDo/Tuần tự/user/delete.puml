@@ -1,0 +1,50 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Quản trị viên" as Admin
+boundary "GD_QuanLyNguoiDung" as Boundary
+control "Ctrl_QuanLyUser" as Control
+entity "Database" as DB
+
+' --- GIAI ĐOẠN XÁC NHẬN ---
+Admin -> Boundary : 1: Chọn tài khoản cần xóa và chọn "Xóa người dùng"
+activate Boundary
+Boundary -> Control : 2: Yêu cầu xác nhận xóa
+activate Control
+Control --> Boundary : 3: Hiển thị hộp thoại xác nhận xóa
+deactivate Control
+Boundary --> Admin : 4: Yêu cầu xác nhận (Đồng ý/Hủy)
+deactivate Boundary
+
+' --- GIAI ĐOẠN XỬ LÝ XÓA ---
+alt Quản trị viên chọn "Đồng ý"
+    Admin -> Boundary : 5: Nhấn "Đồng ý"
+    activate Boundary
+    Boundary -> Control : 6: Gửi lệnh xóa tài khoản
+    activate Control
+    
+    Control -> DB : 7: Thực hiện xóa dữ liệu trong Database
+    activate DB
+    DB --> Control : 8: Xác nhận xóa thành công
+    deactivate DB
+    
+    Control --> Boundary : 9: Phản hồi thành công
+    Boundary --> Admin : 10: Thông báo "Xóa người dùng thành công" và load lại danh sách
+    deactivate Control
+    deactivate Boundary
+
+else Quản trị viên chọn "Hủy"
+    Admin -> Boundary : 5: Nhấn "Hủy"
+    activate Boundary
+    Boundary --> Admin : 6: Thoát hộp thoại và giữ nguyên danh sách
+    deactivate Boundary
+end
+
+@enduml

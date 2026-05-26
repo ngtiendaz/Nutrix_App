@@ -1,0 +1,51 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Người dùng" as User
+boundary "GD_ThongKeDinhDuong" as Boundary
+control "Ctrl_ThongKe" as Control
+entity "Database" as DB
+
+' --- GIAI ĐOẠN KHỞI TẠO ---
+User -> Boundary : 1: Chọn chức năng Thống kê dinh dưỡng
+activate Boundary
+
+Boundary -> Control : 2: Yêu cầu hiển thị giao diện thống kê
+activate Control
+Control --> Boundary : 3: Hiển thị giao diện thống kê ban đầu
+deactivate Control
+Boundary --> User : 4: Yêu cầu chọn mốc thời gian (Tuần/Tháng)
+deactivate Boundary
+
+' --- GIAI ĐOẠN XỬ LÝ DỮ LIỆU ---
+User -> Boundary : 5: Chọn mốc thời gian muốn xem
+activate Boundary
+Boundary -> Control : 6: Truy vấn dữ liệu theo thời gian đã chọn
+activate Control
+
+Control -> DB : 7: Truy vấn nhật ký ăn uống và hoạt động theo mốc thời gian
+activate DB
+DB --> Control : 8: Trả về kết quả dữ liệu
+deactivate DB
+
+alt Có dữ liệu thống kê
+    Control --> Boundary : 9: Phản hồi dữ liệu hợp lệ
+    Boundary -> Boundary : 10: Hiển thị biểu đồ chi tiết (Calo nạp/tiêu hao, chất dinh dưỡng)
+    Boundary --> User : 11: Hiển thị giao diện thống kê đầy đủ
+    
+else Không có dữ liệu
+    Control --> Boundary : 9: Phản hồi không có dữ liệu
+    Boundary --> User : 10: Hiển thị thông báo "Chưa có dữ liệu thống kê" và giao diện trống
+end
+
+deactivate Control
+deactivate Boundary
+
+@enduml

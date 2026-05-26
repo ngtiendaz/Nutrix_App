@@ -1,0 +1,60 @@
+@startuml
+skinparam style strictuml
+skinparam DefaultFontSize 14
+skinparam ActorFontSize 16
+skinparam ParticipantFontSize 14
+skinparam monochrome true
+skinparam shadowing false
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Quản trị viên" as Admin
+boundary "GD_QuanLyNguoiDung" as Boundary
+control "Ctrl_QuanLyUser" as Control
+entity "Database" as DB
+
+' --- GIAI ĐOẠN KHỞI TẠO ---
+Admin -> Boundary : 1: Chọn chức năng Quản lý người dùng
+activate Boundary
+Boundary -> Control : 2: Yêu cầu lấy danh sách người dùng
+activate Control
+Control -> DB : 3: Truy vấn danh sách người dùng
+activate DB
+DB --> Control : 4: Trả về danh sách
+deactivate DB
+Control --> Boundary : 5: Hiển thị giao diện quản lý người dùng
+deactivate Control
+Boundary --> Admin : 6: Hiển thị danh sách người dùng
+deactivate Boundary
+
+' --- GIAI ĐOẠN THÊM NGƯỜI DÙNG ---
+Admin -> Boundary : 7: Chọn "Thêm người dùng"
+activate Boundary
+Boundary --> Admin : 8: Hiển thị giao diện thêm người dùng
+deactivate Boundary
+
+Admin -> Boundary : 9: Nhập thông tin và bấm "Thêm"
+activate Boundary
+Boundary -> Control : 10: Gửi yêu cầu lưu người dùng mới
+activate Control
+
+Control -> Control : 11: Kiểm tra thông tin (Validate dữ liệu)
+activate Control
+Control --> Control : 12: Kiểm tra hoàn tất
+deactivate Control
+
+alt Dữ liệu hợp lệ
+    Control -> DB : 13: Lưu người dùng mới vào CSDL
+    activate DB
+    DB --> Control : 14: Xác nhận lưu thành công
+    deactivate DB
+    Control --> Boundary : 15: Phản hồi thành công
+    Boundary --> Admin : 16: Thông báo "Thêm người dùng thành công"
+else Dữ liệu không hợp lệ (Trùng email/Thiếu thông tin)
+    Control --> Boundary : 15: Phản hồi thất bại
+    Boundary --> Admin : 16: Hiển thị thông báo "Thêm người dùng thất bại"
+end
+deactivate Control
+deactivate Boundary
+
+@enduml
