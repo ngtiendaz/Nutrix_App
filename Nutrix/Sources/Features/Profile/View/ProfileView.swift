@@ -103,7 +103,14 @@ struct ProfileView: View {
     }
     
     private func handleBodyMetricsUpdate() {
-            if profileViewModel.isEditingMetrics {
+        if profileViewModel.isEditingMetrics {
+            hideKeyboard()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                if let validationError = profileViewModel.validateBodyMetrics() {
+                    router.showToast(message: validationError, type: .error)
+                    return
+                }
+                
                 router.showLoading()
                 profileViewModel.saveBodyMetrics(authService: loginViewModel.authService) { success in
                     router.hideLoading()
@@ -112,11 +119,11 @@ struct ProfileView: View {
                         profileViewModel.fetchHistory(authService: loginViewModel.authService)
                     }
                 }
-                hideKeyboard()
-            } else {
-                withAnimation { profileViewModel.isEditingMetrics = true }
             }
+        } else {
+            withAnimation { profileViewModel.isEditingMetrics = true }
         }
+    }
 
     private var mainUserCard: some View {
             VStack(spacing: 20) {
@@ -192,26 +199,34 @@ struct ProfileView: View {
     }
 
     private var editBasicInfoButton: some View {
-            Button(action: {
-                if profileViewModel.isEditingBasic {
+        Button(action: {
+            if profileViewModel.isEditingBasic {
+                hideKeyboard()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    if let validationError = profileViewModel.validateBasicInfo() {
+                        router.showToast(message: validationError, type: .error)
+                        return
+                    }
+                    
                     router.showLoading()
                     profileViewModel.saveBasicInfo(authService: loginViewModel.authService) { success in
                         router.hideLoading()
                         if success { router.showToast(message: "Đã cập nhật hồ sơ", type: .success) }
                     }
-                    hideKeyboard()
-                } else {
-                    withAnimation { profileViewModel.isEditingBasic.toggle() }
                 }
-            }) {
-                Text(profileViewModel.isEditingBasic ? "Lưu" : "Sửa")
-                    .font(.App.subheadline)
-                    .padding(.horizontal, 14).padding(.vertical, 7)
-                    .background(profileViewModel.isEditingBasic ? Color.green.opacity(0.1) : Color.App.primary.opacity(0.1))
-                    .foregroundColor(profileViewModel.isEditingBasic ? .green : Color.App.primary)
-                    .clipShape(Capsule())
+            } else {
+                withAnimation { profileViewModel.isEditingBasic.toggle() }
             }
+        }) {
+            Text(profileViewModel.isEditingBasic ? "Lưu" : "Sửa")
+                .font(.App.subheadline)
+                .padding(.horizontal, 14).padding(.vertical, 7)
+                .background(profileViewModel.isEditingBasic ? Color.green.opacity(0.1) : Color.App.primary.opacity(0.1))
+                .foregroundColor(profileViewModel.isEditingBasic ? .green : Color.App.primary)
+                .clipShape(Capsule())
         }
+        .disabled(profileViewModel.isUpdating)
+    }
     
     private var avatarSection: some View {
             ZStack {

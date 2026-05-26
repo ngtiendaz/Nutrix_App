@@ -37,104 +37,111 @@ struct AddActivitySheet: View {
     }
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color.App.background.ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    // 1. Thanh tìm kiếm
-                    searchBar
-                        .padding(.top, 15)
-                        .padding(.bottom, 20)
+        ZStack {
+            NavigationView {
+                ZStack {
+                    Color.App.background.ignoresSafeArea()
                     
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 30) {
-                            
-                            // 2. Section: Chọn loại hoạt động
-                            VStack(alignment: .leading, spacing: 16) {
-                                Text(searchText.isEmpty ? "Hoạt động phổ biến" : "Kết quả tìm kiếm")
-                                    .font(.App.title3)
-                                    .foregroundColor(.black)
-                                    .padding(.horizontal, 4)
+                    VStack(spacing: 0) {
+                        // 1. Thanh tìm kiếm
+                        searchBar
+                            .padding(.top, 15)
+                            .padding(.bottom, 20)
+                        
+                        ScrollView(showsIndicators: false) {
+                            VStack(spacing: 30) {
                                 
-                                if filteredActivities.isEmpty {
-                                    emptySearchView
-                                } else {
-                                    ScrollView(.horizontal, showsIndicators: false) {
-                                        HStack(spacing: 14) {
-                                            ForEach(filteredActivities) { activity in
-                                                ActivityTypeItem(
-                                                    title: activity.name,
-                                                    icon: activity.icon,
-                                                    isSelected: selectedActivity?.id == activity.id
-                                                )
-                                                .onTapGesture {
-                                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                                                        // Cơ chế Toggle: Bấm lại mục cũ thì hủy chọn hoàn toàn
-                                                        if selectedActivity?.id == activity.id {
-                                                            selectedActivity = nil
-                                                        } else {
-                                                            selectedActivity = activity
+                                // 2. Section: Chọn loại hoạt động
+                                VStack(alignment: .leading, spacing: 16) {
+                                    Text(searchText.isEmpty ? "Hoạt động phổ biến" : "Kết quả tìm kiếm")
+                                        .font(.App.title3)
+                                        .foregroundColor(.black)
+                                        .padding(.horizontal, 4)
+                                    
+                                    if filteredActivities.isEmpty {
+                                        emptySearchView
+                                    } else {
+                                        ScrollView(.horizontal, showsIndicators: false) {
+                                            HStack(spacing: 14) {
+                                                ForEach(filteredActivities) { activity in
+                                                    ActivityTypeItem(
+                                                        title: activity.name,
+                                                        icon: activity.icon,
+                                                        isSelected: selectedActivity?.id == activity.id
+                                                    )
+                                                    .onTapGesture {
+                                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                                                            // Cơ chế Toggle: Bấm lại mục cũ thì hủy chọn hoàn toàn
+                                                            if selectedActivity?.id == activity.id {
+                                                                selectedActivity = nil
+                                                            } else {
+                                                                selectedActivity = activity
+                                                            }
                                                         }
                                                     }
                                                 }
                                             }
+                                            .padding(.horizontal, 4)
+                                            .padding(.vertical, 8)
                                         }
-                                        .padding(.horizontal, 4)
-                                        .padding(.vertical, 8)
                                     }
                                 }
-                            }
-                            
-                            // 3. Section: Tùy chỉnh thời gian
-                            VStack(alignment: .leading, spacing: 16) {
-                                Text("Tùy chỉnh thời gian")
-                                    .font(.App.title3)
-                                    .foregroundColor(.black)
-                                    .padding(.horizontal, 4)
                                 
-                                timeAdjustmentCard
-                            }
-                            
-                            // 4. Section: Hiển thị Calo dự kiến & Khối Chú thích Công thức hệ thống
-                            if selectedActivity != nil {
-                                VStack(alignment: .leading, spacing: 14) {
-                                    estimatedCaloriesView
+                                // 3. Section: Tùy chỉnh thời gian
+                                VStack(alignment: .leading, spacing: 16) {
+                                    Text("Tùy chỉnh thời gian")
+                                        .font(.App.title3)
+                                        .foregroundColor(.black)
+                                        .padding(.horizontal, 4)
                                     
-                                    formulaExplanationCard
+                                    timeAdjustmentCard
                                 }
-                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                                
+                                // 4. Section: Hiển thị Calo dự kiến & Khối Chú thích Công thức hệ thống
+                                if selectedActivity != nil {
+                                    VStack(alignment: .leading, spacing: 14) {
+                                        estimatedCaloriesView
+                                        
+                                        formulaExplanationCard
+                                    }
+                                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                                }
                             }
+                            .padding(.horizontal, 12)
+                            .padding(.bottom, 120)
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.bottom, 120)
+                    }
+                    
+                    // Nút Lưu cố định dưới đáy với dải màu mờ nền
+                    VStack {
+                        Spacer()
+                        saveButton
+                            .background(
+                                LinearGradient(colors: [Color.App.background.opacity(0), Color.App.background], startPoint: .top, endPoint: .bottom)
+                                    .frame(height: 120)
+                            )
+                    }
+                    .ignoresSafeArea()
+                }
+                .navigationTitle("Thêm hoạt động")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Hủy") { dismiss() }
+                            .foregroundColor(.red)
+                            .fontWeight(.medium)
                     }
                 }
-                
-                // Nút Lưu cố định dưới đáy với dải màu mờ nền
-                VStack {
-                    Spacer()
-                    saveButton
-                        .background(
-                            LinearGradient(colors: [Color.App.background.opacity(0), Color.App.background], startPoint: .top, endPoint: .bottom)
-                                .frame(height: 120)
-                        )
-                }
-                .ignoresSafeArea()
             }
-            .navigationTitle("Thêm hoạt động")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Hủy") { dismiss() }
-                        .foregroundColor(.red)
-                        .fontWeight(.medium)
-                }
+            .onAppear {
+                // Đảm bảo đồng bộ và tải lại chỉ số cơ thể sạch ngay từ đầu chu kỳ mở bạt sheet
+                viewModel.getUserLogs(userId: userId, date: date)
             }
-        }
-        .onAppear {
-            // Đảm bảo đồng bộ và tải lại chỉ số cơ thể sạch ngay từ đầu chu kỳ mở bạt sheet
-            viewModel.getUserLogs(userId: userId, date: date)
+            
+            if router.toast != nil {
+                AppNotificationView(data: router.toast)
+                    .zIndex(999)
+            }
         }
     }
 }
@@ -415,6 +422,16 @@ extension AddActivitySheet {
     private var saveButton: some View {
         Button(action: {
             if let activity = selectedActivity {
+                if duration <= 0 {
+                    router.showToast(message: "Thời gian tập luyện phải lớn hơn 0 phút", type: .error)
+                    return
+                }
+                
+                if duration > 480 {
+                    router.showToast(message: "Thời gian tập luyện không được vượt quá 480 phút (8 giờ)", type: .error)
+                    return
+                }
+                
                 router.showLoading()
                 viewModel.addLog(userId: userId, activity: activity, duration: Double(duration), date: date)
                 

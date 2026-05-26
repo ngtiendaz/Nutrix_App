@@ -34,6 +34,7 @@ struct BodyMetricsCard: View {
                     .background(Color.black.opacity(0.05))
                     .cornerRadius(12)
                 }
+                .disabled(vm.isUpdating)
                 
                 // Nút Cập nhật / Lưu
                 Button(action: onUpdate) {
@@ -47,6 +48,7 @@ struct BodyMetricsCard: View {
                         .cornerRadius(12)
                         .shadow(color: (vm.isEditingMetrics ? Color.green : Color.App.primary).opacity(0.2), radius: 5, y: 3)
                 }
+                .disabled(vm.isUpdating)
             }
         }
         .padding(18)

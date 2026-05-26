@@ -32,202 +32,208 @@ struct ActivityDetailView: View {
     }
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                // LỚP NỀN: Nhận tương tác Tap để ẩn bàn phím khi bấm ra ngoài
-                Color.App.background
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        hideKeyboard()
-                    }
-                
-                VStack(spacing: 0) {
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 24) {
-                            // 1. Header Section (Hiển thị Icon, Tên và Ngày Giờ Tạo)
-                            VStack(spacing: 16) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.App.primaryLight)
-                                        .frame(width: 90, height: 90)
-                                    
-                                    Image(systemName: log.activityType.icon)
-                                        .font(.App.large)
-                                        .foregroundColor(Color.App.primary)
-                                }
-                                .padding(.top, 10)
-                                
-                                VStack(spacing: 6) {
-                                    Text(log.activityType.name)
-                                        .font(.App.header)
-                                        .foregroundColor(.black)
-                                    
-                                    // Hiển thị: Ngày giờ ghi nhận hoạt động từ thuộc tính log.createdAt
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "calendar.badge.clock")
-                                        Text("Ghi nhận lúc: \(formatLogDate(log.createdAt))")
-                                    }
-                                    .font(.App.subheadlineRegular)
-                                    .foregroundColor(.gray)
-                                }
-                            }
-                            .onTapGesture { hideKeyboard() }
-                            
-                            // 2. Input & Thông số Card chính
-                            VStack(alignment: .leading, spacing: 16) {
-                                Text("THỜI GIAN TẬP LUYỆN")
-                                    .font(.App.small)
-                                    .foregroundColor(Color.App.primary)
-                                    .tracking(1)
-                                
-                                HStack {
-                                    Image(systemName: "clock.fill")
-                                        .foregroundColor(Color.App.primary)
-                                    
-                                    TextField("0", text: $duration)
-                                        .font(.App.header)
-                                        .foregroundColor(.black)
-                                        .keyboardType(.numberPad)
-                                    
-                                    Text("phút")
-                                        .font(.App.headline)
-                                        .foregroundColor(.gray)
-                                }
-                                .padding()
-                                .background(Color.App.secondaryBackground.opacity(0.5))
-                                .cornerRadius(15)
-                                
-                                Divider().background(Color.black.opacity(0.04))
-                                
-                                // Khối hiển thị Calo đốt cháy dự tính thời gian thực
-                                if let min = Double(duration), min > 0 {
-                                    let currentMet = log.activityType.metValue
-                                    let calculatedCalories = (viewModel.userWeight > 0 && viewModel.userHeight > 0) ?
-                                        calculateRealtimeCalories(met: currentMet, duration: min) :
-                                        log.caloriesBurned * (min / log.durationMinutes)
-                                    
-                                    HStack(spacing: 12) {
-                                        ZStack {
-                                            Circle()
-                                                .fill(Color.orange.opacity(0.15))
-                                                .frame(width: 44, height: 44)
-                                            Image(systemName: "flame.fill")
-                                                .foregroundColor(.orange)
-                                                .font(.App.bodyLarge)
-                                        }
-                                        
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("Năng lượng tiêu thụ")
-                                                .font(.App.captionMedium)
-                                                .foregroundColor(.gray)
-                                            Text("~\(Int(calculatedCalories)) Kcal")
-                                                .font(.App.title2)
-                                                .foregroundColor(.black)
-                                        }
-                                        Spacer()
-                                    }
-                                    .padding(.top, 2)
-                                }
-                                
-                                Divider().background(Color.black.opacity(0.04))
-                                
-                                // Khối kén màu sắc thể hiện các mốc chỉ số áp dụng từ Service
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Chỉ số áp dụng tính toán:")
-                                        .font(.App.caption)
-                                        .foregroundColor(.black.opacity(0.7))
-                                    
-                                    HStack(spacing: 8) {
-                                        // Thẻ hệ số MET bài tập
-                                        HStack(spacing: 4) {
-                                            Image(systemName: "bolt.heart.fill").font(.App.tinyMedium)
-                                            Text("MET: \(String(format: "%.1f", log.activityType.metValue))")
-                                        }
-                                        .font(.App.small)
-                                        .padding(.horizontal, 10).padding(.vertical, 6)
-                                        .background(Color.orange.opacity(0.08)).foregroundColor(.orange).cornerRadius(8)
-                                        
-                                        // Thẻ Cân nặng lấy từ ViewModel
-                                        HStack(spacing: 4) {
-                                            Image(systemName: "scalemass.fill").font(.App.tinyMedium)
-                                            Text("Nặng: \(viewModel.userWeight > 0 ? "\(Int(viewModel.userWeight)) kg" : "-- kg")")
-                                        }
-                                        .font(.App.small)
-                                        .padding(.horizontal, 10).padding(.vertical, 6)
-                                        .background(Color.blue.opacity(0.08)).foregroundColor(.blue).cornerRadius(8)
-                                        
-                                        // Thẻ Chiều cao lấy từ ViewModel
-                                        HStack(spacing: 4) {
-                                            Image(systemName: "figure.stand").font(.App.tinyMedium)
-                                            Text("Cao: \(viewModel.userHeight > 0 ? "\(Int(viewModel.userHeight)) cm" : "-- cm")")
-                                        }
-                                        .font(.App.small)
-                                        .padding(.horizontal, 10).padding(.vertical, 6)
-                                        .background(Color.purple.opacity(0.08)).foregroundColor(.purple).cornerRadius(8)
-                                    }
-                                }
-                            }
-                            .padding(20)
-                            .background(Color.white)
-                            .cornerRadius(24)
-                            .shadow(color: Color.black.opacity(0.02), radius: 10, x: 0, y: 5)
-                            .padding(.horizontal)
-                            
-                            // 3. Khối giải trình thuật toán thu gọn chuyên nghiệp
-                            formulaExplanationCard
-                                .padding(.horizontal)
+        ZStack {
+            NavigationView {
+                ZStack {
+                    // LỚP NỀN: Nhận tương tác Tap để ẩn bàn phím khi bấm ra ngoài
+                    Color.App.background
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            hideKeyboard()
                         }
-                        .padding(.top, 16)
-                        .padding(.bottom, 140)
-                        .background(
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .onTapGesture { hideKeyboard() }
-                        )
-                    }
                     
-                    // 4. Action Buttons dưới đáy cố định
-                    VStack(spacing: 12) {
-                        Button(action: handleUpdate) {
-                            Text("Lưu thay đổi")
-                                .font(.App.bodyBold)
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 56)
-                                .background(Color.App.primary)
-                                .cornerRadius(18)
-                                .shadow(color: Color.App.primary.opacity(0.25), radius: 10, x: 0, y: 5)
+                    VStack(spacing: 0) {
+                        ScrollView(showsIndicators: false) {
+                            VStack(spacing: 24) {
+                                // 1. Header Section (Hiển thị Icon, Tên và Ngày Giờ Tạo)
+                                VStack(spacing: 16) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.App.primaryLight)
+                                            .frame(width: 90, height: 90)
+                                        
+                                        Image(systemName: log.activityType.icon)
+                                            .font(.App.large)
+                                            .foregroundColor(Color.App.primary)
+                                    }
+                                    .padding(.top, 10)
+                                    
+                                    VStack(spacing: 6) {
+                                        Text(log.activityType.name)
+                                            .font(.App.header)
+                                            .foregroundColor(.black)
+                                        
+                                        // Hiển thị: Ngày giờ ghi nhận hoạt động từ thuộc tính log.createdAt
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "calendar.badge.clock")
+                                            Text("Ghi nhận lúc: \(formatLogDate(log.createdAt))")
+                                        }
+                                        .font(.App.subheadlineRegular)
+                                        .foregroundColor(.gray)
+                                    }
+                                }
+                                .onTapGesture { hideKeyboard() }
+                                
+                                // 2. Input & Thông số Card chính
+                                VStack(alignment: .leading, spacing: 16) {
+                                    Text("THỜI GIAN TẬP LUYỆN")
+                                        .font(.App.small)
+                                        .foregroundColor(Color.App.primary)
+                                        .tracking(1)
+                                    
+                                    HStack {
+                                        Image(systemName: "clock.fill")
+                                            .foregroundColor(Color.App.primary)
+                                        
+                                        TextField("0", text: $duration)
+                                            .font(.App.header)
+                                            .foregroundColor(.black)
+                                            .keyboardType(.numberPad)
+                                        
+                                        Text("phút")
+                                            .font(.App.headline)
+                                            .foregroundColor(.gray)
+                                    }
+                                    .padding()
+                                    .background(Color.App.secondaryBackground.opacity(0.5))
+                                    .cornerRadius(15)
+                                    
+                                    Divider().background(Color.black.opacity(0.04))
+                                    
+                                    // Khối hiển thị Calo đốt cháy dự tính thời gian thực
+                                    if let min = Double(duration), min > 0 {
+                                        let currentMet = log.activityType.metValue
+                                        let calculatedCalories = (viewModel.userWeight > 0 && viewModel.userHeight > 0) ?
+                                            calculateRealtimeCalories(met: currentMet, duration: min) :
+                                            log.caloriesBurned * (min / log.durationMinutes)
+                                        
+                                        HStack(spacing: 12) {
+                                            ZStack {
+                                                Circle()
+                                                    .fill(Color.orange.opacity(0.15))
+                                                    .frame(width: 44, height: 44)
+                                                Image(systemName: "flame.fill")
+                                                    .foregroundColor(.orange)
+                                                    .font(.App.bodyLarge)
+                                            }
+                                            
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text("Năng lượng tiêu thụ")
+                                                    .font(.App.captionMedium)
+                                                    .foregroundColor(.gray)
+                                                Text("~\(Int(calculatedCalories)) Kcal")
+                                                    .font(.App.title2)
+                                                    .foregroundColor(.black)
+                                            }
+                                            Spacer()
+                                        }
+                                        .padding(.top, 2)
+                                    }
+                                    
+                                    Divider().background(Color.black.opacity(0.04))
+                                    
+                                    // Khối kén màu sắc thể hiện các mốc chỉ số áp dụng từ Service
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("Chỉ số áp dụng tính toán:")
+                                            .font(.App.caption)
+                                            .foregroundColor(.black.opacity(0.7))
+                                        
+                                        HStack(spacing: 8) {
+                                            // Thẻ hệ số MET bài tập
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "bolt.heart.fill").font(.App.tinyMedium)
+                                                Text("MET: \(String(format: "%.1f", log.activityType.metValue))")
+                                            }
+                                            .font(.App.small)
+                                            .padding(.horizontal, 10).padding(.vertical, 6)
+                                            .background(Color.orange.opacity(0.08)).foregroundColor(.orange).cornerRadius(8)
+                                            
+                                            // Thẻ Cân nặng lấy từ ViewModel
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "scalemass.fill").font(.App.tinyMedium)
+                                                Text("Nặng: \(viewModel.userWeight > 0 ? "\(Int(viewModel.userWeight)) kg" : "-- kg")")
+                                            }
+                                            .font(.App.small)
+                                            .padding(.horizontal, 10).padding(.vertical, 6)
+                                            .background(Color.blue.opacity(0.08)).foregroundColor(.blue).cornerRadius(8)
+                                            
+                                            // Thẻ Chiều cao lấy từ ViewModel
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "figure.stand").font(.App.tinyMedium)
+                                                Text("Cao: \(viewModel.userHeight > 0 ? "\(Int(viewModel.userHeight)) cm" : "-- cm")")
+                                            }
+                                            .font(.App.small)
+                                            .padding(.horizontal, 10).padding(.vertical, 6)
+                                            .background(Color.purple.opacity(0.08)).foregroundColor(.purple).cornerRadius(8)
+                                        }
+                                    }
+                                }
+                                .padding(20)
+                                .background(Color.white)
+                                .cornerRadius(24)
+                                .shadow(color: Color.black.opacity(0.02), radius: 10, x: 0, y: 5)
+                                .padding(.horizontal)
+                                
+                                // 3. Khối giải trình thuật toán thu gọn chuyên nghiệp
+                                formulaExplanationCard
+                                    .padding(.horizontal)
+                            }
+                            .padding(.top, 16)
+                            .padding(.bottom, 140)
+                            .background(
+                                Color.clear
+                                    .contentShape(Rectangle())
+                                    .onTapGesture { hideKeyboard() }
+                            )
                         }
                         
-                        Button(action: handleDelete) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "trash")
-                                Text("Xóa hoạt động khỏi nhật ký")
+                        // 4. Action Buttons dưới đáy cố định
+                        VStack(spacing: 12) {
+                            Button(action: handleUpdate) {
+                                Text("Lưu thay đổi")
+                                    .font(.App.bodyBold)
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 56)
+                                    .background(Color.App.primary)
+                                    .cornerRadius(18)
+                                    .shadow(color: Color.App.primary.opacity(0.25), radius: 10, x: 0, y: 5)
                             }
-                            .font(.App.sectionHeader)
-                            .foregroundColor(.red)
-                            .padding(.vertical, 4)
+                            
+                            Button(action: handleDelete) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "trash")
+                                    Text("Xóa hoạt động khỏi nhật ký")
+                                }
+                                .font(.App.sectionHeader)
+                                .foregroundColor(.red)
+                                .padding(.vertical, 4)
+                            }
                         }
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 24)
+                        .background(Color.clear.shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: -4))
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 24)
-                    .background(Color.clear.shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: -4))
+                }
+                .navigationTitle("Chi tiết hoạt động")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Đóng") { dismiss() }
+                            .foregroundColor(.black)
+                            .font(.App.headline)
+                    }
+                }
+                .onTapGesture { hideKeyboard() }
+                .onAppear {
+                    duration = "\(Int(log.durationMinutes))"
+                    viewModel.getUserLogs(userId: userId, date: date)
                 }
             }
-            // ĐÃ CẬP NHẬT CHUẨN XÁC: Tiêu đề trung tâm chữ đen nền trắng mặc định hệ thống
-            .navigationTitle("Chi tiết hoạt động")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Đóng") { dismiss() }
-                        .foregroundColor(.black)
-                        .font(.App.headline)
-                }
-            }
-            .onTapGesture { hideKeyboard() }
-            .onAppear {
-                duration = "\(Int(log.durationMinutes))"
-                viewModel.getUserLogs(userId: userId, date: date)
+            
+            if router.toast != nil {
+                AppNotificationView(data: router.toast)
+                    .zIndex(999)
             }
         }
     }
@@ -352,15 +358,38 @@ extension ActivityDetailView {
     }
     
     private func handleUpdate() {
-        guard let min = Double(duration) else { return }
         hideKeyboard()
-        router.showLoading()
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            viewModel.updateLog(userId: userId, logId: log.id, duration: min, activity: log.activityType, date: date)
-            router.hideLoading()
-            router.showToast(message: "Đã cập nhật thời gian tập luyện", type: .success)
-            dismiss()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            let trimmed = duration.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty {
+                router.showToast(message: "Thời gian tập luyện không được để trống", type: .error)
+                return
+            }
+            
+            let normalized = trimmed.replacingOccurrences(of: ",", with: ".")
+            guard let min = Double(normalized) else {
+                router.showToast(message: "Thời gian tập luyện phải là số hợp lệ", type: .error)
+                return
+            }
+            
+            if min <= 0 {
+                router.showToast(message: "Thời gian tập luyện phải lớn hơn 0 phút", type: .error)
+                return
+            }
+            
+            if min > 480 {
+                router.showToast(message: "Thời gian tập luyện không được vượt quá 480 phút (8 giờ)", type: .error)
+                return
+            }
+            
+            router.showLoading()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                viewModel.updateLog(userId: userId, logId: log.id, duration: min, activity: log.activityType, date: date)
+                router.hideLoading()
+                router.showToast(message: "Đã cập nhật thời gian tập luyện", type: .success)
+                dismiss()
+            }
         }
     }
     
