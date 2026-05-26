@@ -225,37 +225,115 @@ extension FirebaseService {
         
         // MARK: - 1. XUẤT FILE EXCEL / CSV CHUẨN ĐỊNH DẠNG HÀNG CỘT
         func generateCSV(from points: [MetricPoint], title: String, user: User?) -> URL? {
+            func escapeCSV(_ field: String) -> String {
+                let escaped = field.replacingOccurrences(of: "\"", with: "\"\"")
+                return "\"\(escaped)\""
+            }
+            
             var csvString = ""
             
             // --- THÔNG TIN USER & PLAN (HEADER METADATA) ---
-            csvString += "BÁO CÁO TIẾN ĐỘ DINH DƯỠNG NUTRIX\n"
-            csvString += "Chu kỳ thống kê:,\(title)\n"
-            csvString += "Họ và tên khách hàng:,\(user?.name ?? "Khách vãng lai")\n"
-            csvString += "Email đăng ký:,\(user?.email ?? "Chưa cập nhật")\n"
-            csvString += "Chiều cao hiện tại:,\(user?.height ?? 0) cm\n"
-            csvString += "Cân nặng hiện tại:,\(user?.weight ?? 0) kg\n"
-            csvString += "Thời gian xuất bản:,\(reportCreationTimeString)\n"
+            csvString += "\"BÁO CÁO TIẾN ĐỘ DINH DƯỠNG NUTRIX\"\n"
+            csvString += "\"Chu kỳ thống kê:\",\(escapeCSV(title))\n"
+            csvString += "\"Họ và tên khách hàng:\",\(escapeCSV(user?.name ?? "Khách vãng lai"))\n"
+            csvString += "\"Email đăng ký:\",\(escapeCSV(user?.email ?? "Chưa cập nhật"))\n"
+            csvString += "\"Chiều cao hiện tại:\",\"\(Int(user?.height ?? 0)) cm\"\n"
+            csvString += "\"Cân nặng hiện tại:\",\"\(Int(user?.weight ?? 0)) kg\"\n"
+            csvString += "\"Thời gian xuất bản:\",\(escapeCSV(reportCreationTimeString))\n"
             csvString += "\n"
             
             // --- TIÊU ĐỀ BẢNG DỮ LIỆU ---
-            csvString += "Thời gian,Kcal Nạp Vào,Kcal Mục Tiêu,Kcal Tiêu Hao,Protein (g),Carbs (g),Fat (g),Trạng thái Lộ trình\n"
+            csvString += "\"Thời gian\",\"Kcal Nạp Vào\",\"Kcal Mục Tiêu\",\"Tỷ lệ Hoàn Thành\",\"Kcal Tiêu Hao\",\"Chất Đạm (g)\",\"Tinh Bột (g)\",\"Chất Béo (g)\",\"Trạng thái Lộ trình\"\n"
+            
+            var totalIntake: Double = 0.0
+            var totalBurned: Double = 0.0
+            var totalTarget: Double = 0.0
+            var totalProtein: Double = 0.0
+            var totalCarbs: Double = 0.0
+            var totalFat: Double = 0.0
+            
+            var planDaysCount: Double = 0.0
+            var intakeDaysCount: Double = 0.0
             
             // --- DUYỆT QUA TỪNG NGÀY ĐỂ ĐỔ DỮ LIỆU ---
             for point in points {
                 let label = point.label
-                let intake = String(format: "%.0f", point.intakeCalories)
-                let burned = String(format: "%.0f", point.burnedCalories)
+                let intakeVal = point.intakeCalories
+                let burnedVal = point.burnedCalories
                 
-                let target = point.hasPlan ? String(format: "%.0f", point.targetCalories) : "--"
-                let protein = point.hasPlan ? String(format: "%.1f", point.protein) : "--"
-                let carbs = point.hasPlan ? String(format: "%.1f", point.carbs) : "--"
-                let fat = point.hasPlan ? String(format: "%.1f", point.fat) : "--"
-                let status = point.hasPlan ? point.status.rawValue : "Không có lộ trình"
+                totalIntake += intakeVal
+                totalBurned += burnedVal
+                if intakeVal > 0 {
+                    intakeDaysCount += 1
+                }
                 
-                csvString += "\(label),\(intake),\(target),\(burned),\(protein),\(carbs),\(fat),\(status)\n"
+                let intake = String(format: "%.0f", intakeVal)
+                let burned = String(format: "%.0f", burnedVal)
+                
+                let target: String
+                let protein: String
+                let carbs: String
+                let fat: String
+                let completionRate: String
+                let status: String
+                
+                if point.hasPlan && point.targetCalories > 0 {
+                    planDaysCount += 1
+                    totalTarget += point.targetCalories
+                    totalProtein += point.protein
+                    totalCarbs += point.carbs
+                    totalFat += point.fat
+                    
+                    target = String(format: "%.0f", point.targetCalories)
+                    protein = String(format: "%.1f", point.protein)
+                    carbs = String(format: "%.1f", point.carbs)
+                    fat = String(format: "%.1f", point.fat)
+                    completionRate = String(format: "%.0f%%", point.completionRate)
+                    status = point.status.rawValue
+                } else {
+                    target = ""
+                    protein = ""
+                    carbs = ""
+                    fat = ""
+                    completionRate = ""
+                    status = "Không có lộ trình"
+                }
+                
+                csvString += "\(escapeCSV(label)),\(intake),\(target),\(burned),\(protein),\(carbs),\(fat),\(escapeCSV(completionRate)),\(escapeCSV(status))\n"
             }
             
-            let fileName = "Nutrix_Data_Report_\(UUID().uuidString.prefix(6)).csv"
+            // --- HÀNG TỔNG CỘNG VÀ TRUNG BÌNH ---
+            csvString += "\n"
+            
+            let avgIntake = intakeDaysCount > 0 ? totalIntake / intakeDaysCount : 0.0
+            let avgBurned = intakeDaysCount > 0 ? totalBurned / intakeDaysCount : 0.0
+            let avgTarget = planDaysCount > 0 ? totalTarget / planDaysCount : 0.0
+            let avgProtein = planDaysCount > 0 ? totalProtein / planDaysCount : 0.0
+            let avgCarbs = planDaysCount > 0 ? totalCarbs / planDaysCount : 0.0
+            let avgFat = planDaysCount > 0 ? totalFat / planDaysCount : 0.0
+            let avgCompletionRate = planDaysCount > 0 ? (totalIntake / totalTarget) * 100 : 0.0
+            
+            // Hàng TỔNG CỘNG
+            let totalTargetStr = planDaysCount > 0 ? String(format: "%.0f", totalTarget) : ""
+            let totalProteinStr = planDaysCount > 0 ? String(format: "%.1f", totalProtein) : ""
+            let totalCarbsStr = planDaysCount > 0 ? String(format: "%.1f", totalCarbs) : ""
+            let totalFatStr = planDaysCount > 0 ? String(format: "%.1f", totalFat) : ""
+            
+            csvString += "\"TỔNG CỘNG\",\(String(format: "%.0f", totalIntake)),\(totalTargetStr),\"\",\(String(format: "%.0f", totalBurned)),\(totalProteinStr),\(totalCarbsStr),\(totalFatStr),\"\"\n"
+            
+            // Hàng TRUNG BÌNH/NGÀY
+            let avgTargetStr = planDaysCount > 0 ? String(format: "%.0f", avgTarget) : ""
+            let avgProteinStr = planDaysCount > 0 ? String(format: "%.1f", avgProtein) : ""
+            let avgCarbsStr = planDaysCount > 0 ? String(format: "%.1f", avgCarbs) : ""
+            let avgFatStr = planDaysCount > 0 ? String(format: "%.1f", avgFat) : ""
+            let avgCompletionStr = planDaysCount > 0 ? String(format: "%.0f%%", avgCompletionRate) : ""
+            
+            csvString += "\"TRUNG BÌNH/NGÀY\",\(String(format: "%.0f", avgIntake)),\(avgTargetStr),\(escapeCSV(avgCompletionStr)),\(String(format: "%.0f", avgBurned)),\(avgProteinStr),\(avgCarbsStr),\(avgFatStr),\"\"\n"
+            
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "dd_MM_yy"
+            let dateStr = dateFormatter.string(from: Date())
+            let fileName = "Nutrix_\(dateStr)_report.csv"
             let path = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
             
             do {
@@ -283,7 +361,10 @@ extension FirebaseService {
             let pageRect = CGRect(x: 0, y: 0, width: 595.2, height: 841.8) // Khổ giấy A4 tiêu chuẩn
             let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: format)
             
-            let fileName = "Nutrix_Health_Report_\(UUID().uuidString.prefix(6)).pdf"
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "dd_MM_yy"
+            let dateStr = dateFormatter.string(from: Date())
+            let fileName = "Nutrix_\(dateStr)_report.pdf"
             let path = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
             
             do {

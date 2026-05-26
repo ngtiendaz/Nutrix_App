@@ -1,17 +1,22 @@
 import SwiftUI
 import Charts
+import QuickLook
 
 struct ChartView: View {
     @Binding var selectedDate: Date
     @StateObject private var viewModel = StatisticsViewModel()
     @EnvironmentObject var authService: FirebaseAuthService
+    @EnvironmentObject var router: AppRouter
     
     private let months = Array(1...12)
     private let years = Array(2024...2030)
     
     // MARK: - States quản lý xuất file báo cáo
-    @State private var exportURL: URL? = nil
-    @State private var showShareSheet = false
+    struct PreviewDocument: Identifiable {
+        let id = UUID()
+        let url: URL
+    }
+    @State private var previewDocument: PreviewDocument? = nil
     
     var body: some View {
         ZStack {
@@ -65,11 +70,11 @@ struct ChartView: View {
         .onChange(of: viewModel.selectedTab) { _ in viewModel.loadStatistics(targetDate: viewModel.currentWeekStartDate) }
         .onChange(of: viewModel.selectedMonth) { _ in viewModel.loadStatistics(targetDate: selectedDate) }
         .onChange(of: viewModel.selectedYear) { _ in viewModel.loadStatistics(targetDate: selectedDate) }
-        // Gọi bảng Share Sheet hệ thống khi exportURL được khởi tạo thành công
-        .sheet(isPresented: $showShareSheet) {
-            if let url = exportURL {
-                ShareSheet(activityItems: [url])
+        .fullScreenCover(item: $previewDocument) { doc in
+            QuickLookPreview(url: doc.url) {
+                previewDocument = nil
             }
+            .ignoresSafeArea()
         }
     }
 }
@@ -424,17 +429,23 @@ extension ChartView {
         case .year: reportTitle = "Năm \(viewModel.selectedYear)"
         }
         
-        // THAY ĐỔI TẠI ĐÂY: Truyền thêm authService.currentUser vào hàm sinh file
-        switch type {
-        case .excel:
-            if let url = FirebaseService.shared.generateCSV(from: points, title: reportTitle, user: authService.currentUser) {
-                self.exportURL = url
-                self.showShareSheet = true
+        router.showLoading()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            let url: URL?
+            switch type {
+            case .excel:
+                url = FirebaseService.shared.generateCSV(from: points, title: reportTitle, user: authService.currentUser)
+            case .pdf:
+                url = FirebaseService.shared.generatePDF(from: points, title: reportTitle, user: authService.currentUser)
             }
-        case .pdf:
-            if let url = FirebaseService.shared.generatePDF(from: points, title: reportTitle, user: authService.currentUser) {
-                self.exportURL = url
-                self.showShareSheet = true
+            
+            router.hideLoading()
+            
+            if let url = url {
+                self.previewDocument = PreviewDocument(url: url)
+            } else {
+                router.showToast(message: "Không thể tạo file báo cáo", type: .error)
             }
         }
     }
