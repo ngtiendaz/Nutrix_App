@@ -10,8 +10,6 @@ struct NutritionPlanView: View {
     
     @StateObject private var viewModel = NutritionPlanViewModel()
     
-    @State private var selectedDuration: Int = 1
-    
     var onBackToSetup: () -> Void
     var onApplied: () -> Void
     
@@ -141,9 +139,7 @@ struct NutritionPlanView: View {
             .padding(.top, 8)
         }
         .onAppear {
-            if let planDuration = plan.duration {
-                self.selectedDuration = planDuration
-            }
+            // Removed duration setting
         }
     }
     
@@ -191,7 +187,6 @@ struct NutritionPlanView: View {
         viewModel.handleSavePlan(
             userId: userId,
             plan: plan,
-            durationMonths: selectedDuration,
             currentWeight: plan.currentWeight ?? 0.0,
             targetWeight: plan.targetWeight ?? 0.0
         ) { success in

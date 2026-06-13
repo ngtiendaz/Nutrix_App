@@ -62,8 +62,9 @@ struct AIPlanSetupView: View {
                                             
                                             HStack(spacing: 16) {
                                                 exerciseTimeCard
-                                                durationCard
+                                                // Removed durationCard here since we will put dateSelectionCard below
                                             }
+                                            dateSelectionCard
                                             
                                             healthNoteSection
                                         }
@@ -275,36 +276,54 @@ struct AIPlanSetupView: View {
         .shadow(color: .black.opacity(0.03), radius: 10, x: 0, y: 5)
     }
     
-    private var durationCard: some View {
+    private var dateSelectionCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "calendar")
                     .foregroundColor(.blue)
-                Text("Thời hạn")
+                Text("Thời hạn lộ trình")
                     .font(.App.sectionHeader)
                     .foregroundColor(.black)
             }
             
-            HStack {
-                Button { if vm.duration > 1 { vm.duration -= 1 } } label: {
-                    Image(systemName: "minus.circle.fill")
-                        .foregroundColor(.gray.opacity(0.3))
+            VStack(spacing: 8) {
+                DatePicker(
+                    "Từ ngày",
+                    selection: $vm.startDate,
+                    in: Date()...,
+                    displayedComponents: .date
+                )
+                .font(.App.bodyBold)
+                .foregroundColor(.black)
+                .tint(Color.App.primary)
+                .onChange(of: vm.startDate) { newStartDate in
+                    // Đảm bảo endDate luôn sau startDate ít nhất 10 ngày
+                    if let minEndDate = Calendar.current.date(byAdding: .day, value: 10, to: newStartDate),
+                       vm.endDate < minEndDate {
+                        vm.endDate = minEndDate
+                    }
                 }
                 
-                Spacer()
-                Text("\(Int(vm.duration))")
-                    .font(.App.title2)
-                    .foregroundColor(.black)
-                Spacer()
+                Divider()
                 
-                Button { if vm.duration < 12 { vm.duration += 1 } } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundColor(Color.App.primary)
-                }
+                let minEndDate = Calendar.current.date(byAdding: .day, value: 10, to: vm.startDate) ?? Date()
+                
+                DatePicker(
+                    "Đến ngày",
+                    selection: $vm.endDate,
+                    in: minEndDate...,
+                    displayedComponents: .date
+                )
+                .font(.App.bodyBold)
+                .foregroundColor(.black)
+                .tint(Color.App.primary)
             }
             .padding(.vertical, 8)
             
-            Text("tháng")
+            let components = Calendar.current.dateComponents([.day], from: vm.startDate, to: vm.endDate)
+            let durationDays = max(10, components.day ?? 10)
+            
+            Text("Tổng cộng: \(durationDays) ngày")
                 .font(.App.smallSemibold)
                 .foregroundColor(.gray)
                 .frame(maxWidth: .infinity, alignment: .center)

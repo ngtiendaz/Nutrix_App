@@ -13,7 +13,8 @@ import Combine
 @MainActor
 class AIPlanViewModel: ObservableObject {
     @Published var targetWeight: String = ""
-    @Published var duration: Double = 1.0
+    @Published var startDate: Date = Date()
+    @Published var endDate: Date = Calendar.current.date(byAdding: .day, value: 10, to: Date()) ?? Date()
     @Published var exerciseTime: String = "30"
     @Published var healthNote: String = ""
     @Published var generatedPlan: NutritionPlan?
@@ -21,7 +22,7 @@ class AIPlanViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
     
     private let model = GenerativeModel(
-        name: "models/gemini-2.5-flash",
+        name: "models/gemini-2.5-flash-lite",
         apiKey: AppConfig.geminiAPIKey,
         requestOptions: RequestOptions(apiVersion: "v1")
     )
@@ -33,12 +34,15 @@ class AIPlanViewModel: ObservableObject {
         
         let userActivity = user.activityLevel ?? "không rõ"
         
+        let components = Calendar.current.dateComponents([.day], from: startDate, to: endDate)
+        let durationDays = max(10, components.day ?? 10)
+        
         let prompt = """
         Context: Bạn là chuyên gia dinh dưỡng và huấn luyện viên cá nhân của ứng dụng Nutrix.
         User: \(user.name), \(user.age ?? 22) tuổi, nặng \(user.weight ?? 0)kg, cao \(user.height ?? 0)cm.
         Mức độ hoạt động hiện tại: \(userActivity).
         Tình trạng sức khỏe/Lưu ý: \(healthNote.isEmpty ? "Không có lưu ý đặc biệt" : healthNote).
-        Goal: Mục tiêu nặng \(targetWeight)kg trong \(Int(duration)) tháng.
+        Goal: Mục tiêu nặng \(targetWeight)kg trong \(durationDays) ngày.
         Thời gian tập luyện cam kết: \(exerciseTime) phút/ngày.
         
         Nhiệm vụ:
@@ -87,7 +91,8 @@ class AIPlanViewModel: ObservableObject {
                 
                 decodedPlan.currentWeight = user.weight
                 decodedPlan.targetWeight = Double(self.targetWeight)
-                decodedPlan.duration = Int(self.duration)
+                decodedPlan.startDate = self.startDate
+                decodedPlan.endDate = self.endDate
                 
                 self.generatedPlan = decodedPlan
                 print("✅ LOG: Decode thành công. Target: \(decodedPlan.targetWeight ?? 0)")

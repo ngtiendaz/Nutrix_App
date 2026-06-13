@@ -15,7 +15,6 @@ class NutritionPlanViewModel: ObservableObject {
     func handleSavePlan(
             userId: String,
             plan: NutritionPlan,
-            durationMonths: Int,    // Thêm thời hạn
             currentWeight: Double,  // Thêm cân nặng hiện tại
             targetWeight: Double,   // Thêm cân nặng mục tiêu
             completion: @escaping (Bool) -> Void
@@ -27,7 +26,6 @@ class NutritionPlanViewModel: ObservableObject {
         FirebaseService.shared.saveNutritionPlan(
             userId: userId,
             plan: plan,
-            durationMonths: durationMonths,
             currentWeight: currentWeight,
             targetWeight: targetWeight
         ) { [weak self] result in

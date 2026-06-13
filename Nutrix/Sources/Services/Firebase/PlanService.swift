@@ -13,7 +13,6 @@ extension FirebaseService {
     func saveNutritionPlan(
             userId: String,
             plan: NutritionPlan,
-            durationMonths: Int,
             currentWeight: Double,
             targetWeight: Double,
             completion: @escaping (Result<Void, Error>) -> Void
@@ -26,17 +25,9 @@ extension FirebaseService {
                     self.archivePlanToHistory(userId: userId, plan: oldPlan)
                 }
                 
-                // 2. Tính toán ngày
-                // Nếu là cập nhật mục tiêu AI (plan đã có sẵn ngày và khoảng cách > 1 ngày), ta giữ nguyên ngày cũ.
-                // Nếu là tạo lộ trình hoàn toàn mới, ta mới tính toán ngày bắt đầu từ hôm nay.
-                var startDate = Date()
-                var endDate = Calendar.current.date(byAdding: .month, value: durationMonths, to: startDate) ?? startDate
-                
-                if let planStart = plan.startDate, let planEnd = plan.endDate, 
-                   planEnd.timeIntervalSince(planStart) > 86400 { // Lớn hơn 1 ngày
-                    startDate = planStart
-                    endDate = planEnd
-                }
+                // 2. Lấy ngày trực tiếp từ plan do người dùng đã chọn qua DatePicker
+                let startDate = plan.startDate ?? Date()
+                let endDate = plan.endDate ?? Calendar.current.date(byAdding: .day, value: 10, to: startDate)!
                 
                 // 3. Tạo dữ liệu plan mới
                 let planData: [String: Any] = [
