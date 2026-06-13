@@ -10,7 +10,6 @@ struct NutritionGoalCard: View {
     let data: DailyNutrition
     let goal: NutritionPlan
     
-    
     @State private var animatedCalories: Double = 0
     @State private var animatedBurned: Double = 0
     

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct PlanSummaryCard: View {
+    @EnvironmentObject var router: AppRouter
     let summary: PlanSummary
     
     var body: some View {
@@ -96,6 +97,9 @@ struct PlanSummaryCard: View {
         .background(Color.App.cardBackground)
         .cornerRadius(20)
         .shadow(color: Color.App.shadow, radius: 10, x: 0, y: 5)
+        .onTapGesture {
+            router.selectedTab = .plan
+        }
     }
     
     // MARK: - Helper Functions
