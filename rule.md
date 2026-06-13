@@ -83,5 +83,9 @@ Adhere to the following directory structure:
 - Follow the existing pattern for `dateKey` and hierarchical collections under `users/{userId}/`.
 - Always handle potential decoding errors when fetching documents.
 
+## 7. Quality Assurance & Verification
+
+- **Mandatory Compile Checks:** Every time code is modified, run a text analysis/compilation check (e.g., using `xcodebuild build` or checking Xcode directly) to ensure there are no compilation errors (`lỗi biên dịch`). Do not assume code is correct without verification.
+
 ---
 *Note: This file is a living document and should be updated as the project evolves.*

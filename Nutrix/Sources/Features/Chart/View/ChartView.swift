@@ -7,9 +7,16 @@ struct ChartView: View {
     @StateObject private var viewModel = StatisticsViewModel()
     @EnvironmentObject var authService: FirebaseAuthService
     @EnvironmentObject var router: AppRouter
+    @EnvironmentObject var diaryViewModel: DiaryViewModel
     
     private let months = Array(1...12)
     private let years = Array(2024...2030)
+    
+    struct IdentifiableDate: Identifiable {
+        let id = UUID()
+        let date: Date
+    }
+    @State private var selectedHistoryDate: IdentifiableDate? = nil
     
     // MARK: - States quản lý xuất file báo cáo
     struct PreviewDocument: Identifiable {
@@ -75,6 +82,15 @@ struct ChartView: View {
                 previewDocument = nil
             }
             .ignoresSafeArea()
+        }
+        .sheet(item: $selectedHistoryDate) { item in
+            if #available(iOS 16.0, *) {
+                HistoryFoodListView(date: item.date)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.hidden)
+            } else {
+                HistoryFoodListView(date: item.date)
+            }
         }
     }
 }
@@ -364,36 +380,43 @@ extension ChartView {
                 .background(Color.white).cornerRadius(14)
             } else {
                 ForEach(activePoints.reversed()) { point in
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(listLabel(for: point)).font(.App.headline).foregroundColor(.black)
+                    Button {
+                        if viewModel.selectedTab != .year, let date = point.date {
+                            selectedHistoryDate = IdentifiableDate(date: date)
+                        }
+                    } label: {
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(listLabel(for: point)).font(.App.headline).foregroundColor(.black)
+                                
+                                if !point.hasPlan {
+                                    Text("Nạp thực tế: \(Int(point.intakeCalories)) Kcal")
+                                        .font(.App.captionMedium).foregroundColor(.gray)
+                                } else {
+                                    Text("Nạp: \(Int(point.intakeCalories)) / Mục tiêu: \(Int(point.targetCalories)) Kcal")
+                                        .font(.App.captionMedium).foregroundColor(.gray)
+                                }
+                            }
+                            Spacer()
                             
-                            if !point.hasPlan {
-                                Text("Nạp thực tế: \(Int(point.intakeCalories)) Kcal")
-                                    .font(.App.captionMedium).foregroundColor(.gray)
-                            } else {
-                                Text("Nạp: \(Int(point.intakeCalories)) / Mục tiêu: \(Int(point.targetCalories)) Kcal")
-                                    .font(.App.captionMedium).foregroundColor(.gray)
+                            VStack(alignment: .trailing, spacing: 4) {
+                                if !point.hasPlan {
+                                    Text("--").font(.App.headlineHeavy).foregroundColor(.gray)
+                                    Text("Không có lộ trình")
+                                        .font(.App.micro)
+                                        .padding(.horizontal, 6).padding(.vertical, 3)
+                                        .background(Color.gray.opacity(0.1)).cornerRadius(6).foregroundColor(.gray)
+                                } else {
+                                    Text("\(Int(point.completionRate))%")
+                                        .font(.App.headlineHeavy).foregroundColor(statusColor(point.status))
+                                    Text(point.status.rawValue).font(.App.tiny)
+                                        .padding(.horizontal, 6).padding(.vertical, 3).background(statusColor(point.status).opacity(0.5)).cornerRadius(6)
+                                }
                             }
                         }
-                        Spacer()
-                        
-                        VStack(alignment: .trailing, spacing: 4) {
-                            if !point.hasPlan {
-                                Text("--").font(.App.headlineHeavy).foregroundColor(.gray)
-                                Text("Không có lộ trình")
-                                    .font(.App.micro)
-                                    .padding(.horizontal, 6).padding(.vertical, 3)
-                                    .background(Color.gray.opacity(0.1)).cornerRadius(6).foregroundColor(.gray)
-                            } else {
-                                Text("\(Int(point.completionRate))%")
-                                    .font(.App.headlineHeavy).foregroundColor(statusColor(point.status))
-                                Text(point.status.rawValue).font(.App.tiny)
-                                    .padding(.horizontal, 6).padding(.vertical, 3).background(statusColor(point.status).opacity(0.5)).cornerRadius(6)
-                            }
-                        }
+                        .padding(.vertical, 12).padding(.horizontal, 14).background(Color.white).cornerRadius(14)
                     }
-                    .padding(.vertical, 12).padding(.horizontal, 14).background(Color.white).cornerRadius(14)
+                    .buttonStyle(.plain)
                 }
             }
         }
