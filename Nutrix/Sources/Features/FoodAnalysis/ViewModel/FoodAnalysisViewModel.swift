@@ -26,6 +26,13 @@ class FoodAnalysisViewModel: ObservableObject {
     @Published var weight: Double = 100.0
     @Published var quantity: Double = 1.0
     
+    enum AnalysisMode: String, CaseIterable {
+        case visionEdamam = "Vision + Edamam"
+        case gemini = "Gemini AI"
+    }
+    
+    @Published var analysisMode: AnalysisMode = .gemini
+    
     // 👉 CÁC BIẾN QUẢN LÝ CHỈNH SỬA DINH DƯỠNG
     let isEditableNutrition: Bool
     @Published var editableCalories: Double = 0.0
@@ -93,6 +100,16 @@ class FoodAnalysisViewModel: ObservableObject {
     
     func startAnalysis() async {
         guard let imageToAnalyze = selectedImage, !isAnalyzing, analyzedFood == nil else { return }
+        switch analysisMode {
+        case .visionEdamam:
+            await startVisionEdamamAnalysis()
+        case .gemini:
+            await startGeminiAnalysis()
+        }
+    }
+    
+    private func startVisionEdamamAnalysis() async {
+        guard let imageToAnalyze = selectedImage else { return }
         isAnalyzing = true
         errorMessage = nil
         self.advice = nil
@@ -122,6 +139,97 @@ class FoodAnalysisViewModel: ObservableObject {
                 case .failure(let error):
                     self.handleError("Lỗi kết nối Vision: \(error.localizedDescription)")
                 }
+            }
+        }
+    }
+    
+    private func startGeminiAnalysis() async {
+        guard let imageToAnalyze = selectedImage else { return }
+        isAnalyzing = true
+        errorMessage = nil
+        self.advice = nil
+        cancelAILuongAndEffects()
+        
+        let prompt = """
+        Bạn là chuyên gia dinh dưỡng. Hãy phân tích hình ảnh thức ăn này và trả về kết quả dưới định dạng JSON duy nhất, không chứa bất kỳ markdown, không có text thừa.
+        Nếu không phải là thức ăn hoặc không thể nhận diện, hãy trả về JSON:
+        {
+           "error": "Không thể nhận diện cụ thể món ăn này."
+        }
+        
+        Nếu là thức ăn, hãy trả về JSON:
+        {
+           "name": "Tên món ăn bằng tiếng Việt",
+           "calories": (số Double, calo cho khẩu phần chuẩn),
+           "protein": (số Double, gam protein cho khẩu phần chuẩn),
+           "carbs": (số Double, gam carbs cho khẩu phần chuẩn),
+           "fats": (số Double, gam chất béo cho khẩu phần chuẩn),
+           "servingSize": (số Double, trọng lượng khẩu phần chuẩn tính bằng gam, ví dụ 100.0),
+           "servingUnit": "Gram"
+        }
+        """
+        
+        do {
+            let response = try await self.model.generateContent(prompt, imageToAnalyze)
+            guard var rawString = response.text else { throw NSError(domain: "EmptyResponse", code: 0) }
+            
+            rawString = rawString.trimmingCharacters(in: .whitespacesAndNewlines)
+            if rawString.hasPrefix("```json") { rawString = String(rawString.dropFirst(7)) }
+            else if rawString.hasPrefix("```") { rawString = String(rawString.dropFirst(3)) }
+            if rawString.hasSuffix("```") { rawString = String(rawString.dropLast(3)) }
+            rawString = rawString.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            guard let rawData = rawString.data(using: .utf8) else { throw NSError(domain: "DataConversionError", code: 0) }
+            
+            if let errorDict = try? JSONDecoder().decode([String: String].self, from: rawData), let errorMsg = errorDict["error"] {
+                await MainActor.run {
+                    self.handleError(errorMsg)
+                }
+                return
+            }
+            
+            struct GeminiFoodResult: Codable {
+                let name: String
+                let calories: Double
+                let protein: Double
+                let carbs: Double
+                let fats: Double
+                let servingSize: Double
+                let servingUnit: String
+            }
+            
+            let result = try JSONDecoder().decode(GeminiFoodResult.self, from: rawData)
+            
+            await MainActor.run {
+                let foodId = UUID().uuidString
+                let food = Food(
+                    id: foodId,
+                    name: result.name,
+                    image: nil,
+                    calories: result.calories,
+                    protein: result.protein,
+                    carbs: result.carbs,
+                    fats: result.fats,
+                    servingSize: result.servingSize,
+                    servingUnit: result.servingUnit,
+                    quantity: 1.0
+                )
+                self.analyzedFood = food
+                self.editableCalories = food.calories
+                self.editableProtein = food.protein
+                self.editableCarbs = food.carbs
+                self.editableFats = food.fats
+                
+                self.isAnalyzing = false
+                self.confidence = 0
+                self.suggestions = []
+                
+                self.updateMealType()
+                self.updateAIAdvice()
+            }
+        } catch {
+            await MainActor.run {
+                self.handleError("Lỗi kết nối Gemini: \(error.localizedDescription)")
             }
         }
     }
