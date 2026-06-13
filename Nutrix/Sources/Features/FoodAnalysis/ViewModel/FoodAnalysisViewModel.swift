@@ -184,10 +184,9 @@ class FoodAnalysisViewModel: ObservableObject {
             
             guard let rawData = rawString.data(using: .utf8) else { throw NSError(domain: "DataConversionError", code: 0) }
             
-            if let errorDict = try? JSONDecoder().decode([String: String].self, from: rawData), let errorMsg = errorDict["error"] {
-                await MainActor.run {
-                    self.handleError(errorMsg)
-                }
+            if let errorDict = try? JSONDecoder().decode([String: String].self, from: rawData), let _ = errorDict["error"] {
+                print("Gemini trả về lỗi không nhận diện được, tự động chuyển sang dùng Vision + Edamam...")
+                await self.startVisionEdamamAnalysis()
                 return
             }
             
@@ -231,9 +230,8 @@ class FoodAnalysisViewModel: ObservableObject {
                 self.updateAIAdvice()
             }
         } catch {
-            await MainActor.run {
-                self.handleError("Lỗi kết nối Gemini: \(error.localizedDescription)")
-            }
+            print("Lỗi Gemini: \(error.localizedDescription). Đang chuyển sang dùng Vision + Edamam...")
+            await startVisionEdamamAnalysis()
         }
     }
     
