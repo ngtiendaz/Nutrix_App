@@ -1,3 +1,58 @@
+' @startuml
+' skinparam style strictuml
+' skinparam DefaultFontSize 14
+' skinparam ActorFontSize 16
+' skinparam ParticipantFontSize 14
+' skinparam monochrome true
+' skinparam shadowing false
+' skinparam ParticipantPadding 20
+' skinparam BoxPadding 10
+
+' actor "Quản trị viên" as Admin
+' boundary "GD_BaoCaoThongKe" as Boundary
+' control "Ctrl_ThongKe" as Control
+' entity "Database" as DB
+
+' ' --- GIAI ĐOẠN KHỞI TẠO ---
+' Admin -> Boundary : 1: Chọn "Xem báo cáo thống kê"
+' activate Boundary
+' Boundary -> Control : 2: Yêu cầu lấy số liệu tổng quan
+' activate Control
+' Control -> DB : 3: Truy vấn dữ liệu hệ thống
+' activate DB
+' DB --> Control : 4: Trả về kết quả
+' deactivate DB
+' Control --> Boundary : 5: Hiển thị màn hình báo cáo
+' deactivate Control
+' Boundary --> Admin : 6: Yêu cầu chọn mốc thời gian (Tuần/Tháng/Năm)
+' deactivate Boundary
+
+' ' --- GIAI ĐOẠN XEM CHI TIẾT ---
+' Admin -> Boundary : 7: Chọn mốc thời gian
+' activate Boundary
+' Boundary -> Control : 8: Gửi yêu cầu truy vấn theo thời gian
+' activate Control
+
+' Control -> DB : 9: Truy vấn dữ liệu thói quen người dùng theo thời gian
+' activate DB
+' DB --> Control : 10: Trả về dữ liệu
+' deactivate DB
+
+' alt Có dữ liệu thống kê
+'     Control --> Boundary : 11: Phản hồi dữ liệu chi tiết
+'     Boundary -> Boundary : 12: Vẽ và hiển thị biểu đồ thói quen người dùng
+'     Boundary --> Admin : 13: Hiển thị biểu đồ phân tích thành công
+' else Không có dữ liệu
+'     Control --> Boundary : 11: Phản hồi trạng thái trống
+'     Boundary --> Admin : 12: Thông báo "Chưa có dữ liệu thống kê" và hiển thị biểu đồ trống
+' end
+
+' deactivate Control
+' deactivate Boundary
+
+' @enduml
+
+
 @startuml
 skinparam style strictuml
 skinparam DefaultFontSize 14
@@ -8,46 +63,52 @@ skinparam shadowing false
 skinparam ParticipantPadding 20
 skinparam BoxPadding 10
 
-actor "Quản trị viên" as Admin
-boundary "GD_BaoCaoThongKe" as Boundary
-control "Ctrl_ThongKe" as Control
-entity "Database" as DB
+actor "Người dùng" as NguoiDung
+boundary "GD_NhatKy" as GD
+control "Ctrl_NhatKy" as Ctrl
+entity "Ent_NhatKy" as Ent
 
-' --- GIAI ĐOẠN KHỞI TẠO ---
-Admin -> Boundary : 1: Chọn "Xem báo cáo thống kê"
-activate Boundary
-Boundary -> Control : 2: Yêu cầu lấy số liệu tổng quan
-activate Control
-Control -> DB : 3: Truy vấn dữ liệu hệ thống
-activate DB
-DB --> Control : 4: Trả về kết quả
-deactivate DB
-Control --> Boundary : 5: Hiển thị màn hình báo cáo
-deactivate Control
-Boundary --> Admin : 6: Yêu cầu chọn mốc thời gian (Tuần/Tháng/Năm)
-deactivate Boundary
+title BIỂU ĐỒ TUẦN TỰ: TÌM KIẾM NHẬT KÝ BỮA ĂN THEO NGÀY
 
-' --- GIAI ĐOẠN XEM CHI TIẾT ---
-Admin -> Boundary : 7: Chọn mốc thời gian
-activate Boundary
-Boundary -> Control : 8: Gửi yêu cầu truy vấn theo thời gian
-activate Control
+' 1. Khởi tạo giao diện ban đầu
+1. NguoiDung -> GD: Truy cập chức năng nhật ký bữa ăn
+activate GD
+2. GD -> Ctrl: Yêu cầu hiển thị giao diện tìm kiếm
+activate Ctrl
+3. Ctrl --> GD: Hiển thị bộ lọc chọn ngày
+deactivate Ctrl
+deactivate GD
 
-Control -> DB : 9: Truy vấn dữ liệu thói quen người dùng theo thời gian
-activate DB
-DB --> Control : 10: Trả về dữ liệu
-deactivate DB
-
-alt Có dữ liệu thống kê
-    Control --> Boundary : 11: Phản hồi dữ liệu chi tiết
-    Boundary -> Boundary : 12: Vẽ và hiển thị biểu đồ thói quen người dùng
-    Boundary --> Admin : 13: Hiển thị biểu đồ phân tích thành công
-else Không có dữ liệu
-    Control --> Boundary : 11: Phản hồi trạng thái trống
-    Boundary --> Admin : 12: Thông báo "Chưa có dữ liệu thống kê" và hiển thị biểu đồ trống
+' 2. Bắt đầu luồng tìm kiếm và kiểm tra
+loop Kiểm tra dữ liệu và tìm kiếm
+    4. NguoiDung -> GD: Chọn ngày và nhấn nút "Tìm kiếm"
+    activate GD
+    5. GD -> Ctrl: Gửi yêu cầu tìm kiếm theo ngày đã chọn
+    activate Ctrl
+    
+    6. Ctrl -> Ctrl: Kiểm tra tính hợp lệ của ngày chọn
+    activate Ctrl
+    
+    7. Ctrl -> Ent: Truy vấn dữ liệu nhật ký theo ngày
+    activate Ent
+    8. Ent --> Ctrl: Phản hồi kết quả dữ liệu
+    deactivate Ent
+    
+    alt 8.1 Trường hợp ngày không hợp lệ hoặc không có dữ liệu
+        9. Ctrl --> GD: Thông báo lỗi hoặc không tìm thấy nhật ký
+        deactivate Ctrl
+        10. GD --> NguoiDung: Hiển thị thông báo, yêu cầu chọn lại ngày
+        deactivate GD
+        deactivate Ctrl
+    else 8.2 Trường hợp tìm thấy dữ liệu thành công
+        break break loop
+            11. Ctrl --> GD: Trả về danh sách thực phẩm và dinh dưỡng
+            activate Ctrl
+            12. GD --> NguoiDung: Hiển thị thông tin nhật ký bữa ăn chi tiết
+            deactivate Ctrl
+            deactivate GD
+        end
+    end
 end
-
-deactivate Control
-deactivate Boundary
 
 @enduml

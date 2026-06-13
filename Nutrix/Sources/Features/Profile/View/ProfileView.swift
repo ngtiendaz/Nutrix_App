@@ -46,8 +46,8 @@ struct ProfileView: View {
                         
                         // 4. Settings List
                         VStack(spacing: 12) {
-                            settingItem(icon: "bell.fill", title: "Thông báo", color: .orange)
-                            settingItem(icon: "lock.shield.fill", title: "Bảo mật", color: .blue)
+                            // settingItem(icon: "bell.fill", title: "Thông báo", color: .orange)
+                            // settingItem(icon: "lock.shield.fill", title: "Bảo mật", color: .blue)
                             Button(action: { showingLogoutAlert = true }) {
                                 settingItem(icon: "door.right.hand.open", title: "Đăng xuất", color: .red, isLast: true)
                             }
