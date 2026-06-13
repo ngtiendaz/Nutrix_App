@@ -57,9 +57,9 @@ struct ActualNutritionCard: View {
                     .foregroundColor(.gray)
                 
                 HStack(spacing: 12) {
-                    macroItem(label: "Carbs", value: animatedCarbs, color: .blue)
-                    macroItem(label: "Đạm", value: animatedProtein, color: .red)
-                    macroItem(label: "Béo", value: animatedFat, color: .orange)
+                    macroItem(label: "Tinh bột", value: animatedCarbs, color: .blue)
+                    macroItem(label: "Chất đạm", value: animatedProtein, color: .red)
+                    macroItem(label: "Chất béo", value: animatedFat, color: .orange)
                 }
             }
         }

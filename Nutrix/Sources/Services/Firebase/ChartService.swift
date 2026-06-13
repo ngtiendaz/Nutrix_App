@@ -437,7 +437,7 @@ extension FirebaseService {
                     let tableHeaderAttr: [NSAttributedString.Key: Any] = [.font: UIFont.boldSystemFont(ofSize: 10), .foregroundColor: blackColor]
                     let tableCellAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 10), .foregroundColor: blackColor]
                     
-                    let headers = ["Thời gian", "Nạp vào", "Mục tiêu", "Tiêu hao", "Protein", "Carbs", "Fat"]
+                    let headers = ["Thời gian", "Nạp vào", "Mục tiêu", "Tiêu hao", "Chất đạm", "Tinh bột", "Chất béo"]
                     let widths: [CGFloat] = [70, 75, 75, 75, 55, 55, 55]
                     
                     var currentX: CGFloat = 40

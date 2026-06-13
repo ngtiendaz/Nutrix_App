@@ -70,9 +70,9 @@ class StatisticsViewModel: ObservableObject {
         guard sum > 0 else { return [] }
         
         return [
-            MacroElement(name: "Carbs", value: (totalCarbs / sum) * 100, color: .blue),
-            MacroElement(name: "Protein", value: (totalProtein / sum) * 100, color: .red),
-            MacroElement(name: "Fat", value: (totalFat / sum) * 100, color: .orange)
+            MacroElement(name: "Tinh bột", value: (totalCarbs / sum) * 100, color: .blue),
+            MacroElement(name: "Chất đạm", value: (totalProtein / sum) * 100, color: .red),
+            MacroElement(name: "Chất béo", value: (totalFat / sum) * 100, color: .orange)
         ]
     }
     

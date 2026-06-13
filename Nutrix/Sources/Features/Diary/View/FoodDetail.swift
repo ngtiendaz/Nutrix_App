@@ -194,9 +194,9 @@ extension FoodDetailView {
             }
             Divider()
             HStack(spacing: 12) {
-                NutrientMiniCard(title: "Carbs", value: foodDetailViewModel.displayCarbs, color: .blue)
-                NutrientMiniCard(title: "Protein", value: foodDetailViewModel.displayProtein, color: .red)
-                NutrientMiniCard(title: "Fat", value: foodDetailViewModel.displayFats, color: .orange)
+                NutrientMiniCard(title: "Tinh bột", value: foodDetailViewModel.displayCarbs, color: .blue)
+                NutrientMiniCard(title: "Chất đạm", value: foodDetailViewModel.displayProtein, color: .red)
+                NutrientMiniCard(title: "Chất béo", value: foodDetailViewModel.displayFats, color: .orange)
             }
         }
         .padding(20)
