@@ -11,6 +11,7 @@ struct PlanView: View {
     
     @State private var showAISetup = false
     @State private var showDeleteConfirmation = false
+    @State private var selectedHistoryPlan: NutritionPlan? = nil
     
     var body: some View {
         ZStack {
@@ -65,7 +66,12 @@ struct PlanView: View {
                                     
                                     VStack(spacing: 14) {
                                         ForEach(planViewModel.historyPlans, id: \.startDate) { histPlan in
-                                            historyPlanDetailedCard(plan: histPlan)
+                                            Button {
+                                                selectedHistoryPlan = histPlan
+                                            } label: {
+                                                historyPlanDetailedCard(plan: histPlan)
+                                            }
+                                            .buttonStyle(.plain)
                                         }
                                     }
                                 }
@@ -135,6 +141,15 @@ struct PlanView: View {
                     .environmentObject(planViewModel)
                     .environmentObject(router)
                     .environmentObject(authService)
+            }
+        }
+        .sheet(item: $selectedHistoryPlan) { plan in
+            if #available(iOS 16.0, *) {
+                HistoryPlanDetailSheet(plan: plan, allMetrics: planViewModel.metricsHistory)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.hidden)
+            } else {
+                HistoryPlanDetailSheet(plan: plan, allMetrics: planViewModel.metricsHistory)
             }
         }
     }
