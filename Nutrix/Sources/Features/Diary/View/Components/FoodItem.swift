@@ -35,9 +35,9 @@ struct FoodItem: View {
                     
                     // Nutrients Row (Gọn hơn)
                     HStack(spacing: 15) {
-                        NutrientSmallView(label: "Protein:", value: food.protein, color: .blue)
-                        NutrientSmallView(label: "Cabs:", value: food.carbs, color: .red)
-                        NutrientSmallView(label: "Fat:", value: food.fats, color: .orange)
+                        NutrientSmallView(label: "Đạm:", value: food.protein, color: .blue)
+                        NutrientSmallView(label: "Tinh bột:", value: food.carbs, color: .red)
+                        NutrientSmallView(label: "Chất béo:", value: food.fats, color: .orange)
                     }
                     
                     // Calories Row

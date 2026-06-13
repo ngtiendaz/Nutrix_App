@@ -18,7 +18,7 @@ class DiaryViewModel: ObservableObject, Hashable {
     @Published var hasPlan: Bool = true
     @Published var planSummary: PlanSummary? = nil
 
-    private var lastSelectedDate: Date = Date()
+    private(set) var lastSelectedDate: Date = Date()
     private var pendingNutrition = PendingDailyNutrition()
 
     private struct PendingDailyNutrition {

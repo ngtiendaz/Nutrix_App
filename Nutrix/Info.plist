@@ -10,6 +10,8 @@
 	<string>$(APP_KEY_EDAMAM)</string>
 	<key>API_KEY_GEMINI</key>
 	<string>$(API_KEY_GEMINI)</string>
+	<key>API_KEY_GEMINI_BACKUP</key>
+	<string>$(API_KEY_GEMINI_BACKUP)</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

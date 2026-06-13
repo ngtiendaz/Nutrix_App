@@ -18,8 +18,8 @@ struct FoodAnalysisView: View {
     @EnvironmentObject var diaryViewModel: DiaryViewModel
     
     // 👉 Thay đổi Init để hỗ trợ cả Food có sẵn, Ảnh, và Cờ chỉnh sửa
-    init(food: Food? = nil, image: UIImage? = nil, authService: FirebaseAuthService, isEditableNutrition: Bool = false, onSaveSuccess: (() -> Void)? = nil) {
-        _foodAnalysisViewModel = StateObject(wrappedValue: FoodAnalysisViewModel(food: food, image: image, authService: authService, isEditableNutrition: isEditableNutrition))
+    init(food: Food? = nil, image: UIImage? = nil, authService: FirebaseAuthService, isEditableNutrition: Bool = false, mealDate: Date? = nil, onSaveSuccess: (() -> Void)? = nil) {
+        _foodAnalysisViewModel = StateObject(wrappedValue: FoodAnalysisViewModel(food: food, image: image, authService: authService, isEditableNutrition: isEditableNutrition, mealDate: mealDate))
         self.onSaveSuccess = onSaveSuccess
     }
     

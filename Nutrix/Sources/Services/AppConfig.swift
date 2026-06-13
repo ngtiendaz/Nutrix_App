@@ -34,4 +34,11 @@ enum AppConfig {
     static let geminiAPIKey: String = {
         return infoDict["API_KEY_GEMINI"] as? String ?? ""
     }()
+    
+    static let geminiAPIKeys: [String] = {
+        let key1 = infoDict["API_KEY_GEMINI"] as? String ?? ""
+        let key2 = infoDict["API_KEY_GEMINI_BACKUP"] as? String ?? ""
+        
+        return [key1, key2].filter { !$0.isEmpty }
+    }()
 }

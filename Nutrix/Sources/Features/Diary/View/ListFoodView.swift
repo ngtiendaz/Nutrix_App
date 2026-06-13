@@ -68,6 +68,7 @@ struct ListFoodView: View {
                     image: nil,
                     authService: FirebaseAuthService(),
                     isEditableNutrition: true,
+                    mealDate: diaryViewModel.lastSelectedDate,
                     onSaveSuccess: {
                         selectedFood = nil
                         DispatchQueue.main.async {

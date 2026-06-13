@@ -61,17 +61,20 @@ class FoodAnalysisViewModel: ObservableObject {
     private var aiAdviceTask: Task<Void, Never>?
     
     private let model = GenerativeModel(
-        name: "models/gemini-2.5-flash",
+        name: "models/gemini-2.5-flash-lite",
         apiKey: AppConfig.geminiAPIKey,
         requestOptions: RequestOptions(apiVersion: "v1")
     )
     
     // 👉 Init hỗ trợ cả 2 luồng: Nhận diện ảnh và Chọn từ danh sách
-    init(food: Food? = nil, image: UIImage? = nil, authService: FirebaseAuthService, isEditableNutrition: Bool = false) {
+    init(food: Food? = nil, image: UIImage? = nil, authService: FirebaseAuthService, isEditableNutrition: Bool = false, mealDate: Date? = nil) {
         self.analyzedFood = food
         self.selectedImage = image
         self.authService = authService
         self.isEditableNutrition = isEditableNutrition
+        if let date = mealDate {
+            self.mealDate = date
+        }
         
         // Nếu có sẵn thức ăn từ danh sách, set giá trị mặc định cho form
         if let preloadedFood = food {

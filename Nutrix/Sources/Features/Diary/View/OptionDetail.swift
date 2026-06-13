@@ -71,6 +71,7 @@ struct OptionDetail: View {
                 FoodAnalysisView(
                     image: uiImage,
                     authService: loginViewModel.authService,
+                    mealDate: diaryViewModel.lastSelectedDate,
                     onSaveSuccess: handleFoodSaved
                 )
                 .environmentObject(router)         // Tiêm router vào đây
