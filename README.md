@@ -46,5 +46,3 @@ Nutrix áp dụng chặt chẽ kiến trúc **MVVM (Model - View - ViewModel)** 
 - **Backend/Database**: Firebase (Authentication, Cloud Firestore, Storage)
 - **Tích hợp API AI**: Google Gemini API, Edamam API, Google Vision
 
----
-*Dự án đang trong quá trình phát triển.*
