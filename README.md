@@ -46,3 +46,18 @@ Nutrix áp dụng chặt chẽ kiến trúc **MVVM (Model - View - ViewModel)** 
 - **Backend/Database**: Firebase (Authentication, Cloud Firestore, Storage)
 - **Tích hợp API AI**: Google Gemini API, Edamam API, Google Vision
 
+## Hướng dẫn cài đặt
+
+1. **Clone repository**:
+   ```bash
+   git clone <URL_CUA_REPO>
+   cd Nutrix
+   ```
+2. **Mở dự án**:
+   Mở file `Nutrix.xcodeproj` bằng Xcode.
+3. **Cấu hình Firebase**:
+   Đảm bảo file `GoogleService-Info.plist` đã được thêm vào thư mục `Nutrix` trong dự án Xcode.
+4. **Cài đặt Dependencies**:
+   Dự án sử dụng Swift Package Manager (SPM). Xcode sẽ tự động tải các package phụ thuộc khi bạn mở dự án. Hãy chờ Xcode "Resolve Package Dependencies" xong.
+5. **Biên dịch và Chạy**:
+   Chọn thiết bị mô phỏng (Simulator) hoặc thiết bị thật (iPhone iOS 16.0 trở lên) và nhấn `Cmd + R` để chạy ứng dụng.
